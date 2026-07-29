@@ -1,8 +1,8 @@
-# Todo board
+# Personal board
 
-A four-column todo board — Waiting for, Backlog, Now, Accomplished — in a single
-HTML file. No build, no dependencies, no server: open `index.html` in a browser
-and it works.
+A four-column personal board — Waiting for, Backlog, Now, Accomplished — in a
+single HTML file. No build, no dependencies, no server: open `index.html` in a
+browser and it works.
 
 **Waiting for** holds what is blocked on someone else. It is set slightly apart
 from the other three by a hairline, and stays white whatever palette is chosen.
@@ -26,9 +26,13 @@ Open `index.html` directly (`file://` is fine).
 
 ## Storage
 
-The board lives in `localStorage` under `todo.board.v1`, the chosen palette under
-`todo.palette.v1` — per browser, per machine. Export is the way to move a board
-somewhere else. Two tabs on the same board stay in sync.
+The board lives in `localStorage` under `personal.board.v1`, the chosen palette
+under `personal.palette.v1` — per browser, per machine. Export is the way to move
+a board somewhere else. Two tabs on the same board stay in sync.
+
+A board saved under either older key — `todo.board.v1` or `backlog.board.v1` —
+is carried over to the new one the first time the page loads, and the old key is
+dropped. Older JSON exports still import.
 
 ## Palettes
 
