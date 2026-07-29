@@ -4,7 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Todo board</title>
-<!-- three columns in the current palette; setFavicon() redraws it when the palette changes -->
+<!-- the three palette columns; setFavicon() redraws it when the palette changes.
+     Waiting for is left out — a white bar on an ivory tile reads as nothing at 16px. -->
 <link id="favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%23FAF9F5%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%225%22%20width%3D%226%22%20height%3D%2222%22%20rx%3D%222%22%20fill%3D%22%23788C5D%22%2F%3E%3Crect%20x%3D%2213%22%20y%3D%225%22%20width%3D%226%22%20height%3D%2222%22%20rx%3D%222%22%20fill%3D%22%23D97757%22%2F%3E%3Crect%20x%3D%2222%22%20y%3D%225%22%20width%3D%226%22%20height%3D%2222%22%20rx%3D%222%22%20fill%3D%22%2387867F%22%2F%3E%3C%2Fsvg%3E" />
 <style>
   :root {
@@ -29,6 +30,10 @@
     --rule-backlog: #788C5D;
     --rule-now: #D97757;
     --rule-accomplished: #87867F;
+    /* Waiting for sits outside the palette — plain white in every scheme, so the
+       picker leaves this pair alone */
+    --fill-waiting: var(--white);
+    --rule-waiting: var(--gray-200);
     --col-rule: rgba(20, 20, 19, 0.07);
     --serif: ui-serif, Georgia, "Times New Roman", serif;
     --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -44,7 +49,7 @@
     line-height: 1.5;
   }
   .wrap {
-    max-width: 940px;
+    max-width: 1140px;
     margin: 0 auto;
     padding: 48px 32px 64px;
   }
@@ -208,9 +213,24 @@
   /* ---------- board ---------- */
   .board {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    /* waiting · hairline · backlog · now · accomplished */
+    grid-template-columns: 1fr 1px repeat(3, 1fr);
     gap: 16px;
     align-items: start;
+  }
+  /* Waiting for holds what is not yours to move, so it is set off from the three
+     doing-columns rather than sitting flush with them. A gap-width hairline,
+     faded at both ends, stretched to the tallest column in the row. */
+  .col-divider {
+    align-self: stretch;
+    width: 1px;
+    background: linear-gradient(
+      to bottom,
+      transparent 0,
+      var(--gray-200) 14%,
+      var(--gray-200) 86%,
+      transparent 100%
+    );
   }
   .col {
     background: var(--fill);
@@ -221,6 +241,7 @@
     flex-direction: column;
     min-height: 200px;
   }
+  .col[data-col="waiting"]      { --fill: var(--fill-waiting);      border-top: 3px solid var(--rule-waiting); }
   .col[data-col="backlog"]      { --fill: var(--fill-backlog);      border-top: 3px solid var(--rule-backlog); }
   .col[data-col="now"]          { --fill: var(--fill-now);          border-top: 3px solid var(--rule-now); }
   .col[data-col="accomplished"] { --fill: var(--fill-accomplished); border-top: 3px solid var(--rule-accomplished); }
@@ -506,8 +527,11 @@
   }
   .toast button:hover { border-color: var(--clay); }
 
-  @media (max-width: 860px) {
+  /* below four-across the columns no longer sit in one row, so the hairline has
+     nothing to divide and goes away */
+  @media (max-width: 940px) {
     .board { grid-template-columns: repeat(2, 1fr); }
+    .col-divider { display: none; }
     .wrap { padding: 32px 20px 56px; }
   }
   @media (max-width: 560px) {
@@ -549,11 +573,15 @@
 <script>
   // ---------- config ----------
   var COLUMNS = [
+    { key: 'waiting',      label: 'Waiting for',  prompt: 'Who or what are you waiting on?',
+      add: 'waiting', divider: true },
     { key: 'backlog',      label: 'Backlog',      prompt: 'What needs doing?' },
     { key: 'now',          label: 'Now',          prompt: "What's underway?" },
     { key: 'accomplished', label: 'Accomplished', prompt: 'What got done?', clearable: true }
   ];
   var KEYS = COLUMNS.map(function (c) { return c.key; });
+  // the palette only dresses the three doing-columns; Waiting for stays white
+  var PAL_KEYS = ['backlog', 'now', 'accomplished'];
   var STORE = 'todo.board.v1';
   var OLD_STORE = 'backlog.board.v1';   // pre-rename key, migrated once on load
   var GONE_KEY = 'cut';                 // the removed fourth column, see load()
@@ -671,7 +699,7 @@
     var addBtn = document.createElement('button');
     addBtn.className = 'addbtn';
     addBtn.type = 'button';
-    addBtn.textContent = '+ add to ' + c.label.toLowerCase();
+    addBtn.textContent = '+ add to ' + (c.add || c.label.toLowerCase());
 
     var composer = document.createElement('div');
     composer.className = 'composer';
@@ -763,6 +791,13 @@
     col.appendChild(body);
     col.appendChild(foot);
     board.appendChild(col);
+
+    if (c.divider) {
+      var rule = document.createElement('div');
+      rule.className = 'col-divider';
+      rule.setAttribute('aria-hidden', 'true');
+      board.appendChild(rule);
+    }
 
     bodies[c.key] = body;
     counts[c.key] = count;
@@ -1063,7 +1098,8 @@
   // names the combination after, and the lead colour its family is grouped by, sit
   // within those first three.
   // Each column takes its colour at 12% over ivory, exactly like the default.
-  // Order is always [backlog, now, accomplished].
+  // Order is always [backlog, now, accomplished] — Waiting for takes no palette
+  // colour, it is white throughout.
   var PAL_KEY = 'todo.palette.v1';
   var OLD_PAL_KEY = 'backlog.palette.v1';
   var IVORY_RGB = [250, 249, 245];
@@ -1258,8 +1294,9 @@
     return out.toUpperCase();
   }
 
-  // the icon is the board itself: three bars, one per column, in the palette's
-  // colours. The tints are too pale to survive 16px, so the bars run solid.
+  // the icon is the board itself: three bars, one per palette column, in the
+  // palette's colours. The tints are too pale to survive 16px, so the bars run
+  // solid — which is also why white Waiting for gets no bar.
   function setFavicon(colors) {
     var link = document.getElementById('favicon');
     if (!link) return;
@@ -1275,7 +1312,7 @@
     var p = PALETTES.filter(function (x) { return x.id === id; })[0] || PALETTES[0];
     var root = document.documentElement;
     currentPal = p.id;
-    KEYS.forEach(function (k, i) {
+    PAL_KEYS.forEach(function (k, i) {
       root.style.setProperty('--fill-' + k, tintOf(p.colors[i]));
       root.style.setProperty('--rule-' + k, p.colors[i]);
     });

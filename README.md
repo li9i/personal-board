@@ -1,7 +1,11 @@
 # Todo board
 
-A three-column todo board — Backlog, Now, Accomplished — in a single HTML file.
-No build, no dependencies, no server: open `index.html` in a browser and it works.
+A four-column todo board — Waiting for, Backlog, Now, Accomplished — in a single
+HTML file. No build, no dependencies, no server: open `index.html` in a browser
+and it works.
+
+**Waiting for** holds what is blocked on someone else. It is set slightly apart
+from the other three by a hairline, and stays white whatever palette is chosen.
 
 ![The board with a few cards in each column](doc/board.png)
 
@@ -15,8 +19,9 @@ Open `index.html` directly (`file://` is fine).
 - **Drag a card** to move it within a column or across to another one.
 - **×** on a card deletes it. **clear column** empties Accomplished. Both raise a
   toast with an **Undo**.
-- **Palette** swaps the column colours — pick a family, then a combination. The
-  panel stays open while you try them, and closes on a click outside or Escape.
+- **Palette** swaps the colours of Backlog, Now and Accomplished — pick a family,
+  then a combination. The panel stays open while you try them, and closes on a
+  click outside or Escape.
 - **Export** downloads the board as JSON; **Import** reads one back in.
 
 ## Storage
@@ -29,4 +34,5 @@ somewhere else. Two tabs on the same board stay in sync.
 
 The colour combinations come from Sanzo Wada's *A Dictionary of Color
 Combinations*, grouped into families by their lead colour and trimmed to three
-colours each — one per column.
+colours each — one each for Backlog, Now and Accomplished. Waiting for takes no
+palette colour.
