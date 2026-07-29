@@ -4,6 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Todo board</title>
+<!-- three columns in the current palette; setFavicon() redraws it when the palette changes -->
+<link id="favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%23FAF9F5%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%225%22%20width%3D%226%22%20height%3D%2222%22%20rx%3D%222%22%20fill%3D%22%23788C5D%22%2F%3E%3Crect%20x%3D%2213%22%20y%3D%225%22%20width%3D%226%22%20height%3D%2222%22%20rx%3D%222%22%20fill%3D%22%23D97757%22%2F%3E%3Crect%20x%3D%2222%22%20y%3D%225%22%20width%3D%226%22%20height%3D%2222%22%20rx%3D%222%22%20fill%3D%22%2387867F%22%2F%3E%3C%2Fsvg%3E" />
 <style>
   :root {
     --ivory: #FAF9F5;
@@ -1256,6 +1258,19 @@
     return out.toUpperCase();
   }
 
+  // the icon is the board itself: three bars, one per column, in the palette's
+  // colours. The tints are too pale to survive 16px, so the bars run solid.
+  function setFavicon(colors) {
+    var link = document.getElementById('favicon');
+    if (!link) return;
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">' +
+      '<rect width="32" height="32" rx="7" fill="#FAF9F5"/>';
+    [4, 13, 22].forEach(function (x, i) {
+      svg += '<rect x="' + x + '" y="5" width="6" height="22" rx="2" fill="' + colors[i] + '"/>';
+    });
+    link.href = 'data:image/svg+xml,' + encodeURIComponent(svg + '</svg>');
+  }
+
   function applyPalette(id) {
     var p = PALETTES.filter(function (x) { return x.id === id; })[0] || PALETTES[0];
     var root = document.documentElement;
@@ -1264,6 +1279,7 @@
       root.style.setProperty('--fill-' + k, tintOf(p.colors[i]));
       root.style.setProperty('--rule-' + k, p.colors[i]);
     });
+    setFavicon(p.colors);
     try { localStorage.setItem(PAL_KEY, p.id); } catch (e) {}
   }
 
