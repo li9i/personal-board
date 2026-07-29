@@ -1305,9 +1305,15 @@
           '<span class="pal-num">' + (p.num ? 'no. ' + p.num : 'default') + '</span></span>' +
           palBars(p) +
           '<span class="pal-cols">' + p.names + '</span>';
-        b.addEventListener('click', function () {
+        b.addEventListener('click', function (e) {
+          e.stopPropagation();
           applyPalette(p.id);
-          closePalette();
+          // stay open so several palettes can be tried in a row — the panel only
+          // closes on a click outside or Escape. Move the marker in place rather
+          // than re-rendering, which would throw away the scroll position.
+          Array.prototype.forEach.call(palPanel.querySelectorAll('.pal'), function (el) {
+            el.classList.toggle('on', el.dataset.pal === p.id);
+          });
         });
         palPanel.appendChild(b);
       });
