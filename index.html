@@ -1,0 +1,1237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Todo board</title>
+<style>
+  :root {
+    --ivory: #FAF9F5;
+    --slate: #141413;
+    --clay: #D97757;
+    --clay-d: #B85C3E;
+    --oat: #E3DACC;
+    --olive: #788C5D;
+    --gray-50: #F0EEE6;
+    --gray-200: #D1CFC5;
+    --gray-500: #87867F;
+    --gray-600: #63625C;   /* text sitting on a column tint — 5.1:1 on all four */
+    --gray-800: #3D3D3A;
+    --white: #ffffff;
+
+    /* column fills: each column's colour at 12% over ivory.
+       Both sets are rewritten by the palette picker. */
+    --fill-backlog: #EAECE3;
+    --fill-now: #F6E9E2;
+    --fill-accomplished: #ECEBE7;
+    --fill-cut: #F5F4EF;
+    --rule-backlog: #788C5D;
+    --rule-now: #D97757;
+    --rule-accomplished: #87867F;
+    --rule-cut: #D1CFC5;
+    --col-rule: rgba(20, 20, 19, 0.07);
+    --serif: ui-serif, Georgia, "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: var(--ivory);
+    color: var(--slate);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 48px 32px 64px;
+  }
+
+  /* ---------- header ---------- */
+  header { margin-bottom: 22px; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gray-500);
+  }
+  h1 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 30px;
+    letter-spacing: -0.01em;
+    margin: 6px 0 4px;
+  }
+  .hintline {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--gray-500);
+    margin-top: 10px;
+  }
+  .hintline::before {
+    content: "›";
+    color: var(--clay);
+    margin-right: 6px;
+  }
+
+  /* ---------- toolbar ---------- */
+  .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--ivory);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 0 12px;
+    margin-bottom: 14px;
+    border-bottom: 1.5px solid var(--gray-200);
+  }
+  .summary {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--gray-800);
+    letter-spacing: 0.01em;
+  }
+  .summary b { color: var(--slate); font-weight: 600; }
+  .summary .dot { color: var(--gray-200); margin: 0 4px; }
+  .spacer { flex: 1; }
+  button.ghost {
+    background: transparent;
+    color: var(--gray-800);
+    border: 1.5px solid var(--gray-200);
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 9px 16px;
+    cursor: pointer;
+  }
+  button.ghost:hover { border-color: var(--gray-500); }
+  button.ghost[aria-expanded="true"] { border-color: var(--gray-500); }
+
+  /* ---------- palette picker ---------- */
+  .palette-wrap { position: relative; }
+  .palette-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 20;
+    width: 268px;
+    background: var(--white);
+    border: 1.5px solid var(--gray-200);
+    border-radius: 10px;
+    padding: 7px;
+    box-shadow: 0 6px 22px rgba(20,20,19,0.10);
+    display: none;
+    flex-direction: column;
+    gap: 1px;
+    max-height: 72vh;
+    overflow-y: auto;
+  }
+  .palette-panel.on { display: flex; }
+  .palette-panel .cap {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--gray-600);
+    padding: 5px 7px 7px;
+  }
+  .pal {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    padding: 7px;
+    border: 1.5px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+  }
+  .pal:hover { background: var(--gray-50); }
+  .pal:focus-visible { outline: 2px solid var(--clay); outline-offset: -2px; }
+  .pal.on { border-color: var(--clay); }
+  .pal-top { display: flex; align-items: baseline; gap: 8px; }
+  .pal-name { font-size: 12px; color: var(--slate); }
+  .pal-num {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--gray-600);
+    font-variant-numeric: tabular-nums;
+  }
+  .pal-bars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; }
+  .pal-bar {
+    height: 24px;
+    border-radius: 3px;
+    border: 1px solid var(--gray-200);
+    border-top: 3px solid var(--r);
+    background: var(--t);
+  }
+  .pal-cols {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    color: var(--gray-600);
+    line-height: 1.35;
+  }
+  .fam-strip { display: flex; flex-wrap: wrap; gap: 4px; }
+  .fam-dot {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: var(--c);
+    border: 1px solid rgba(20,20,19,0.12);
+  }
+  .pal-back {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--gray-600);
+    padding: 5px 7px 8px;
+    text-align: left;
+  }
+  .pal-back:hover { color: var(--slate); }
+  .pal-back .arrow { color: var(--clay); font-size: 13px; }
+
+  /* ---------- board ---------- */
+  .board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    align-items: start;
+  }
+  .col {
+    background: var(--fill);
+    border: 1.5px solid var(--gray-200);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 200px;
+  }
+  .col[data-col="backlog"]      { --fill: var(--fill-backlog);      border-top: 3px solid var(--rule-backlog); }
+  .col[data-col="now"]          { --fill: var(--fill-now);          border-top: 3px solid var(--rule-now); }
+  .col[data-col="accomplished"] { --fill: var(--fill-accomplished); border-top: 3px solid var(--rule-accomplished); }
+  .col[data-col="cut"]          { --fill: var(--fill-cut);          border-top: 3px solid var(--rule-cut); }
+  .col.dragover {
+    outline: 2px dashed var(--clay);
+    outline-offset: -6px;
+    /* layered over the fill so the column keeps its own colour while dragging */
+    background-image: linear-gradient(rgba(217, 119, 87, 0.10), rgba(217, 119, 87, 0.10));
+  }
+  .col-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 14px 14px 10px;
+    border-bottom: 1.5px solid var(--col-rule);
+  }
+  .col-head h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 17px;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .col-head .count {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--gray-800);
+    background: var(--white);
+    border: 1.5px solid var(--gray-200);
+    border-radius: 999px;
+    padding: 1px 8px;
+    min-width: 26px;
+    text-align: center;
+  }
+  .col-body {
+    padding: 10px 10px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    min-height: 60px;
+  }
+  .empty {
+    font-family: var(--mono);
+    font-size: 11px;
+    /* purely decorative — an empty column already says it is empty */
+    color: var(--gray-500);
+    text-align: center;
+    padding: 18px 6px;
+    user-select: none;
+  }
+  .col-foot {
+    border-top: 1.5px solid var(--col-rule);
+    padding: 8px 10px 10px;
+  }
+  .addbtn {
+    width: 100%;
+    background: transparent;
+    border: 1.5px dashed rgba(20, 20, 19, 0.16);
+    border-radius: 8px;
+    color: var(--gray-600);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 8px 10px;
+    cursor: pointer;
+    text-align: left;
+  }
+  .addbtn:hover { border-color: var(--clay); color: var(--clay-d); }
+
+  /* ---------- composer ---------- */
+  .composer { display: none; }
+  .composer.on { display: block; }
+  .composer textarea {
+    width: 100%;
+    resize: vertical;
+    min-height: 58px;
+    background: var(--white);
+    border: 1.5px solid var(--gray-500);
+    border-radius: 8px;
+    padding: 9px 10px;
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.35;
+    color: var(--slate);
+    outline: none;
+  }
+  .composer textarea:focus { border-color: var(--clay); }
+  .composer-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 7px;
+  }
+  .composer .save {
+    background: var(--slate);
+    color: var(--ivory);
+    border: 1.5px solid var(--slate);
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 12px;
+    cursor: pointer;
+  }
+  .composer .save:hover { background: var(--gray-800); }
+  .composer .cancel {
+    background: transparent;
+    border: none;
+    color: var(--gray-600);
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    padding: 5px 2px;
+  }
+  .composer .cancel:hover { color: var(--slate); }
+  .composer .keyhint {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--gray-600);
+  }
+
+  /* ---------- card ---------- */
+  .card {
+    background: var(--white);
+    border: 1.5px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 10px 11px 8px;
+    cursor: grab;
+    /* a white card only separates from its tint by 1.19:1, so it gets a lift too */
+    box-shadow: 0 1px 2px rgba(20,20,19,0.05);
+    transition: border-color 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
+  }
+  .card:hover { border-color: var(--gray-500); box-shadow: 0 2px 5px rgba(20,20,19,0.09); }
+  .card:active { cursor: grabbing; }
+  .card.dragging { opacity: .4; }
+  .ctext {
+    font-size: 13px;
+    line-height: 1.35;
+    color: var(--slate);
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin-bottom: 7px;
+  }
+  .card textarea {
+    width: 100%;
+    resize: vertical;
+    min-height: 52px;
+    background: var(--white);
+    border: 1.5px solid var(--clay);
+    border-radius: 6px;
+    padding: 7px 8px;
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.35;
+    color: var(--slate);
+    outline: none;
+    margin-bottom: 7px;
+  }
+  .card-bot {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .date {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--gray-800);
+    letter-spacing: 0.02em;
+  }
+  .card-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 3px;
+    opacity: 0;
+    transition: opacity 120ms ease;
+  }
+  .card:hover .card-actions,
+  .card:focus-within .card-actions { opacity: 1; }
+  @media (hover: none) { .card-actions { opacity: 1; } }
+  .card-actions button {
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1;
+    color: var(--gray-800);
+    background: var(--white);
+    border: 1.5px solid var(--gray-200);
+    border-radius: 4px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+  }
+  .card-actions button:hover { border-color: var(--gray-500); color: var(--slate); }
+  .card-actions button.del:hover { border-color: var(--clay); color: var(--clay-d); }
+
+  /* ---------- undo toast ---------- */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 26px;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--slate);
+    color: var(--ivory);
+    border-radius: 999px;
+    padding: 9px 10px 9px 18px;
+    font-family: var(--mono);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 140ms ease, transform 140ms ease;
+    z-index: 20;
+  }
+  .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+  .toast button {
+    background: transparent;
+    color: var(--clay);
+    border: 1.5px solid var(--gray-800);
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 12px;
+    cursor: pointer;
+  }
+  .toast button:hover { border-color: var(--clay); }
+
+  @media (max-width: 920px) {
+    .board { grid-template-columns: repeat(2, 1fr); }
+    .wrap { padding: 32px 20px 56px; }
+  }
+  @media (max-width: 560px) {
+    .board { grid-template-columns: 1fr; }
+    .toolbar { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">personal / todo board</div>
+    <h1>Todo board</h1>
+    <div class="hintline">click “+ add” in a column &nbsp;·&nbsp; drag cards between columns &nbsp;·&nbsp; click a card to edit</div>
+  </header>
+
+  <div class="toolbar">
+    <div class="summary" id="summary"></div>
+    <div class="spacer"></div>
+    <span class="palette-wrap">
+      <button class="ghost" id="paletteBtn" aria-expanded="false" aria-haspopup="true">Palette</button>
+      <div class="palette-panel" id="palettePanel"></div>
+    </span>
+    <button class="ghost" id="importBtn">Import</button>
+    <button class="ghost" id="exportBtn">Export</button>
+    <input type="file" id="fileInput" accept="application/json,.json" hidden />
+  </div>
+
+  <div class="board" id="board"></div>
+
+</div>
+
+<div class="toast" id="toast">
+  <span id="toastMsg"></span>
+  <button id="undoBtn">Undo</button>
+</div>
+
+<script>
+  // ---------- config ----------
+  var COLUMNS = [
+    { key: 'backlog',      label: 'Backlog',      prompt: 'What needs doing?' },
+    { key: 'now',          label: 'Now',          prompt: "What's underway?" },
+    { key: 'accomplished', label: 'Accomplished', prompt: 'What got done?' },
+    { key: 'cut',          label: 'Cut',          prompt: "What's being dropped?" }
+  ];
+  var KEYS = COLUMNS.map(function (c) { return c.key; });
+  var STORE = 'todo.board.v1';
+  var OLD_STORE = 'backlog.board.v1';   // pre-rename key, migrated once on load
+
+  // ---------- state ----------
+  // state.cols = { backlog: [card], now: [...], accomplished: [...], cut: [...] }
+  // card = { id, text, created }
+  var state = load();
+  var dragId = null;
+  var lastDeleted = null;   // { col, index, card }
+  var toastTimer = null;
+
+  function blank() {
+    var cols = {};
+    KEYS.forEach(function (k) { cols[k] = []; });
+    return { cols: cols };
+  }
+
+  function load() {
+    var fresh = blank();
+    try {
+      var raw = localStorage.getItem(STORE);
+      if (raw == null) {
+        // the board used to be stored under "backlog.board.v1" — carry it over
+        raw = localStorage.getItem(OLD_STORE);
+        if (raw != null) {
+          localStorage.setItem(STORE, raw);
+          localStorage.removeItem(OLD_STORE);
+        }
+      }
+      if (!raw) return fresh;
+      var parsed = JSON.parse(raw);
+      if (!parsed || !parsed.cols) return fresh;
+      var cols = parsed.cols;
+      // the Accomplished column used to be keyed "later" — carry those cards over
+      if (Array.isArray(cols.later) && !Array.isArray(cols.accomplished)) {
+        cols.accomplished = cols.later;
+      }
+      KEYS.forEach(function (k) {
+        var list = cols[k];
+        if (!Array.isArray(list)) return;
+        fresh.cols[k] = list.filter(function (c) {
+          return c && typeof c.text === 'string';
+        }).map(function (c) {
+          return {
+            id: c.id || uid(),
+            text: c.text,
+            created: typeof c.created === 'number' ? c.created : Date.now()
+          };
+        });
+      });
+    } catch (e) { /* corrupt or unavailable storage — start clean */ }
+    return fresh;
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORE, JSON.stringify(state));
+    } catch (e) {
+      console.warn('Could not save to localStorage:', e);
+    }
+  }
+
+  function uid() {
+    return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  function find(id) {
+    for (var i = 0; i < KEYS.length; i++) {
+      var list = state.cols[KEYS[i]];
+      for (var j = 0; j < list.length; j++) {
+        if (list[j].id === id) return { col: KEYS[i], index: j, card: list[j] };
+      }
+    }
+    return null;
+  }
+
+  function fmtDate(ms) {
+    var d = new Date(ms);
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+
+  // ---------- build columns ----------
+  var board = document.getElementById('board');
+  var bodies = {};
+  var counts = {};
+
+  COLUMNS.forEach(function (c) {
+    var col = document.createElement('section');
+    col.className = 'col';
+    col.dataset.col = c.key;
+
+    var head = document.createElement('div');
+    head.className = 'col-head';
+    var h2 = document.createElement('h2');
+    h2.textContent = c.label;
+    var count = document.createElement('span');
+    count.className = 'count';
+    head.appendChild(h2);
+    head.appendChild(count);
+
+    var body = document.createElement('div');
+    body.className = 'col-body';
+
+    var foot = document.createElement('div');
+    foot.className = 'col-foot';
+
+    var addBtn = document.createElement('button');
+    addBtn.className = 'addbtn';
+    addBtn.type = 'button';
+    addBtn.textContent = '+ add to ' + c.label.toLowerCase();
+
+    var composer = document.createElement('div');
+    composer.className = 'composer';
+    var ta = document.createElement('textarea');
+    ta.rows = 2;
+    ta.placeholder = c.prompt;
+    var row = document.createElement('div');
+    row.className = 'composer-row';
+    var saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.className = 'save';
+    saveBtn.textContent = 'Add';
+    var cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'cancel';
+    cancelBtn.textContent = 'cancel';
+    var hint = document.createElement('span');
+    hint.className = 'keyhint';
+    hint.textContent = '⏎ add · esc close';
+    row.appendChild(saveBtn);
+    row.appendChild(cancelBtn);
+    row.appendChild(hint);
+    composer.appendChild(ta);
+    composer.appendChild(row);
+
+    foot.appendChild(addBtn);
+    foot.appendChild(composer);
+
+    col.appendChild(head);
+    col.appendChild(body);
+    col.appendChild(foot);
+    board.appendChild(col);
+
+    bodies[c.key] = body;
+    counts[c.key] = count;
+
+    function openComposer() {
+      closeComposers();
+      composer.classList.add('on');
+      addBtn.style.display = 'none';
+      ta.focus();
+    }
+    function closeComposer() {
+      composer.classList.remove('on');
+      addBtn.style.display = '';
+      ta.value = '';
+    }
+    composer.close = closeComposer;
+
+    function commit(keepOpen) {
+      var text = ta.value.trim();
+      if (!text) { closeComposer(); return; }
+      state.cols[c.key].push({ id: uid(), text: text, created: Date.now() });
+      save();
+      render();
+      ta.value = '';
+      if (keepOpen) { ta.focus(); } else { closeComposer(); }
+    }
+
+    addBtn.addEventListener('click', openComposer);
+    saveBtn.addEventListener('click', function () { commit(true); });
+    cancelBtn.addEventListener('click', closeComposer);
+    ta.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commit(true); }
+      else if (e.key === 'Escape') { e.preventDefault(); closeComposer(); }
+    });
+
+    // ---- drop target ----
+    col.addEventListener('dragover', function (e) {
+      if (!dragId) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      col.classList.add('dragover');
+    });
+    col.addEventListener('dragleave', function (e) {
+      if (!col.contains(e.relatedTarget)) col.classList.remove('dragover');
+    });
+    col.addEventListener('drop', function (e) {
+      e.preventDefault();
+      col.classList.remove('dragover');
+      if (!dragId) return;
+      var at = insertIndex(body, e.clientY);
+      moveCard(dragId, c.key, at);
+    });
+  });
+
+  function closeComposers() {
+    document.querySelectorAll('.composer.on').forEach(function (el) {
+      if (el.close) el.close();
+    });
+  }
+
+  // where in the target column should the dragged card land?
+  function insertIndex(body, y) {
+    var cards = [].slice.call(body.querySelectorAll('.card:not(.dragging)'));
+    for (var i = 0; i < cards.length; i++) {
+      var box = cards[i].getBoundingClientRect();
+      if (y < box.top + box.height / 2) return i;
+    }
+    return cards.length;
+  }
+
+  function moveCard(id, toCol, at) {
+    var found = find(id);
+    if (!found) return;
+    // `at` already excludes the dragged card (insertIndex skips .dragging),
+    // so no index adjustment is needed when reordering within a column.
+    state.cols[found.col].splice(found.index, 1);
+    var list = state.cols[toCol];
+    if (at == null || at > list.length) at = list.length;
+    list.splice(at, 0, found.card);
+    save();
+    render();
+  }
+
+  function removeCard(id) {
+    var found = find(id);
+    if (!found) return;
+    state.cols[found.col].splice(found.index, 1);
+    lastDeleted = found;
+    save();
+    render();
+    showToast('Card deleted');
+  }
+
+  // ---------- toast ----------
+  var toast = document.getElementById('toast');
+  function showToast(msg) {
+    document.getElementById('toastMsg').textContent = msg;
+    toast.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () {
+      toast.classList.remove('on');
+      lastDeleted = null;
+    }, 6000);
+  }
+  document.getElementById('undoBtn').addEventListener('click', function () {
+    if (!lastDeleted) return;
+    var list = state.cols[lastDeleted.col];
+    list.splice(Math.min(lastDeleted.index, list.length), 0, lastDeleted.card);
+    lastDeleted = null;
+    clearTimeout(toastTimer);
+    toast.classList.remove('on');
+    save();
+    render();
+  });
+
+  // ---------- card ----------
+  function makeCard(card, colKey) {
+    var el = document.createElement('article');
+    el.className = 'card';
+    el.draggable = true;
+    el.dataset.id = card.id;
+
+    var text = document.createElement('div');
+    text.className = 'ctext';
+    text.textContent = card.text;
+
+    var bot = document.createElement('div');
+    bot.className = 'card-bot';
+    var date = document.createElement('span');
+    date.className = 'date';
+    date.textContent = fmtDate(card.created);
+
+    var actions = document.createElement('div');
+    actions.className = 'card-actions';
+    var del = mkBtn('×', 'delete');
+    del.className = 'del';
+    actions.appendChild(del);
+
+    bot.appendChild(date);
+    bot.appendChild(actions);
+    el.appendChild(text);
+    el.appendChild(bot);
+
+    del.addEventListener('click', function (e) { e.stopPropagation(); removeCard(card.id); });
+
+    // ---- inline edit ----
+    text.addEventListener('click', function () {
+      var ta = document.createElement('textarea');
+      ta.value = card.text;
+      el.draggable = false;
+      el.replaceChild(ta, text);
+      ta.focus();
+      ta.setSelectionRange(ta.value.length, ta.value.length);
+
+      var done = false;
+      function finish(keep) {
+        if (done) return;
+        done = true;
+        el.draggable = true;
+        if (keep) {
+          var v = ta.value.trim();
+          if (v) { card.text = v; save(); }
+        }
+        render();
+      }
+      ta.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); finish(true); }
+        else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+      });
+      ta.addEventListener('blur', function () { finish(true); });
+    });
+
+    el.addEventListener('dragstart', function (e) {
+      dragId = card.id;
+      el.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', card.id);
+    });
+    el.addEventListener('dragend', function () {
+      dragId = null;
+      el.classList.remove('dragging');
+      document.querySelectorAll('.col.dragover').forEach(function (c) {
+        c.classList.remove('dragover');
+      });
+    });
+
+    return el;
+  }
+
+  function mkBtn(label, title) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    b.title = title;
+    b.setAttribute('aria-label', title);
+    return b;
+  }
+
+  // ---------- render ----------
+  function render() {
+    COLUMNS.forEach(function (c) {
+      var body = bodies[c.key];
+      body.innerHTML = '';
+      var list = state.cols[c.key];
+      if (!list.length) {
+        var empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.textContent = 'nothing here';
+        body.appendChild(empty);
+      } else {
+        list.forEach(function (card) { body.appendChild(makeCard(card, c.key)); });
+      }
+      counts[c.key].textContent = list.length;
+    });
+
+    document.getElementById('summary').innerHTML = COLUMNS.map(function (c) {
+      return '<b>' + state.cols[c.key].length + '</b>&nbsp;' + c.key;
+    }).join('<span class="dot">·</span>');
+  }
+
+  // ---------- export / import ----------
+  document.getElementById('exportBtn').addEventListener('click', function () {
+    var blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'todo-board-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  });
+
+  var fileInput = document.getElementById('fileInput');
+  document.getElementById('importBtn').addEventListener('click', function () {
+    fileInput.click();
+  });
+  fileInput.addEventListener('change', function () {
+    var f = fileInput.files && fileInput.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var parsed = JSON.parse(reader.result);
+        if (!parsed || !parsed.cols) throw new Error('bad shape');
+        var total = 0;
+        KEYS.forEach(function (k) {
+          if (Array.isArray(parsed.cols[k])) total += parsed.cols[k].length;
+        });
+        if (!confirm('Replace the current board with ' + total + ' card(s) from this file?')) return;
+        localStorage.setItem(STORE, JSON.stringify(parsed));
+        state = load();
+        save();
+        render();
+      } catch (e) {
+        alert("That file doesn't look like a todo board export.");
+      }
+      fileInput.value = '';
+    };
+    reader.readAsText(f);
+  });
+
+  // ---------- palettes ----------
+  // Four-colour combinations from Sanzo Wada's Haishoku Sokan (1933) — the source
+  // of Seigensha's Color Scheme Dictionary. Numbers are the book's own; hexes come
+  // from the mattdesl/dictionary-of-colour-combinations digitisation of its CMYK.
+  // Each column takes its colour at 12% over ivory, exactly like the default.
+  // Order is always [backlog, now, accomplished, cut].
+  var PAL_KEY = 'todo.palette.v1';
+  var OLD_PAL_KEY = 'backlog.palette.v1';
+  var IVORY_RGB = [250, 249, 245];
+  var TINT = 0.12;
+
+  var FAMILIES = [
+    { id: 'studio', name: 'Studio', note: 'the original four', palettes: [
+      { id: 'studio', name: 'Olive & Clay', num: null,
+        colors: ['#788C5D', '#D97757', '#87867F', '#D1CFC5'],
+        lead: '#D97757',
+        names: 'Olive · Clay · Grey · Oat' }
+    ] },
+    { id: 'citron', name: 'Citron', note: 'led by a yellow', palettes: [
+      { id: 'w333', name: "Lemon Yellow & Cobalt Green", num: 333,
+        colors: ['#006EB8', '#F8ED43', '#96D1AA', '#AE5224'],
+        lead: '#F8ED43',
+        names: 'Blue · Lemon Yellow · Cobalt Green · Burnt Sienna' },
+      { id: 'w247', name: "Apricot Yellow & Benzol Green", num: 247,
+        colors: ['#1C4286', '#FFDD00', '#00978D', '#BB7125'],
+        lead: '#FFDD00',
+        names: 'Deep Lyons Blue · Apricot Yellow · Benzol Green · Raw Sienna' },
+      { id: 'w347', name: "Lilac & Sea Green", num: 347,
+        colors: ['#005B8D', '#B984AF', '#00B49B', '#A6A159'],
+        lead: '#00B49B',
+        names: 'Helvetia Blue · Lilac · Sea Green · Olive Yellow' },
+      { id: 'w265', name: "Old Rose & Apricot Yellow", num: 265,
+        colors: ['#1E0E3F', '#D46D7A', '#FFDD00', '#A6A159'],
+        lead: '#FFDD00',
+        names: 'Dull Violet Black · Old Rose · Apricot Yellow · Olive Yellow' },
+      { id: 'w295', name: "Cream Yellow & Yellow", num: 295,
+        colors: ['#1E0E3F', '#FDBF68', '#FFF200', '#006EB8'],
+        lead: '#FFF200',
+        names: 'Dull Violet Black · Cream Yellow · Yellow · Blue' },
+      { id: 'w313', name: "Carmine & Diamine Green", num: 313,
+        colors: ['#FFF200', '#CC1236', '#1A7444', '#111314'],
+        lead: '#FFF200',
+        names: 'Yellow · Carmine · Diamine Green · Black' },
+      { id: 'w284', name: "Eugenia Red A & Dusky Green", num: 284,
+        colors: ['#FFDD00', '#E2625E', '#004F46', '#00B49B'],
+        lead: '#FFDD00',
+        names: 'Apricot Yellow · Eugenia Red A · Dusky Green · Sea Green' },
+      { id: 'w305', name: "Apricot Yellow & Turquoise Green", num: 305,
+        colors: ['#B2B73E', '#FFDD00', '#B5DECC', '#EEB480'],
+        lead: '#FFDD00',
+        names: 'Citron Yellow · Apricot Yellow · Turquoise Green · Pinkish Cinnamon' },
+      { id: 'w251', name: "Yellow & Diamine Green", num: 251,
+        colors: ['#A72144', '#FFF200', '#1A7444', '#34454C'],
+        lead: '#FFF200',
+        names: 'Red · Yellow · Diamine Green · Slate Color' },
+      { id: 'w253', name: "Lemon Yellow & Slate Color", num: 253,
+        colors: ['#501345', '#F8ED43', '#34454C', '#F68C50'],
+        lead: '#F8ED43',
+        names: 'Cotinga Purple · Lemon Yellow · Slate Color · Apricot Orange' },
+      { id: 'w311', name: "Pompeian Red & Light Green Yellow", num: 311,
+        colors: ['#FDBF68', '#AB2439', '#C7D14F', '#B7C2A9'],
+        lead: '#C7D14F',
+        names: 'Cream Yellow · Pompeian Red · Light Green Yellow · Dark Greenish Glaucous' }
+    ] },
+    { id: 'ochre', name: 'Ochre', note: 'led by an orange or gold', palettes: [
+      { id: 'w286', name: "Orange Yellow & Peacock Blue", num: 286,
+        colors: ['#AE5224', '#FCB315', '#00939B', '#40456A'],
+        lead: '#FCB315',
+        names: 'Burnt Sienna · Orange Yellow · Peacock Blue · Violet Blue' },
+      { id: 'w338', name: "Carmine Red & Dusky Green", num: 338,
+        colors: ['#FCB315', '#A62C37', '#004F46', '#C0A9B3'],
+        lead: '#FCB315',
+        names: 'Orange Yellow · Carmine Red · Dusky Green · Grayish Lavender - B' },
+      { id: 'w312', name: "Yellow Orange & Artemesia Green", num: 312,
+        colors: ['#005B8D', '#F99D1B', '#709390', '#AE5224'],
+        lead: '#F99D1B',
+        names: 'Helvetia Blue · Yellow Orange · Artemesia Green · Burnt Sienna' },
+      { id: 'w248', name: "Eosine Pink & Khaki", num: 248,
+        colors: ['#704357', '#F37F94', '#BC892B', '#B5B1D8'],
+        lead: '#BC892B',
+        names: 'Dark Slate Purple · Eosine Pink · Khaki · Grayish Lavender - A' },
+      { id: 'w269', name: "Pale Burnt Lake & Black", num: 269,
+        colors: ['#BB7125', '#802626', '#111314', '#A36AA5'],
+        lead: '#BB7125',
+        names: 'Raw Sienna · Pale Burnt Lake · Black · Aconite Violet' },
+      { id: 'w297', name: "Yellow Orange & Olive Green", num: 297,
+        colors: ['#AE5224', '#F99D1B', '#6B7140', '#40456A'],
+        lead: '#F99D1B',
+        names: 'Burnt Sienna · Yellow Orange · Olive Green · Violet Blue' },
+      { id: 'w304', name: "Hay’s Russet & Benzol Green", num: 304,
+        colors: ['#FDBF68', '#793327', '#00978D', '#8B835B'],
+        lead: '#FDBF68',
+        names: 'Cream Yellow · Hay’s Russet · Benzol Green · Dark Citrine' },
+      { id: 'w335', name: "Vandyke Red & Slate Color", num: 335,
+        colors: ['#F99D1B', '#82241F', '#34454C', '#4F4086'],
+        lead: '#F99D1B',
+        names: 'Yellow Orange · Vandyke Red · Slate Color · Violet' }
+    ] },
+    { id: 'ember', name: 'Ember', note: 'led by a red', palettes: [
+      { id: 'w257', name: "Spectrum Red & Orange Yellow", num: 257,
+        colors: ['#006EB8', '#E31F26', '#FCB315', '#A36AA5'],
+        lead: '#E31F26',
+        names: 'Blue · Spectrum Red · Orange Yellow · Aconite Violet' },
+      { id: 'w250', name: "Peach Red & Sea Green", num: 250,
+        colors: ['#CAB356', '#F15A30', '#00B49B', '#BCE4E5'],
+        lead: '#F15A30',
+        names: 'Pyrite Yellow · Peach Red · Sea Green · Nile Blue' },
+      { id: 'w242', name: "Burnt Sienna & Diamine Green", num: 242,
+        colors: ['#111314', '#AE5224', '#1A7444', '#F37F94'],
+        lead: '#AE5224',
+        names: 'Black · Burnt Sienna · Diamine Green · Eosine Pink' },
+      { id: 'w256', name: "Orange & Dull Viridian Green", num: 256,
+        colors: ['#111314', '#F37420', '#009465', '#EEA78C'],
+        lead: '#F37420',
+        names: 'Black · Orange · Dull Viridian Green · Vinaceous Cinnamon' },
+      { id: 'w308', name: "Scarlet & Cobalt Green", num: 308,
+        colors: ['#D96629', '#CB2F43', '#96D1AA', '#D1B0A7'],
+        lead: '#D96629',
+        names: 'English Red · Scarlet · Cobalt Green · Fawn' }
+    ] },
+    { id: 'rose', name: 'Rose', note: 'led by a crimson or rose', palettes: [
+      { id: 'w299', name: "Indian Lake & Oil Green", num: 299,
+        colors: ['#007190', '#C53C69', '#819238', '#EEA78C'],
+        lead: '#C53C69',
+        names: 'Antwarp Blue · Indian Lake · Oil Green · Vinaceous Cinnamon' },
+      { id: 'w282', name: "Eugenia Red B & Cobalt Green", num: 282,
+        colors: ['#B984AF', '#DA525D', '#96D1AA', '#C59F6B'],
+        lead: '#DA525D',
+        names: 'Lilac · Eugenia Red B · Cobalt Green · Maple' },
+      { id: 'w262', name: "Eugenia Red B & Cossack Green", num: 262,
+        colors: ['#B09F36', '#DA525D', '#437742', '#EBD3A2'],
+        lead: '#DA525D',
+        names: 'Citrine · Eugenia Red B · Cossack Green · Ivory Buff' }
+    ] },
+    { id: 'drab', name: 'Drab', note: 'muted, warm earth', palettes: [
+      { id: 'w340', name: "Peach Red & Sea Green", num: 340,
+        colors: ['#111314', '#F15A30', '#00B49B', '#B6BFC1'],
+        lead: '#F15A30',
+        names: 'Black · Peach Red · Sea Green · Neutral Gray' },
+      { id: 'w276', name: "Eosine Pink & Yellow Green", num: 276,
+        colors: ['#111314', '#F37F94', '#AFD472', '#FDD4BD'],
+        lead: '#AFD472',
+        names: 'Black · Eosine Pink · Yellow Green · Seashell Pink' },
+      { id: 'w303', name: "Peach Red & Deep Slate Olive", num: 303,
+        colors: ['#FBE6A0', '#F15A30', '#253122', '#B6BFC1'],
+        lead: '#F15A30',
+        names: 'Naples Yellow · Peach Red · Deep Slate Olive · Neutral Gray' },
+      { id: 'w268', name: "Raw Sienna & Nile Blue", num: 268,
+        colors: ['#253122', '#BB7125', '#BCE4E5', '#B59392'],
+        lead: '#BB7125',
+        names: 'Deep Slate Olive · Raw Sienna · Nile Blue · Light Brown Drab' },
+      { id: 'w249', name: "Hay’s Russet & Dark Medici Blue", num: 249,
+        colors: ['#D6B43E', '#793327', '#547076', '#C2AE93'],
+        lead: '#D6B43E',
+        names: 'Olive Ocher · Hay’s Russet · Dark Medici Blue · Ecru' },
+      { id: 'w263', name: "Burnt Sienna & Turquoise Green", num: 263,
+        colors: ['#34454C', '#AE5224', '#B5DECC', '#EEB480'],
+        lead: '#AE5224',
+        names: 'Slate Color · Burnt Sienna · Turquoise Green · Pinkish Cinnamon' },
+      { id: 'w320', name: "Coral Red & Light Glaucous Blue", num: 320,
+        colors: ['#819238', '#F58E84', '#A5C8D1', '#F5ECC2'],
+        lead: '#819238',
+        names: 'Oil Green · Coral Red · Light Glaucous Blue · Sulpher Yellow' }
+    ] },
+    { id: 'ash', name: 'Ash', note: 'muted, cool grey', palettes: [
+      { id: 'w271', name: "Pomegranite Purple & Deep Slate Green", num: 271,
+        colors: ['#099197', '#B71F57', '#112F2C', '#96D1AA'],
+        lead: '#B71F57',
+        names: 'Green Blue · Pomegranite Purple · Deep Slate Green · Cobalt Green' },
+      { id: 'w344', name: "Cinnamon Buff & Black", num: 344,
+        colors: ['#1C4286', '#FDC57E', '#111314', '#A36AA5'],
+        lead: '#FDC57E',
+        names: 'Deep Lyons Blue · Cinnamon Buff · Black · Aconite Violet' },
+      { id: 'w329', name: "Cream Yellow & Slate Color", num: 329,
+        colors: ['#501345', '#FDBF68', '#34454C', '#C0A9B3'],
+        lead: '#FDBF68',
+        names: 'Cotinga Purple · Cream Yellow · Slate Color · Grayish Lavender - B' },
+      { id: 'w324', name: "Pompeian Red & Neutral Gray", num: 324,
+        colors: ['#A36AA5', '#AB2439', '#B6BFC1', '#5A82B3'],
+        lead: '#AB2439',
+        names: 'Aconite Violet · Pompeian Red · Neutral Gray · Olympic Blue' }
+    ] }
+  ];
+
+  var PALETTES = [];
+  FAMILIES.forEach(function (f) {
+    f.palettes.forEach(function (p) { p.family = f; PALETTES.push(p); });
+  });
+
+  function tintOf(hex) {
+    var h = hex.replace('#', '');
+    var out = '#';
+    for (var i = 0; i < 3; i++) {
+      var v = parseInt(h.substr(i * 2, 2), 16);
+      var m = Math.round(v * TINT + IVORY_RGB[i] * (1 - TINT));
+      out += ('0' + m.toString(16)).slice(-2);
+    }
+    return out.toUpperCase();
+  }
+
+  function applyPalette(id) {
+    var p = PALETTES.filter(function (x) { return x.id === id; })[0] || PALETTES[0];
+    var root = document.documentElement;
+    currentPal = p.id;
+    KEYS.forEach(function (k, i) {
+      root.style.setProperty('--fill-' + k, tintOf(p.colors[i]));
+      root.style.setProperty('--rule-' + k, p.colors[i]);
+    });
+    try { localStorage.setItem(PAL_KEY, p.id); } catch (e) {}
+  }
+
+  var palPanel = document.getElementById('palettePanel');
+  var palBtn = document.getElementById('paletteBtn');
+  var palView = null;      // null = family list, otherwise a family id
+  var currentPal = 'studio';
+
+  function palBars(p) {
+    return '<span class="pal-bars">' + p.colors.map(function (c) {
+      return '<span class="pal-bar" style="--r:' + c + ';--t:' + tintOf(c) + '"></span>';
+    }).join('') + '</span>';
+  }
+
+  function renderPanel() {
+    palPanel.innerHTML = '';
+
+    if (palView) {
+      var fam = FAMILIES.filter(function (f) { return f.id === palView; })[0];
+      var back = document.createElement('button');
+      back.type = 'button';
+      back.className = 'pal-back';
+      back.innerHTML = '<span class="arrow">&lsaquo;</span> all families · ' + fam.name;
+      back.addEventListener('click', function (e) {
+        e.stopPropagation();
+        palView = null;
+        renderPanel();
+      });
+      palPanel.appendChild(back);
+
+      fam.palettes.forEach(function (p) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'pal';
+        b.dataset.pal = p.id;
+        if (p.id === currentPal) b.classList.add('on');
+        b.innerHTML =
+          '<span class="pal-top"><span class="pal-name">' + p.name + '</span>' +
+          '<span class="pal-num">' + (p.num ? 'no. ' + p.num : 'default') + '</span></span>' +
+          palBars(p) +
+          '<span class="pal-cols">' + p.names + '</span>';
+        b.addEventListener('click', function () {
+          applyPalette(p.id);
+          closePalette();
+        });
+        palPanel.appendChild(b);
+      });
+      return;
+    }
+
+    var cap = document.createElement('div');
+    cap.className = 'cap';
+    cap.textContent = 'Sanzo Wada · 38 four-colour combinations';
+    palPanel.appendChild(cap);
+
+    FAMILIES.forEach(function (f) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'pal';
+      b.dataset.fam = f.id;
+      if (f.palettes.some(function (p) { return p.id === currentPal; })) b.classList.add('on');
+      // one dot per palette, each showing that palette's lead colour — the one the
+      // family is named for. So the strip previews both the count and the character.
+      var dots = f.palettes.map(function (p) {
+        return '<span class="fam-dot" style="--c:' + p.lead + '"></span>';
+      }).join('');
+      b.innerHTML =
+        '<span class="pal-top"><span class="pal-name">' + f.name + '</span>' +
+        '<span class="pal-num">' + f.palettes.length + '</span></span>' +
+        '<span class="fam-strip">' + dots + '</span>' +
+        '<span class="pal-cols">' + f.note + '</span>';
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        palView = f.id;
+        renderPanel();
+      });
+      palPanel.appendChild(b);
+    });
+  }
+
+  function openPalette() {
+    palView = null;
+    renderPanel();
+    palPanel.classList.add('on');
+    palBtn.setAttribute('aria-expanded', 'true');
+  }
+  function closePalette() {
+    palPanel.classList.remove('on');
+    palBtn.setAttribute('aria-expanded', 'false');
+  }
+  palBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    if (palPanel.classList.contains('on')) closePalette(); else openPalette();
+  });
+  document.addEventListener('click', function (e) {
+    if (!palPanel.contains(e.target) && e.target !== palBtn) closePalette();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closePalette();
+  });
+
+  var savedPal = 'studio';
+  try {
+    // same pre-rename carry-over as the board; applyPalette writes it back under PAL_KEY
+    savedPal = localStorage.getItem(PAL_KEY) || localStorage.getItem(OLD_PAL_KEY) || 'studio';
+    localStorage.removeItem(OLD_PAL_KEY);
+  } catch (e) {}
+  applyPalette(savedPal);
+
+  // keep two tabs of the same board in sync
+  window.addEventListener('storage', function (e) {
+    if (e.key !== STORE) return;
+    state = load();
+    render();
+  });
+
+  render();
+</script>
+</body>
+</html>
