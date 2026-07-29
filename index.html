@@ -15,7 +15,7 @@
     --gray-50: #F0EEE6;
     --gray-200: #D1CFC5;
     --gray-500: #87867F;
-    --gray-600: #63625C;   /* text sitting on a column tint — 5.1:1 on all four */
+    --gray-600: #63625C;   /* text sitting on a column tint — 5.1:1 on all three */
     --gray-800: #3D3D3A;
     --white: #ffffff;
 
@@ -24,11 +24,9 @@
     --fill-backlog: #EAECE3;
     --fill-now: #F6E9E2;
     --fill-accomplished: #ECEBE7;
-    --fill-cut: #F5F4EF;
     --rule-backlog: #788C5D;
     --rule-now: #D97757;
     --rule-accomplished: #87867F;
-    --rule-cut: #D1CFC5;
     --col-rule: rgba(20, 20, 19, 0.07);
     --serif: ui-serif, Georgia, "Times New Roman", serif;
     --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -44,7 +42,7 @@
     line-height: 1.5;
   }
   .wrap {
-    max-width: 1180px;
+    max-width: 940px;
     margin: 0 auto;
     padding: 48px 32px 64px;
   }
@@ -164,7 +162,7 @@
     color: var(--gray-600);
     font-variant-numeric: tabular-nums;
   }
-  .pal-bars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; }
+  .pal-bars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
   .pal-bar {
     height: 24px;
     border-radius: 3px;
@@ -208,7 +206,7 @@
   /* ---------- board ---------- */
   .board {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 16px;
     align-items: start;
   }
@@ -224,7 +222,6 @@
   .col[data-col="backlog"]      { --fill: var(--fill-backlog);      border-top: 3px solid var(--rule-backlog); }
   .col[data-col="now"]          { --fill: var(--fill-now);          border-top: 3px solid var(--rule-now); }
   .col[data-col="accomplished"] { --fill: var(--fill-accomplished); border-top: 3px solid var(--rule-accomplished); }
-  .col[data-col="cut"]          { --fill: var(--fill-cut);          border-top: 3px solid var(--rule-cut); }
   .col.dragover {
     outline: 2px dashed var(--clay);
     outline-offset: -6px;
@@ -344,6 +341,59 @@
     color: var(--gray-600);
   }
 
+  /* ---------- clear column ---------- */
+  .clear-row { margin-top: 7px; }
+  .clear-row.off { display: none; }
+  .clearbtn {
+    display: block;
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    color: var(--gray-600);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 2px;
+    cursor: pointer;
+  }
+  .clearbtn:hover { color: var(--clay-d); }
+  .clear-ask {
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+  .clear-ask.on { display: flex; }
+  .clear-ask .q {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--gray-800);
+  }
+  /* outlined, not filled: --clay-d reaches 4.5:1 as ink on white, but only
+     4.3:1 as a background under ivory text */
+  .clear-ask .yes {
+    margin-left: auto;
+    background: var(--white);
+    color: var(--clay-d);
+    border: 1.5px solid var(--clay-d);
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 12px;
+    cursor: pointer;
+  }
+  /* thickens the ring rather than tinting the fill — any tint behind --clay-d
+     drops it back under 4.5:1 */
+  .clear-ask .yes:hover { box-shadow: 0 0 0 1.5px var(--clay-d); }
+  .clear-ask .no {
+    background: transparent;
+    border: none;
+    color: var(--gray-600);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 2px;
+    cursor: pointer;
+  }
+  .clear-ask .no:hover { color: var(--slate); }
+
   /* ---------- card ---------- */
   .card {
     background: var(--white);
@@ -454,7 +504,7 @@
   }
   .toast button:hover { border-color: var(--clay); }
 
-  @media (max-width: 920px) {
+  @media (max-width: 860px) {
     .board { grid-template-columns: repeat(2, 1fr); }
     .wrap { padding: 32px 20px 56px; }
   }
@@ -499,19 +549,19 @@
   var COLUMNS = [
     { key: 'backlog',      label: 'Backlog',      prompt: 'What needs doing?' },
     { key: 'now',          label: 'Now',          prompt: "What's underway?" },
-    { key: 'accomplished', label: 'Accomplished', prompt: 'What got done?' },
-    { key: 'cut',          label: 'Cut',          prompt: "What's being dropped?" }
+    { key: 'accomplished', label: 'Accomplished', prompt: 'What got done?', clearable: true }
   ];
   var KEYS = COLUMNS.map(function (c) { return c.key; });
   var STORE = 'todo.board.v1';
   var OLD_STORE = 'backlog.board.v1';   // pre-rename key, migrated once on load
+  var GONE_KEY = 'cut';                 // the removed fourth column, see load()
 
   // ---------- state ----------
-  // state.cols = { backlog: [card], now: [...], accomplished: [...], cut: [...] }
+  // state.cols = { backlog: [card], now: [...], accomplished: [...] }
   // card = { id, text, created }
   var state = load();
   var dragId = null;
-  var lastDeleted = null;   // { col, index, card }
+  var lastDeleted = null;   // { col, index, cards } — one card, or a whole cleared column
   var toastTimer = null;
 
   function blank() {
@@ -541,20 +591,26 @@
         cols.accomplished = cols.later;
       }
       KEYS.forEach(function (k) {
-        var list = cols[k];
-        if (!Array.isArray(list)) return;
-        fresh.cols[k] = list.filter(function (c) {
-          return c && typeof c.text === 'string';
-        }).map(function (c) {
-          return {
-            id: c.id || uid(),
-            text: c.text,
-            created: typeof c.created === 'number' ? c.created : Date.now()
-          };
-        });
+        fresh.cols[k] = normalize(cols[k]);
       });
+      // the board used to have a fourth "Cut" column. It is gone, but its cards
+      // are not thrown away — they land at the end of Backlog to be kept or deleted.
+      fresh.cols.backlog = fresh.cols.backlog.concat(normalize(cols[GONE_KEY]));
     } catch (e) { /* corrupt or unavailable storage — start clean */ }
     return fresh;
+  }
+
+  function normalize(list) {
+    if (!Array.isArray(list)) return [];
+    return list.filter(function (c) {
+      return c && typeof c.text === 'string';
+    }).map(function (c) {
+      return {
+        id: c.id || uid(),
+        text: c.text,
+        created: typeof c.created === 'number' ? c.created : Date.now()
+      };
+    });
   }
 
   function save() {
@@ -588,6 +644,7 @@
   var board = document.getElementById('board');
   var bodies = {};
   var counts = {};
+  var clearRows = {};
 
   COLUMNS.forEach(function (c) {
     var col = document.createElement('section');
@@ -640,6 +697,65 @@
 
     foot.appendChild(addBtn);
     foot.appendChild(composer);
+
+    // ---- clear the whole column, but only after an explicit yes ----
+    if (c.clearable) {
+      var clearRow = document.createElement('div');
+      clearRow.className = 'clear-row';
+
+      var clearBtn = document.createElement('button');
+      clearBtn.type = 'button';
+      clearBtn.className = 'clearbtn';
+      clearBtn.textContent = 'clear column';
+      clearBtn.setAttribute('aria-label', 'Clear the ' + c.label + ' column');
+
+      var ask = document.createElement('div');
+      ask.className = 'clear-ask';
+      var q = document.createElement('span');
+      q.className = 'q';
+      var yes = document.createElement('button');
+      yes.type = 'button';
+      yes.className = 'yes';
+      yes.textContent = 'clear';
+      var no = document.createElement('button');
+      no.type = 'button';
+      no.className = 'no';
+      no.textContent = 'cancel';
+      ask.appendChild(q);
+      ask.appendChild(yes);
+      ask.appendChild(no);
+
+      clearRow.appendChild(clearBtn);
+      clearRow.appendChild(ask);
+      foot.appendChild(clearRow);
+
+      var closeAsk = function () {
+        ask.classList.remove('on');
+        clearBtn.style.display = '';
+      };
+      clearRow.closeAsk = closeAsk;
+
+      clearBtn.addEventListener('click', function () {
+        var n = state.cols[c.key].length;
+        if (!n) return;
+        var what = n + ' card' + (n === 1 ? '' : 's');
+        q.textContent = 'clear ' + what + '?';
+        yes.setAttribute('aria-label', 'Yes, clear ' + what + ' from ' + c.label);
+        clearBtn.style.display = 'none';
+        ask.classList.add('on');
+        yes.focus();
+      });
+      no.addEventListener('click', function () {
+        closeAsk();
+        clearBtn.focus();
+      });
+      yes.addEventListener('click', function () {
+        closeAsk();
+        clearColumn(c.key);
+      });
+
+      clearRows[c.key] = clearRow;
+    }
 
     col.appendChild(head);
     col.appendChild(body);
@@ -705,6 +821,12 @@
     });
   }
 
+  function closeClearAsks() {
+    KEYS.forEach(function (k) {
+      if (clearRows[k]) clearRows[k].closeAsk();
+    });
+  }
+
   // where in the target column should the dragged card land?
   function insertIndex(body, y) {
     var cards = [].slice.call(body.querySelectorAll('.card:not(.dragging)'));
@@ -732,10 +854,22 @@
     var found = find(id);
     if (!found) return;
     state.cols[found.col].splice(found.index, 1);
-    lastDeleted = found;
+    lastDeleted = { col: found.col, index: found.index, cards: [found.card] };
     save();
     render();
     showToast('Card deleted');
+  }
+
+  // emptying a column is the one action that can lose a lot at once, so it takes
+  // a confirmation in the footer first — and is still undoable after that.
+  function clearColumn(key) {
+    var cards = state.cols[key];
+    if (!cards.length) return;
+    lastDeleted = { col: key, index: 0, cards: cards.slice() };
+    state.cols[key] = [];
+    save();
+    render();
+    showToast(cards.length + ' card' + (cards.length === 1 ? '' : 's') + ' cleared');
   }
 
   // ---------- toast ----------
@@ -752,7 +886,8 @@
   document.getElementById('undoBtn').addEventListener('click', function () {
     if (!lastDeleted) return;
     var list = state.cols[lastDeleted.col];
-    list.splice(Math.min(lastDeleted.index, list.length), 0, lastDeleted.card);
+    var at = Math.min(lastDeleted.index, list.length);
+    list.splice.apply(list, [at, 0].concat(lastDeleted.cards));
     lastDeleted = null;
     clearTimeout(toastTimer);
     toast.classList.remove('on');
@@ -858,6 +993,14 @@
         list.forEach(function (card) { body.appendChild(makeCard(card, c.key)); });
       }
       counts[c.key].textContent = list.length;
+
+      var clearRow = clearRows[c.key];
+      if (clearRow) {
+        // any state change drops a pending confirmation — it was asked about a
+        // count that may no longer hold
+        clearRow.closeAsk();
+        clearRow.classList.toggle('off', !list.length);
+      }
     });
 
     document.getElementById('summary').innerHTML = COLUMNS.map(function (c) {
@@ -891,7 +1034,8 @@
         var parsed = JSON.parse(reader.result);
         if (!parsed || !parsed.cols) throw new Error('bad shape');
         var total = 0;
-        KEYS.forEach(function (k) {
+        // an older export may still carry a Cut column; load() folds it into Backlog
+        KEYS.concat(GONE_KEY).forEach(function (k) {
           if (Array.isArray(parsed.cols[k])) total += parsed.cols[k].length;
         });
         if (!confirm('Replace the current board with ' + total + ' card(s) from this file?')) return;
@@ -911,183 +1055,188 @@
   // Four-colour combinations from Sanzo Wada's Haishoku Sokan (1933) — the source
   // of Seigensha's Color Scheme Dictionary. Numbers are the book's own; hexes come
   // from the mattdesl/dictionary-of-colour-combinations digitisation of its CMYK.
+  // The board has three columns, so each entry keeps the first three of the book's
+  // four colours — the dropped one is the colour the removed Cut column wore. That
+  // cut is safe for the picker: in all 38 combinations the two colours the book
+  // names the combination after, and the lead colour its family is grouped by, sit
+  // within those first three.
   // Each column takes its colour at 12% over ivory, exactly like the default.
-  // Order is always [backlog, now, accomplished, cut].
+  // Order is always [backlog, now, accomplished].
   var PAL_KEY = 'todo.palette.v1';
   var OLD_PAL_KEY = 'backlog.palette.v1';
   var IVORY_RGB = [250, 249, 245];
   var TINT = 0.12;
 
   var FAMILIES = [
-    { id: 'studio', name: 'Studio', note: 'the original four', palettes: [
+    { id: 'studio', name: 'Studio', note: 'the original three', palettes: [
       { id: 'studio', name: 'Olive & Clay', num: null,
-        colors: ['#788C5D', '#D97757', '#87867F', '#D1CFC5'],
+        colors: ['#788C5D', '#D97757', '#87867F'],
         lead: '#D97757',
-        names: 'Olive · Clay · Grey · Oat' }
+        names: 'Olive · Clay · Grey' }
     ] },
     { id: 'citron', name: 'Citron', note: 'led by a yellow', palettes: [
       { id: 'w333', name: "Lemon Yellow & Cobalt Green", num: 333,
-        colors: ['#006EB8', '#F8ED43', '#96D1AA', '#AE5224'],
+        colors: ['#006EB8', '#F8ED43', '#96D1AA'],
         lead: '#F8ED43',
-        names: 'Blue · Lemon Yellow · Cobalt Green · Burnt Sienna' },
+        names: 'Blue · Lemon Yellow · Cobalt Green' },
       { id: 'w247', name: "Apricot Yellow & Benzol Green", num: 247,
-        colors: ['#1C4286', '#FFDD00', '#00978D', '#BB7125'],
+        colors: ['#1C4286', '#FFDD00', '#00978D'],
         lead: '#FFDD00',
-        names: 'Deep Lyons Blue · Apricot Yellow · Benzol Green · Raw Sienna' },
+        names: 'Deep Lyons Blue · Apricot Yellow · Benzol Green' },
       { id: 'w347', name: "Lilac & Sea Green", num: 347,
-        colors: ['#005B8D', '#B984AF', '#00B49B', '#A6A159'],
+        colors: ['#005B8D', '#B984AF', '#00B49B'],
         lead: '#00B49B',
-        names: 'Helvetia Blue · Lilac · Sea Green · Olive Yellow' },
+        names: 'Helvetia Blue · Lilac · Sea Green' },
       { id: 'w265', name: "Old Rose & Apricot Yellow", num: 265,
-        colors: ['#1E0E3F', '#D46D7A', '#FFDD00', '#A6A159'],
+        colors: ['#1E0E3F', '#D46D7A', '#FFDD00'],
         lead: '#FFDD00',
-        names: 'Dull Violet Black · Old Rose · Apricot Yellow · Olive Yellow' },
+        names: 'Dull Violet Black · Old Rose · Apricot Yellow' },
       { id: 'w295', name: "Cream Yellow & Yellow", num: 295,
-        colors: ['#1E0E3F', '#FDBF68', '#FFF200', '#006EB8'],
+        colors: ['#1E0E3F', '#FDBF68', '#FFF200'],
         lead: '#FFF200',
-        names: 'Dull Violet Black · Cream Yellow · Yellow · Blue' },
+        names: 'Dull Violet Black · Cream Yellow · Yellow' },
       { id: 'w313', name: "Carmine & Diamine Green", num: 313,
-        colors: ['#FFF200', '#CC1236', '#1A7444', '#111314'],
+        colors: ['#FFF200', '#CC1236', '#1A7444'],
         lead: '#FFF200',
-        names: 'Yellow · Carmine · Diamine Green · Black' },
+        names: 'Yellow · Carmine · Diamine Green' },
       { id: 'w284', name: "Eugenia Red A & Dusky Green", num: 284,
-        colors: ['#FFDD00', '#E2625E', '#004F46', '#00B49B'],
+        colors: ['#FFDD00', '#E2625E', '#004F46'],
         lead: '#FFDD00',
-        names: 'Apricot Yellow · Eugenia Red A · Dusky Green · Sea Green' },
+        names: 'Apricot Yellow · Eugenia Red A · Dusky Green' },
       { id: 'w305', name: "Apricot Yellow & Turquoise Green", num: 305,
-        colors: ['#B2B73E', '#FFDD00', '#B5DECC', '#EEB480'],
+        colors: ['#B2B73E', '#FFDD00', '#B5DECC'],
         lead: '#FFDD00',
-        names: 'Citron Yellow · Apricot Yellow · Turquoise Green · Pinkish Cinnamon' },
+        names: 'Citron Yellow · Apricot Yellow · Turquoise Green' },
       { id: 'w251', name: "Yellow & Diamine Green", num: 251,
-        colors: ['#A72144', '#FFF200', '#1A7444', '#34454C'],
+        colors: ['#A72144', '#FFF200', '#1A7444'],
         lead: '#FFF200',
-        names: 'Red · Yellow · Diamine Green · Slate Color' },
+        names: 'Red · Yellow · Diamine Green' },
       { id: 'w253', name: "Lemon Yellow & Slate Color", num: 253,
-        colors: ['#501345', '#F8ED43', '#34454C', '#F68C50'],
+        colors: ['#501345', '#F8ED43', '#34454C'],
         lead: '#F8ED43',
-        names: 'Cotinga Purple · Lemon Yellow · Slate Color · Apricot Orange' },
+        names: 'Cotinga Purple · Lemon Yellow · Slate Color' },
       { id: 'w311', name: "Pompeian Red & Light Green Yellow", num: 311,
-        colors: ['#FDBF68', '#AB2439', '#C7D14F', '#B7C2A9'],
+        colors: ['#FDBF68', '#AB2439', '#C7D14F'],
         lead: '#C7D14F',
-        names: 'Cream Yellow · Pompeian Red · Light Green Yellow · Dark Greenish Glaucous' }
+        names: 'Cream Yellow · Pompeian Red · Light Green Yellow' }
     ] },
     { id: 'ochre', name: 'Ochre', note: 'led by an orange or gold', palettes: [
       { id: 'w286', name: "Orange Yellow & Peacock Blue", num: 286,
-        colors: ['#AE5224', '#FCB315', '#00939B', '#40456A'],
+        colors: ['#AE5224', '#FCB315', '#00939B'],
         lead: '#FCB315',
-        names: 'Burnt Sienna · Orange Yellow · Peacock Blue · Violet Blue' },
+        names: 'Burnt Sienna · Orange Yellow · Peacock Blue' },
       { id: 'w338', name: "Carmine Red & Dusky Green", num: 338,
-        colors: ['#FCB315', '#A62C37', '#004F46', '#C0A9B3'],
+        colors: ['#FCB315', '#A62C37', '#004F46'],
         lead: '#FCB315',
-        names: 'Orange Yellow · Carmine Red · Dusky Green · Grayish Lavender - B' },
+        names: 'Orange Yellow · Carmine Red · Dusky Green' },
       { id: 'w312', name: "Yellow Orange & Artemesia Green", num: 312,
-        colors: ['#005B8D', '#F99D1B', '#709390', '#AE5224'],
+        colors: ['#005B8D', '#F99D1B', '#709390'],
         lead: '#F99D1B',
-        names: 'Helvetia Blue · Yellow Orange · Artemesia Green · Burnt Sienna' },
+        names: 'Helvetia Blue · Yellow Orange · Artemesia Green' },
       { id: 'w248', name: "Eosine Pink & Khaki", num: 248,
-        colors: ['#704357', '#F37F94', '#BC892B', '#B5B1D8'],
+        colors: ['#704357', '#F37F94', '#BC892B'],
         lead: '#BC892B',
-        names: 'Dark Slate Purple · Eosine Pink · Khaki · Grayish Lavender - A' },
+        names: 'Dark Slate Purple · Eosine Pink · Khaki' },
       { id: 'w269', name: "Pale Burnt Lake & Black", num: 269,
-        colors: ['#BB7125', '#802626', '#111314', '#A36AA5'],
+        colors: ['#BB7125', '#802626', '#111314'],
         lead: '#BB7125',
-        names: 'Raw Sienna · Pale Burnt Lake · Black · Aconite Violet' },
+        names: 'Raw Sienna · Pale Burnt Lake · Black' },
       { id: 'w297', name: "Yellow Orange & Olive Green", num: 297,
-        colors: ['#AE5224', '#F99D1B', '#6B7140', '#40456A'],
+        colors: ['#AE5224', '#F99D1B', '#6B7140'],
         lead: '#F99D1B',
-        names: 'Burnt Sienna · Yellow Orange · Olive Green · Violet Blue' },
+        names: 'Burnt Sienna · Yellow Orange · Olive Green' },
       { id: 'w304', name: "Hay’s Russet & Benzol Green", num: 304,
-        colors: ['#FDBF68', '#793327', '#00978D', '#8B835B'],
+        colors: ['#FDBF68', '#793327', '#00978D'],
         lead: '#FDBF68',
-        names: 'Cream Yellow · Hay’s Russet · Benzol Green · Dark Citrine' },
+        names: 'Cream Yellow · Hay’s Russet · Benzol Green' },
       { id: 'w335', name: "Vandyke Red & Slate Color", num: 335,
-        colors: ['#F99D1B', '#82241F', '#34454C', '#4F4086'],
+        colors: ['#F99D1B', '#82241F', '#34454C'],
         lead: '#F99D1B',
-        names: 'Yellow Orange · Vandyke Red · Slate Color · Violet' }
+        names: 'Yellow Orange · Vandyke Red · Slate Color' }
     ] },
     { id: 'ember', name: 'Ember', note: 'led by a red', palettes: [
       { id: 'w257', name: "Spectrum Red & Orange Yellow", num: 257,
-        colors: ['#006EB8', '#E31F26', '#FCB315', '#A36AA5'],
+        colors: ['#006EB8', '#E31F26', '#FCB315'],
         lead: '#E31F26',
-        names: 'Blue · Spectrum Red · Orange Yellow · Aconite Violet' },
+        names: 'Blue · Spectrum Red · Orange Yellow' },
       { id: 'w250', name: "Peach Red & Sea Green", num: 250,
-        colors: ['#CAB356', '#F15A30', '#00B49B', '#BCE4E5'],
+        colors: ['#CAB356', '#F15A30', '#00B49B'],
         lead: '#F15A30',
-        names: 'Pyrite Yellow · Peach Red · Sea Green · Nile Blue' },
+        names: 'Pyrite Yellow · Peach Red · Sea Green' },
       { id: 'w242', name: "Burnt Sienna & Diamine Green", num: 242,
-        colors: ['#111314', '#AE5224', '#1A7444', '#F37F94'],
+        colors: ['#111314', '#AE5224', '#1A7444'],
         lead: '#AE5224',
-        names: 'Black · Burnt Sienna · Diamine Green · Eosine Pink' },
+        names: 'Black · Burnt Sienna · Diamine Green' },
       { id: 'w256', name: "Orange & Dull Viridian Green", num: 256,
-        colors: ['#111314', '#F37420', '#009465', '#EEA78C'],
+        colors: ['#111314', '#F37420', '#009465'],
         lead: '#F37420',
-        names: 'Black · Orange · Dull Viridian Green · Vinaceous Cinnamon' },
+        names: 'Black · Orange · Dull Viridian Green' },
       { id: 'w308', name: "Scarlet & Cobalt Green", num: 308,
-        colors: ['#D96629', '#CB2F43', '#96D1AA', '#D1B0A7'],
+        colors: ['#D96629', '#CB2F43', '#96D1AA'],
         lead: '#D96629',
-        names: 'English Red · Scarlet · Cobalt Green · Fawn' }
+        names: 'English Red · Scarlet · Cobalt Green' }
     ] },
     { id: 'rose', name: 'Rose', note: 'led by a crimson or rose', palettes: [
       { id: 'w299', name: "Indian Lake & Oil Green", num: 299,
-        colors: ['#007190', '#C53C69', '#819238', '#EEA78C'],
+        colors: ['#007190', '#C53C69', '#819238'],
         lead: '#C53C69',
-        names: 'Antwarp Blue · Indian Lake · Oil Green · Vinaceous Cinnamon' },
+        names: 'Antwarp Blue · Indian Lake · Oil Green' },
       { id: 'w282', name: "Eugenia Red B & Cobalt Green", num: 282,
-        colors: ['#B984AF', '#DA525D', '#96D1AA', '#C59F6B'],
+        colors: ['#B984AF', '#DA525D', '#96D1AA'],
         lead: '#DA525D',
-        names: 'Lilac · Eugenia Red B · Cobalt Green · Maple' },
+        names: 'Lilac · Eugenia Red B · Cobalt Green' },
       { id: 'w262', name: "Eugenia Red B & Cossack Green", num: 262,
-        colors: ['#B09F36', '#DA525D', '#437742', '#EBD3A2'],
+        colors: ['#B09F36', '#DA525D', '#437742'],
         lead: '#DA525D',
-        names: 'Citrine · Eugenia Red B · Cossack Green · Ivory Buff' }
+        names: 'Citrine · Eugenia Red B · Cossack Green' }
     ] },
     { id: 'drab', name: 'Drab', note: 'muted, warm earth', palettes: [
       { id: 'w340', name: "Peach Red & Sea Green", num: 340,
-        colors: ['#111314', '#F15A30', '#00B49B', '#B6BFC1'],
+        colors: ['#111314', '#F15A30', '#00B49B'],
         lead: '#F15A30',
-        names: 'Black · Peach Red · Sea Green · Neutral Gray' },
+        names: 'Black · Peach Red · Sea Green' },
       { id: 'w276', name: "Eosine Pink & Yellow Green", num: 276,
-        colors: ['#111314', '#F37F94', '#AFD472', '#FDD4BD'],
+        colors: ['#111314', '#F37F94', '#AFD472'],
         lead: '#AFD472',
-        names: 'Black · Eosine Pink · Yellow Green · Seashell Pink' },
+        names: 'Black · Eosine Pink · Yellow Green' },
       { id: 'w303', name: "Peach Red & Deep Slate Olive", num: 303,
-        colors: ['#FBE6A0', '#F15A30', '#253122', '#B6BFC1'],
+        colors: ['#FBE6A0', '#F15A30', '#253122'],
         lead: '#F15A30',
-        names: 'Naples Yellow · Peach Red · Deep Slate Olive · Neutral Gray' },
+        names: 'Naples Yellow · Peach Red · Deep Slate Olive' },
       { id: 'w268', name: "Raw Sienna & Nile Blue", num: 268,
-        colors: ['#253122', '#BB7125', '#BCE4E5', '#B59392'],
+        colors: ['#253122', '#BB7125', '#BCE4E5'],
         lead: '#BB7125',
-        names: 'Deep Slate Olive · Raw Sienna · Nile Blue · Light Brown Drab' },
+        names: 'Deep Slate Olive · Raw Sienna · Nile Blue' },
       { id: 'w249', name: "Hay’s Russet & Dark Medici Blue", num: 249,
-        colors: ['#D6B43E', '#793327', '#547076', '#C2AE93'],
+        colors: ['#D6B43E', '#793327', '#547076'],
         lead: '#D6B43E',
-        names: 'Olive Ocher · Hay’s Russet · Dark Medici Blue · Ecru' },
+        names: 'Olive Ocher · Hay’s Russet · Dark Medici Blue' },
       { id: 'w263', name: "Burnt Sienna & Turquoise Green", num: 263,
-        colors: ['#34454C', '#AE5224', '#B5DECC', '#EEB480'],
+        colors: ['#34454C', '#AE5224', '#B5DECC'],
         lead: '#AE5224',
-        names: 'Slate Color · Burnt Sienna · Turquoise Green · Pinkish Cinnamon' },
+        names: 'Slate Color · Burnt Sienna · Turquoise Green' },
       { id: 'w320', name: "Coral Red & Light Glaucous Blue", num: 320,
-        colors: ['#819238', '#F58E84', '#A5C8D1', '#F5ECC2'],
+        colors: ['#819238', '#F58E84', '#A5C8D1'],
         lead: '#819238',
-        names: 'Oil Green · Coral Red · Light Glaucous Blue · Sulpher Yellow' }
+        names: 'Oil Green · Coral Red · Light Glaucous Blue' }
     ] },
     { id: 'ash', name: 'Ash', note: 'muted, cool grey', palettes: [
       { id: 'w271', name: "Pomegranite Purple & Deep Slate Green", num: 271,
-        colors: ['#099197', '#B71F57', '#112F2C', '#96D1AA'],
+        colors: ['#099197', '#B71F57', '#112F2C'],
         lead: '#B71F57',
-        names: 'Green Blue · Pomegranite Purple · Deep Slate Green · Cobalt Green' },
+        names: 'Green Blue · Pomegranite Purple · Deep Slate Green' },
       { id: 'w344', name: "Cinnamon Buff & Black", num: 344,
-        colors: ['#1C4286', '#FDC57E', '#111314', '#A36AA5'],
+        colors: ['#1C4286', '#FDC57E', '#111314'],
         lead: '#FDC57E',
-        names: 'Deep Lyons Blue · Cinnamon Buff · Black · Aconite Violet' },
+        names: 'Deep Lyons Blue · Cinnamon Buff · Black' },
       { id: 'w329', name: "Cream Yellow & Slate Color", num: 329,
-        colors: ['#501345', '#FDBF68', '#34454C', '#C0A9B3'],
+        colors: ['#501345', '#FDBF68', '#34454C'],
         lead: '#FDBF68',
-        names: 'Cotinga Purple · Cream Yellow · Slate Color · Grayish Lavender - B' },
+        names: 'Cotinga Purple · Cream Yellow · Slate Color' },
       { id: 'w324', name: "Pompeian Red & Neutral Gray", num: 324,
-        colors: ['#A36AA5', '#AB2439', '#B6BFC1', '#5A82B3'],
+        colors: ['#A36AA5', '#AB2439', '#B6BFC1'],
         lead: '#AB2439',
-        names: 'Aconite Violet · Pompeian Red · Neutral Gray · Olympic Blue' }
+        names: 'Aconite Violet · Pompeian Red · Neutral Gray' }
     ] }
   ];
 
@@ -1167,7 +1316,7 @@
 
     var cap = document.createElement('div');
     cap.className = 'cap';
-    cap.textContent = 'Sanzo Wada · 38 four-colour combinations';
+    cap.textContent = 'Sanzo Wada · 38 combinations, trimmed to three';
     palPanel.appendChild(cap);
 
     FAMILIES.forEach(function (f) {
@@ -1213,7 +1362,9 @@
     if (!palPanel.contains(e.target) && e.target !== palBtn) closePalette();
   });
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closePalette();
+    if (e.key !== 'Escape') return;
+    closePalette();
+    closeClearAsks();
   });
 
   var savedPal = 'studio';
