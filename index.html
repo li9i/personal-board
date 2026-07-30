@@ -53,6 +53,7 @@
   button.ghost,
   .composer .save,
   .clear-ask .yes,
+  .card-menu .menu-ask .yes,
   .toast button {
     border-radius: 999px;
     font-family: var(--mono);
@@ -589,6 +590,33 @@
     color: var(--gray-500);
   }
   .card-menu button:hover .glyph { color: inherit; }
+  /* the question a word asks before it does what it says, worn in the list where
+     the words were. The same shape the clear row asks in, one level in. */
+  .card-menu .menu-ask {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 4px 3px;
+  }
+  .card-menu .menu-ask .q {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--gray-800);
+  }
+  .card-menu .menu-ask button { width: auto; }
+  /* outlined, not filled, for the reason the clear row is */
+  .card-menu .menu-ask .yes {
+    margin-left: auto;
+    background: var(--white);
+    color: var(--clay-d);
+    border: 1.5px solid var(--clay-d);
+  }
+  .card-menu .menu-ask .yes:hover {
+    background: var(--white);
+    color: var(--clay-d);
+    box-shadow: 0 0 0 1.5px var(--clay-d);
+  }
+  .card-menu .menu-ask .no { color: var(--gray-600); }
 
   /* ---------- notes window ---------- */
   /* A card's notes open in the middle of the page over a scrim. The panel is
@@ -1284,6 +1312,20 @@
   }
 
   function openMenu(card, button, actions) {
+    fillMenu(actions, button);
+    menuOwner = button;
+    button.setAttribute('aria-expanded', 'true');
+    card.classList.add('menuopen');
+    // shown before it is placed: a list with no size to it cannot be aimed
+    menu.classList.add('on');
+    placeMenu(button);
+    menu.firstChild.focus();
+  }
+
+  // The words the list stands as. An action that carries `confirm` does not run
+  // on the press: the list gives up its words for that question, and only `yes`
+  // reaches the action.
+  function fillMenu(actions, button) {
     menu.innerHTML = '';
     actions.forEach(function (a) {
       var row = textBtn(a.cls);
@@ -1296,18 +1338,47 @@
       row.appendChild(document.createTextNode(a.title));
       row.addEventListener('click', function (e) {
         e.stopPropagation();
+        if (a.confirm) { askInMenu(a, actions, button); return; }
         closeMenu();
         a.onClick();
       });
       menu.appendChild(row);
     });
-    menuOwner = button;
-    button.setAttribute('aria-expanded', 'true');
-    card.classList.add('menuopen');
-    // shown before it is placed: a list with no size to it cannot be aimed
-    menu.classList.add('on');
+  }
+
+  // Undo takes a wrong press back, but only until the toast goes, and a card is
+  // a lot to lose to a slip of the hand on a small button. The question is asked
+  // in the list itself: nothing else on the page moves, and no is one press away.
+  function askInMenu(action, actions, button) {
+    menu.innerHTML = '';
+    var ask = el('div', 'menu-ask');
+    ask.appendChild(el('span', 'q', action.confirm));
+    var yes = textBtn('yes', 'yes');
+    yes.setAttribute('role', 'menuitem');
+    yes.setAttribute('aria-label', 'Yes, ' + action.title);
+    var no = textBtn('no', 'no');
+    no.setAttribute('role', 'menuitem');
+    no.setAttribute('aria-label', 'No, keep it');
+    ask.appendChild(yes);
+    ask.appendChild(no);
+    menu.appendChild(ask);
+    // asked in fewer words than it offered: the list has a new size to be aimed by
     placeMenu(button);
-    menu.firstChild.focus();
+
+    yes.addEventListener('click', function (e) {
+      e.stopPropagation();
+      closeMenu();
+      action.onClick();
+    });
+    // back to the words, rather than away altogether: the press that opened the
+    // list was not the one being taken back
+    no.addEventListener('click', function (e) {
+      e.stopPropagation();
+      fillMenu(actions, button);
+      placeMenu(button);
+      menu.firstChild.focus();
+    });
+    yes.focus();
   }
 
   // Says whether it had anything to put away, so Escape can be spent on the list
@@ -1339,7 +1410,8 @@
   menu.addEventListener('keydown', function (e) {
     if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
     e.preventDefault();
-    var rows = [].slice.call(menu.children);
+    // every button in the list, since a question stands as one row holding two
+    var rows = [].slice.call(menu.querySelectorAll('button'));
     var at = rows.indexOf(document.activeElement);
     rows[(at + (e.key === 'ArrowDown' ? 1 : rows.length - 1)) % rows.length].focus();
   });
@@ -1357,7 +1429,9 @@
   //   level    which drag this card belongs to
   //   redraw   what to run after an edit — the board, or the notes list
   //   mark     an optional word after the date
-  //   buttons  what the list offers, in order: { label, title, cls, onClick }
+  //   buttons  what the list offers, in order:
+  //            { label, title, cls, onClick, confirm } — confirm is the question
+  //            asked in the list before onClick is allowed to run
   function makeItem(item, spec) {
     var card = el('article', 'card');
     card.draggable = true;
@@ -1525,7 +1599,7 @@
           onClick: function () { openNotes(card.id); } },
         { label: '↗', title: 'export this card',
           onClick: function () { exportCard(card.id); } },
-        { label: '×', title: 'delete', cls: 'del',
+        { label: '×', title: 'delete', cls: 'del', confirm: 'delete card?',
           onClick: function () { removeCard(card.id); } }
       ]
     });
@@ -1536,7 +1610,7 @@
       level: 'note',
       redraw: redrawNotes,
       buttons: [
-        { label: '×', title: 'delete note', cls: 'del',
+        { label: '×', title: 'delete note', cls: 'del', confirm: 'delete note?',
           onClick: function () { removeNote(note.id); } }
       ]
     });

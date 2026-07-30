@@ -40,8 +40,10 @@ Open `index.html` directly. A `file://` address works.
   with notes says so next to its date. Escape or a click outside closes the
   window.
 - **Drag a card** to move it within a column or to another column.
-- **delete** takes a card off the board. **clear column** empties Accomplished.
-  Both raise a toast with an **Undo**.
+- **delete** takes a card off the board. It first asks **delete card?** in the
+  list. **yes** deletes the card. **no** shows the words of the list again.
+  **delete note** asks **delete note?** in the same way. **clear column** empties
+  Accomplished and also asks first. All three raise a toast with an **Undo**.
 - **export this card** writes one card to a file, with its notes. Use the file to
   pass the card to someone else. Import adds the card to the board and does not
   change the other cards. The card goes to the column it was sent from. If this
