@@ -17,18 +17,30 @@ Open `index.html` directly (`file://` is fine).
 - **+ add** at the bottom of a column writes a new card. Enter saves, Shift+Enter
   makes a new line, Escape cancels.
 - **Click a card** to edit its text; same keys apply.
+- **≡** on a card opens the rest of what can be done with it, as a list of words:
+  **edit**, **notes**, **export this card**, **delete**. A note carries the same
+  button, holding **edit** and **delete note**. Escape or a click outside closes
+  the list.
 - **Backticks** mark inline code: `` `npm test` `` shows as a monospace chip. The
   card keeps the backticks, so they are there again when you edit it. A span has
   to hold something and stay on one line, so a stray backtick is just a backtick.
-- **≡** on a card opens its notes, in a small window in the middle of the page.
-  Notes are cards themselves: the same editing, backticks, dates, dragging to
-  reorder and **×** to delete with an Undo. The window takes the colour of the
-  column the card sits in. A card that holds notes says so next to its date.
-  Escape or a click outside closes the window.
+- **Links** are picked out of what a card says, in either of two shapes: a bare
+  `https://…`, or `[what it is](https://…)` for an address too long to read on a
+  card, which shows the words and keeps the address behind them. `mailto:` counts
+  as well. Nothing else does — a `javascript:` is not a link here, and neither is
+  an address inside backticks, which is code. The card keeps what was typed, so
+  it is there again when you edit it. A link opens in a new tab, and a click on
+  one follows it rather than opening the card for editing — so when a link is all
+  a card says, **edit** in its list is the way in.
+- **notes** opens the card's notes, in a small window in the middle of the page.
+  Notes are cards themselves: the same editing, backticks, links, dates, dragging
+  to reorder and a list of their own to delete from, with an Undo. The window
+  takes the colour of the column the card sits in. A card that holds notes says
+  so next to its date. Escape or a click outside closes the window.
 - **Drag a card** to move it within a column or across to another one.
-- **×** on a card deletes it. **clear column** empties Accomplished. Both raise a
-  toast with an **Undo**.
-- **↗** on a card writes that one card to a file, notes and all, to pass to
+- **delete** takes a card off the board. **clear column** empties Accomplished.
+  Both raise a toast with an **Undo**.
+- **export this card** writes that one card to a file, notes and all, to pass to
   someone else. Import puts it on the board without touching what is already
   there, in the column it was sent from, or in Backlog if this board has no such
   column. It arrives as a new card, so the same file imported twice gives two.

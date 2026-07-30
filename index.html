@@ -481,6 +481,34 @@
        tight to stop it prising the card's lines apart */
     line-height: 1.15;
   }
+  /* An address is marked by its underline rather than by a colour of its own, so
+     it keeps whatever ink the column set for its text and reads at full strength
+     wherever card text goes — a white card, and the notes window's tinted line. */
+  .ctext a {
+    color: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+    /* an address is one long word and a column is narrow */
+    overflow-wrap: anywhere;
+  }
+  /* the underline takes the clay and thickens, rather than the words taking it:
+     --clay-d is 4.5:1 as ink on a white card but only 3.4:1 on the darkest fill
+     a palette makes, and that fill is what the notes window's line sits on. As a
+     line rather than a letter it has 3:1 to clear, and clears it on all of them. */
+  .ctext a:hover {
+    text-decoration-color: var(--clay-d);
+    text-decoration-thickness: 2px;
+  }
+  /* the darker clay, as the underline uses: this ring is the only one on the
+     board that can come to rest on a column's fill rather than on white, and
+     --clay itself is 2.3:1 on the darkest of those */
+  .ctext a:focus-visible {
+    outline: 2px solid var(--clay-d);
+    outline-offset: 1px;
+    border-radius: 2px;
+  }
   .card textarea {
     min-height: 52px;
     border: 1.5px solid var(--clay);
@@ -507,9 +535,60 @@
     transition: opacity 120ms ease;
   }
   .card:hover .card-actions,
-  .card:focus-within .card-actions { opacity: 1; }
+  .card:focus-within .card-actions,
+  /* the button has to stay while the list it opened is standing, or it fades out
+     from under a pointer that has left the card to reach the list */
+  .card.menuopen .card-actions { opacity: 1; }
   @media (hover: none) { .card-actions { opacity: 1; } }
-  .card-actions button.del:hover { border-color: var(--clay); color: var(--clay-d); }
+
+  /* ---------- a card's actions ---------- */
+  /* A card is mostly its words, and the line its date sits on is short, so
+     everything a card can be told to do is kept behind the one button and opened
+     as a list. The list hangs off the page rather than off the card: a column
+     hides what overflows it and the notes window scrolls, and either would cut
+     the list off. placeMenu() puts it under the button it belongs to. */
+  .card-menu {
+    position: fixed;
+    /* over the notes window, under the undo toast — deleting a note from the
+       list has to leave its Undo reachable */
+    z-index: 35;
+    min-width: 150px;
+    background: var(--white);
+    border: 1.5px solid var(--gray-200);
+    border-radius: 9px;
+    padding: 5px;
+    box-shadow: 0 6px 22px rgba(20,20,19,0.10);
+    display: none;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .card-menu.on { display: flex; }
+  .card-menu button {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    padding: 6px 8px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--gray-800);
+    font-family: var(--mono);
+    font-size: 11px;
+    text-align: left;
+    cursor: pointer;
+  }
+  .card-menu button:hover { background: var(--gray-50); color: var(--slate); }
+  .card-menu button:focus-visible { outline: 2px solid var(--clay); outline-offset: -2px; }
+  .card-menu button.del:hover { color: var(--clay-d); }
+  /* the same character the button used to wear, kept as the mark of the action
+     and quietened, since the word beside it is what is read */
+  .card-menu .glyph {
+    width: 12px;
+    text-align: center;
+    color: var(--gray-500);
+  }
+  .card-menu button:hover .glyph { color: inherit; }
 
   /* ---------- notes window ---------- */
   /* A card's notes open in the middle of the page over a scrim. The panel is
@@ -1033,6 +1112,9 @@
   // ---------- dragging ----------
   function wireDrag(card, id, level) {
     card.addEventListener('dragstart', function (e) {
+      // a list is placed where its button was standing, and a card on the move
+      // takes its button with it
+      closeMenu();
       drag = { id: id, level: level };
       card.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
@@ -1176,14 +1258,106 @@
     commit();
   });
 
+  // ---------- a card's actions ----------
+  // What a card can be told to do is shown as a list of words, opened by the one
+  // button the card carries. There is a single list for the whole board, moved to
+  // whichever button asked for it: only one can be open at a time, so only one
+  // needs to exist, and hanging it off the page rather than off the card keeps it
+  // clear of everything that would otherwise clip or scroll it.
+  var menu = el('div', 'card-menu');
+  menu.setAttribute('role', 'menu');
+  document.body.appendChild(menu);
+  var menuOwner = null;      // the button the open list belongs to, if any
+
+  function makeMenuButton(card, actions) {
+    var button = iconBtn('≡', 'actions', 'menubtn');
+    button.setAttribute('aria-haspopup', 'true');
+    button.setAttribute('aria-expanded', 'false');
+    button.addEventListener('click', function (e) {
+      e.stopPropagation();
+      // a second press on the same button puts the list away again
+      var mine = menuOwner === button;
+      closeMenu();
+      if (!mine) openMenu(card, button, actions);
+    });
+    return button;
+  }
+
+  function openMenu(card, button, actions) {
+    menu.innerHTML = '';
+    actions.forEach(function (a) {
+      var row = textBtn(a.cls);
+      row.setAttribute('role', 'menuitem');
+      // the character is the mark the button used to wear, kept for the eye; the
+      // word beside it is the whole of what the row is called
+      var glyph = el('span', 'glyph', a.label);
+      glyph.setAttribute('aria-hidden', 'true');
+      row.appendChild(glyph);
+      row.appendChild(document.createTextNode(a.title));
+      row.addEventListener('click', function (e) {
+        e.stopPropagation();
+        closeMenu();
+        a.onClick();
+      });
+      menu.appendChild(row);
+    });
+    menuOwner = button;
+    button.setAttribute('aria-expanded', 'true');
+    card.classList.add('menuopen');
+    // shown before it is placed: a list with no size to it cannot be aimed
+    menu.classList.add('on');
+    placeMenu(button);
+    menu.firstChild.focus();
+  }
+
+  // Says whether it had anything to put away, so Escape can be spent on the list
+  // and go no further. Never moves the focus itself — a click on one of the words
+  // closes the list on its way to doing what it says, and pulling the focus back
+  // to the card would take it off whatever the action opened.
+  function closeMenu() {
+    if (!menuOwner) return false;
+    menuOwner.setAttribute('aria-expanded', 'false');
+    var card = menuOwner.closest('.card');
+    if (card) card.classList.remove('menuopen');
+    menuOwner = null;
+    menu.classList.remove('on');
+    return true;
+  }
+
+  // Hung under the button it belongs to and pulled back onto the page at either
+  // edge, or thrown above the button when there is no room left below it.
+  function placeMenu(button) {
+    var at = button.getBoundingClientRect();
+    var box = menu.getBoundingClientRect();
+    var left = Math.min(at.right - box.width, window.innerWidth - box.width - 8);
+    var top = at.bottom + 6;
+    if (top + box.height > window.innerHeight - 8) top = at.top - box.height - 6;
+    menu.style.left = Math.round(Math.max(8, left)) + 'px';
+    menu.style.top = Math.round(Math.max(8, top)) + 'px';
+  }
+
+  menu.addEventListener('keydown', function (e) {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    var rows = [].slice.call(menu.children);
+    var at = rows.indexOf(document.activeElement);
+    rows[(at + (e.key === 'ArrowDown' ? 1 : rows.length - 1)) % rows.length].focus();
+  });
+
+  // The list is placed where the button was when it opened, so anything that
+  // moves the button underneath it puts it away rather than leaving it stranded.
+  // Capture, since it is the notes window that scrolls and not the page.
+  window.addEventListener('scroll', function () { closeMenu(); }, true);
+  window.addEventListener('resize', function () { closeMenu(); });
+
   // ---------- card ----------
   // A board card and a note are the same object wearing the same furniture: text
-  // that opens for editing on a click, a date, and a row of actions. `spec` is
-  // the little that differs between the two.
+  // that opens for editing on a click, a date, and the button that opens the rest.
+  // `spec` is the little that differs between the two.
   //   level    which drag this card belongs to
   //   redraw   what to run after an edit — the board, or the notes list
   //   mark     an optional word after the date
-  //   buttons  the actions, in order: { label, title, cls, onClick }
+  //   buttons  what the list offers, in order: { label, title, cls, onClick }
   function makeItem(item, spec) {
     var card = el('article', 'card');
     card.draggable = true;
@@ -1191,21 +1365,24 @@
 
     var text = el('div', 'ctext');
     renderText(text, item.text);
-    text.addEventListener('click', function () { editItem(card, text, item, spec.redraw); });
+    text.addEventListener('click', function (e) {
+      // a click on an address follows it rather than opening the card around it
+      if (e.target.closest('a')) return;
+      editItem(card, text, item, spec.redraw);
+    });
 
     var bot = el('div', 'card-bot');
     bot.appendChild(el('span', 'date', fmtDate(item.created)));
     if (spec.mark) bot.appendChild(el('span', 'notemark', spec.mark));
 
+    // Editing heads the list for every card, not only the ones that need it: a
+    // click on the text is the usual way in, but a link takes that click for
+    // itself, and a card that is nothing but a link would have nowhere to press.
     var actions = el('div', 'card-actions');
-    spec.buttons.forEach(function (b) {
-      var button = iconBtn(b.label, b.title, b.cls);
-      button.addEventListener('click', function (e) {
-        e.stopPropagation();
-        b.onClick();
-      });
-      actions.appendChild(button);
-    });
+    actions.appendChild(makeMenuButton(card, [
+      { label: '✎', title: 'edit',
+        onClick: function () { editItem(card, text, item, spec.redraw); } }
+    ].concat(spec.buttons)));
     bot.appendChild(actions);
 
     card.appendChild(text);
@@ -1217,6 +1394,9 @@
   // Swap the text for a box holding it. Enter and leaving the box keep the
   // change, Escape drops it, and an empty box counts as no change at all.
   function editItem(card, text, item, redraw) {
+    // the ✎ action outlives the text it opens, so a second press has nothing
+    // left to swap out
+    if (text.parentNode !== card) return;
     var ta = el('textarea');
     ta.value = item.text;
     card.draggable = false;
@@ -1260,13 +1440,88 @@
     });
   }
 
+  // The two shapes an address is written in: a bare one, and [what it is](where),
+  // for when the address is far too long to read on a card. Both stop at the first
+  // space, and neither may hold the brackets that delimit it. One capture group
+  // wrapping the pair, so split lands the addresses on the odd indices, the same
+  // way codeSpans does.
+  var LINK_RE = /(\[[^\[\]\n]+\]\([^()\s]+\)|https?:\/\/[^\s<>]+|mailto:[^\s<>]+)/i;
+  var LABELLED = /^\[([^\[\]\n]+)\]\(([^()\s]+)\)$/;
+  // What the board will open. Everything else — a javascript: or a data: among
+  // them — is not a link here and stays the characters it was typed as.
+  var OPENABLE = /^(https?:\/\/|mailto:)/i;
+
+  function safeHref(url) {
+    return OPENABLE.test(url) ? url : null;
+  }
+
+  // An address runs to the first space, so the punctuation of the sentence it
+  // sits in gets swept up with it. Give back what hangs off the end and reads as
+  // prose rather than address — and a closing bracket only when nothing opened it.
+  // The brackets are tallied once and the tally walked back down, rather than
+  // counted afresh for every character given up: a card holding thousands of them
+  // is a paste gone wrong, and it should cost the board no more than a glance.
+  function trimTail(url) {
+    var opens = 0;
+    var closes = 0;
+    var end = url.length;
+    var i;
+    for (i = 0; i < url.length; i++) {
+      if (url.charAt(i) === '(') opens++;
+      else if (url.charAt(i) === ')') closes++;
+    }
+    while (end) {
+      var last = url.charAt(end - 1);
+      if ('.,;:!?\'"'.indexOf(last) >= 0) end--;
+      else if (last === ')' && closes > opens) { closes--; end--; }
+      else break;
+    }
+    return url.slice(0, end);
+  }
+
+  // Pick the addresses out of a run of plain text. A link segment carries the
+  // href to open and the text to show for it, which for a bare address are the
+  // same thing.
+  function linkSpans(s) {
+    var out = [];
+    s.split(LINK_RE).forEach(function (part, i) {
+      if (!part) return;
+      if (i % 2 === 0) { out.push({ text: part, code: false }); return; }
+      var m = LABELLED.exec(part);
+      var shown = m ? m[1] : trimTail(part);
+      var href = safeHref(m ? m[2] : shown);
+      // an address this board will not open is not one, and neither is a label
+      // with nothing in it to click — both stay as they were written
+      if (!href || !shown.trim()) { out.push({ text: part, code: false }); return; }
+      out.push({ text: shown, href: href });
+      // whatever trimTail handed back follows the link as the prose it is
+      if (!m && part.length > shown.length) {
+        out.push({ text: part.slice(shown.length), code: false });
+      }
+    });
+    return out;
+  }
+
+  // Everything a card's text displays as, in order. Backticks are read first, so
+  // an address inside them is code and stays on the card as the address it is.
+  function inlineSpans(s) {
+    var out = [];
+    codeSpans(s).forEach(function (seg) {
+      if (seg.code) out.push(seg);
+      else linkSpans(seg.text).forEach(function (part) { out.push(part); });
+    });
+    return out;
+  }
+
   function makeCard(card) {
     return makeItem(card, {
       level: 'card',
       redraw: render,
       mark: noteMark(card),
       buttons: [
-        { label: '≡', title: 'notes', cls: 'notesbtn',
+        // a small ruled page, and no more of an emoji than the ≡ that opened the
+        // list — every mark on this board has to arrive as text, not as a picture
+        { label: '▤', title: 'notes',
           onClick: function () { openNotes(card.id); } },
         { label: '↗', title: 'export this card',
           onClick: function () { exportCard(card.id); } },
@@ -1305,13 +1560,25 @@
     items.forEach(function (item) { body.appendChild(make(item)); });
   }
 
-  // Fill el with the card's text, each code segment as a <code> chip. The stored
-  // text keeps its backticks, so editing a card shows them again. Built from text
-  // nodes throughout, so card text never passes through innerHTML.
+  // Fill el with the card's text, each code segment as a <code> chip and each
+  // address as a link. The stored text keeps its backticks and its brackets, so
+  // editing a card shows them again. Built from text nodes throughout, so card
+  // text never passes through innerHTML.
   function renderText(el, s) {
     el.textContent = '';
-    codeSpans(s).forEach(function (seg) {
-      if (seg.code) {
+    inlineSpans(s).forEach(function (seg) {
+      if (seg.href) {
+        var a = document.createElement('a');
+        a.href = seg.href;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        // what drags is the card, not the address written on it
+        a.draggable = false;
+        a.textContent = seg.text;
+        // a labelled link says nothing about where it goes, so it says it here
+        if (seg.text !== seg.href) a.title = seg.href;
+        el.appendChild(a);
+      } else if (seg.code) {
         var code = document.createElement('code');
         code.textContent = seg.text;
         el.appendChild(code);
@@ -1360,8 +1627,10 @@
     if (!openCardId) return;
     notesComposer.close();
     // the board is redrawn on every change, so hand focus back by id, not by
-    // holding on to the button that opened the window
-    var back = document.querySelector('.card[data-id="' + openCardId + '"] .notesbtn');
+    // holding on to the button that opened the window — and it goes back to the
+    // card's own button, since the one that was pressed was in a list that has
+    // since been put away
+    var back = document.querySelector('.card[data-id="' + openCardId + '"] .menubtn');
     openCardId = null;
     scrim.classList.remove('on');
     if (back) back.focus();
@@ -1387,6 +1656,9 @@
 
   // ---------- render ----------
   function render() {
+    // every card is built anew below, and an open list belongs to a button that
+    // is about to stop existing
+    closeMenu();
     COLUMNS.forEach(function (c) {
       var list = state.cols[c.key];
       var view = views[c.key];
@@ -1878,9 +2150,15 @@
   });
   document.addEventListener('click', function (e) {
     if (!palPanel.contains(e.target) && e.target !== palBtn) closePalette();
+    // a press on a card's own button never reaches here, and one on a word in the
+    // list puts it away itself on the way to doing what the word says
+    if (!menu.contains(e.target)) closeMenu();
   });
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
+    // a list standing over a card takes the key before the window under it does
+    var owner = menuOwner;
+    if (closeMenu()) { owner.focus(); return; }
     closePalette();
     closeClearAsks();
     closeNotes();
