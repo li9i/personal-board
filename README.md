@@ -1,76 +1,81 @@
 # Personal board
 
-A four-column personal board — Waiting for, Backlog, Now, Accomplished — in a
-single HTML file. No build, no dependencies, no server: open `index.html` in a
-browser and it works.
+A personal board with four columns: Waiting for, Backlog, Now, Accomplished. The
+board is one HTML file. There is no build step, no dependency and no server. Open
+`index.html` in a browser and the board works.
 
-**Waiting for** holds what is blocked on someone else. It is set slightly apart
-from the other three by a hairline, and stays uncoloured whatever palette is
-chosen: the page's own background, with white cards and grey text on it.
+**Waiting for** holds the cards that are blocked on someone else. A hairline
+separates this column from the other three. The column stays uncoloured for every
+palette. It uses the page background, with white cards and grey text.
 
 ![The board with a few cards in each column](doc/board.png)
 
 ## Use
 
-Open `index.html` directly (`file://` is fine).
+Open `index.html` directly. A `file://` address works.
 
-- **+ add** at the bottom of a column writes a new card. Enter saves, Shift+Enter
-  makes a new line, Escape cancels.
-- **Click a card** to edit its text; same keys apply.
-- **≡** on a card opens the rest of what can be done with it, as a list of words:
-  **edit**, **notes**, **export this card**, **delete**. A note carries the same
-  button, holding **edit** and **delete note**. Escape or a click outside closes
-  the list.
-- **Backticks** mark inline code: `` `npm test` `` shows as a monospace chip. The
-  card keeps the backticks, so they are there again when you edit it. A span has
-  to hold something and stay on one line, so a stray backtick is just a backtick.
-- **Links** are picked out of what a card says, in either of two shapes: a bare
-  `https://…`, or `[what it is](https://…)` for an address too long to read on a
-  card, which shows the words and keeps the address behind them. `mailto:` counts
-  as well. Nothing else does — a `javascript:` is not a link here, and neither is
-  an address inside backticks, which is code. The card keeps what was typed, so
-  it is there again when you edit it. A link opens in a new tab, and a click on
-  one follows it rather than opening the card for editing — so when a link is all
-  a card says, **edit** in its list is the way in.
-- **notes** opens the card's notes, in a small window in the middle of the page.
-  Notes are cards themselves: the same editing, backticks, links, dates, dragging
-  to reorder and a list of their own to delete from, with an Undo. The window
-  takes the colour of the column the card sits in. A card that holds notes says
-  so next to its date. Escape or a click outside closes the window.
-- **Drag a card** to move it within a column or across to another one.
+- **+ add** at the bottom of a column writes a new card. Enter saves the card.
+  Shift+Enter makes a new line. Escape cancels.
+- **Click a card** to edit the text of the card. The same keys apply.
+- **≡** on a card opens the list. The list holds **edit**, **notes**, **export
+  this card** and **delete**. A note carries the same button, with **edit** and
+  **delete note**. Escape or a click outside closes the list.
+- **Backticks** mark inline code. `` `npm test` `` shows as a monospace chip. The
+  card keeps the backticks, so you see them again when you edit the card. A chip
+  must hold text and stay on one line. A single backtick therefore stays a
+  backtick.
+- **Links**: the board finds links in the text of a card. Two shapes work, a bare
+  `https://…` and `[what it is](https://…)`. Use the second shape for an address
+  that is too long to read on a card. It shows the words and keeps the address
+  behind them. A `mailto:` address is also a link. Nothing else is a link. A
+  `javascript:` address is not a link. An address inside backticks is code, not a
+  link. The card keeps the text you typed, so you see it again when you edit the
+  card. A link opens in a new tab. A click on a link follows the link and does
+  not open the card for editing. When a link is all that a card says, use **edit**
+  in the list to open the card.
+- **notes** opens the notes of the card, in a small window in the middle of the
+  page. Notes are cards themselves. They take the same editing, backticks, links,
+  dates and dragging to reorder. They have a list of their own, with a delete and
+  an Undo. The window takes the colour of the column that holds the card. A card
+  with notes says so next to its date. Escape or a click outside closes the
+  window.
+- **Drag a card** to move it within a column or to another column.
 - **delete** takes a card off the board. **clear column** empties Accomplished.
   Both raise a toast with an **Undo**.
-- **export this card** writes that one card to a file, notes and all, to pass to
-  someone else. Import puts it on the board without touching what is already
-  there, in the column it was sent from, or in Backlog if this board has no such
-  column. It arrives as a new card, so the same file imported twice gives two.
-- **Palette** swaps the colours of Backlog, Now and Accomplished — pick a family,
-  then a combination. The panel stays open while you try them, and closes on a
-  click outside or Escape.
-- **Export** downloads the whole board as JSON; **Import** reads back either a
-  board or a single card.
+- **export this card** writes one card to a file, with its notes. Use the file to
+  pass the card to someone else. Import adds the card to the board and does not
+  change the other cards. The card goes to the column it was sent from. If this
+  board has no such column, the card goes to Backlog. The card arrives as a new
+  card. The same file imported twice therefore gives two cards.
+- **Palette** swaps the colours of Backlog, Now and Accomplished. Pick a family,
+  then a combination. The panel stays open while you try the combinations. A
+  click outside or Escape closes the panel.
+- **Export** downloads the whole board as JSON. **Import** reads back a board or
+  a single card.
 
 ## Storage
 
-A card's notes are kept on the card, so a card is whole on its own: notes travel
-with Export and Import, deleting a card takes its notes with it, and Undo brings
-the lot back. A board saved before notes existed opens with none.
+The board keeps the notes of a card on the card, so a card is whole on its own.
+Notes travel with Export and Import. A delete takes the notes of the card with
+it. Undo brings the card and the notes back. A board saved before notes existed
+opens with no notes.
 
 Two shapes leave the board and come back. A whole board is `{"cols": ...}` and
-replaces what is here. One card is `{"card": ..., "col": ...}` and joins it.
-Import is given a file and tells the two apart by which of the fields it carries.
+replaces the board that is here. One card is `{"card": ..., "col": ...}` and
+joins the board. Import reads the file and tells the two shapes apart by the
+fields the file carries.
 
-The board lives in `localStorage` under `personal.board.v1`, the chosen palette
-under `personal.palette.v1` — per browser, per machine. Export is the way to move
-a board somewhere else. Two tabs on the same board stay in sync.
+The board lives in `localStorage` under `personal.board.v1`. The palette lives
+under `personal.palette.v1`. Both are per browser and per machine. Use Export to
+move a board to another machine. Two tabs on the same board stay in sync.
 
-A board saved under either older key — `todo.board.v1` or `backlog.board.v1` —
-is carried over to the new one the first time the page loads, and the old key is
-dropped. Older JSON exports still import.
+The page also reads two older keys, `todo.board.v1` and `backlog.board.v1`. The
+first load carries a board under an older key over to the new key, and drops the
+old key. Older JSON exports still import.
 
 ## Palettes
 
 The colour combinations come from Sanzo Wada's *A Dictionary of Color
-Combinations*, grouped into families by their lead colour and trimmed to three
-colours each — one each for Backlog, Now and Accomplished. Waiting for takes no
-palette colour.
+Combinations*. The board groups the combinations into families by their lead
+colour, and trims each combination to three colours. Backlog, Now and
+Accomplished take one colour each. Waiting for takes no palette colour.
