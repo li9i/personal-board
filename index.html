@@ -4,9 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Personal board</title>
-<!-- the three palette columns; setFavicon() redraws it when the palette changes.
-     Waiting for is left out — a white bar on an ivory tile reads as nothing at 16px. -->
-<link id="favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%23FAF9F5%22%2F%3E%3Crect%20x%3D%224%22%20y%3D%225%22%20width%3D%226%22%20height%3D%2222%22%20rx%3D%222%22%20fill%3D%22%23788C5D%22%2F%3E%3Crect%20x%3D%2213%22%20y%3D%225%22%20width%3D%226%22%20height%3D%2222%22%20rx%3D%222%22%20fill%3D%22%23D97757%22%2F%3E%3Crect%20x%3D%2222%22%20y%3D%225%22%20width%3D%226%22%20height%3D%2222%22%20rx%3D%222%22%20fill%3D%22%2387867F%22%2F%3E%3C%2Fsvg%3E" />
+<!-- drawn by setFavicon() from the palette in force, and redrawn when it changes,
+     so the colours are not written down twice -->
+<link id="favicon" rel="icon" type="image/svg+xml" />
 <style>
   :root {
     --ivory: #FAF9F5;
@@ -22,18 +22,9 @@
     --gray-800: #3D3D3A;
     --white: #ffffff;
 
-    /* column fills: each column's colour at 12% over ivory.
-       Both sets are rewritten by the palette picker. */
-    --fill-backlog: #EAECE3;
-    --fill-now: #F6E9E2;
-    --fill-accomplished: #ECEBE7;
-    --rule-backlog: #788C5D;
-    --rule-now: #D97757;
-    --rule-accomplished: #87867F;
-    /* Waiting for sits outside the palette — it takes the page background in
-       every scheme, so the picker leaves this pair alone */
-    --fill-waiting: var(--ivory);
-    --rule-waiting: var(--gray-200);
+    /* Each column carries its own --fill and --rule, written onto it by the
+       palette picker from the COLUMNS list. Nothing here needs to know how many
+       columns there are or what they are called. */
     --col-rule: rgba(20, 20, 19, 0.07);
     --serif: ui-serif, Georgia, "Times New Roman", serif;
     --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -52,6 +43,91 @@
     max-width: 1140px;
     margin: 0 auto;
     padding: 48px 32px 64px;
+  }
+
+  /* ---------- shapes worn in more than one place ----------
+     Each of these sets what the shape has in common; the sections below add
+     what is particular to one use of it. */
+
+  /* a pill: the toolbar buttons, Add, the yes of a confirmation, Undo */
+  button.ghost,
+  .composer .save,
+  .clear-ask .yes,
+  .toast button {
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 12px;
+    cursor: pointer;
+  }
+
+  /* a word on its own, grey until it is wanted */
+  .composer .cancel,
+  .clear-ask .no,
+  .clearbtn {
+    background: transparent;
+    border: none;
+    color: var(--gray-600);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 2px;
+    cursor: pointer;
+  }
+  .composer .cancel:hover,
+  .clear-ask .no:hover { color: var(--slate); }
+
+  /* a small square holding one character */
+  .card-actions button,
+  .notes-close {
+    --side: 20px;
+    width: var(--side);
+    height: var(--side);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1;
+    color: var(--gray-800);
+    background: var(--white);
+    border: 1.5px solid var(--gray-200);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .card-actions button:hover,
+  .notes-close:hover { border-color: var(--gray-500); color: var(--slate); }
+
+  /* a box to type into: both composers, and a card opened for editing */
+  .composer textarea,
+  .card textarea {
+    width: 100%;
+    resize: vertical;
+    background: var(--white);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.35;
+    color: var(--slate);
+    outline: none;
+  }
+
+  /* small print in capitals */
+  .palette-panel .cap,
+  .pal-back,
+  .notes-col {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--gray-600);
+  }
+
+  /* the small print on a card's bottom row */
+  .date,
+  .notemark {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.02em;
   }
 
   /* ---------- header ---------- */
@@ -108,11 +184,8 @@
     background: transparent;
     color: var(--gray-800);
     border: 1.5px solid var(--gray-200);
-    border-radius: 999px;
-    font-family: var(--mono);
     font-size: 12px;
     padding: 9px 16px;
-    cursor: pointer;
   }
   button.ghost:hover { border-color: var(--gray-500); }
   button.ghost[aria-expanded="true"] { border-color: var(--gray-500); }
@@ -137,14 +210,7 @@
     overflow-y: auto;
   }
   .palette-panel.on { display: flex; }
-  .palette-panel .cap {
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--gray-600);
-    padding: 5px 7px 7px;
-  }
+  .palette-panel .cap { padding: 5px 7px 7px; }
   .pal {
     display: flex;
     flex-direction: column;
@@ -199,11 +265,6 @@
     background: transparent;
     border: none;
     cursor: pointer;
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--gray-600);
     padding: 5px 7px 8px;
     text-align: left;
   }
@@ -232,19 +293,19 @@
       transparent 100%
     );
   }
+  /* A column is filled with its own colour and capped with a heavier rule in it.
+     Both come off the element as --fill and --rule, so the notes window can wear
+     the colour of the column its card sits in by taking the same two. */
   .col {
-    background: var(--fill);
+    background: var(--fill, var(--ivory));
     border: 1.5px solid var(--gray-200);
+    border-top: 3px solid var(--rule, var(--gray-200));
     border-radius: 12px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     min-height: 200px;
   }
-  .col[data-col="waiting"]      { --fill: var(--fill-waiting);      border-top: 3px solid var(--rule-waiting); }
-  .col[data-col="backlog"]      { --fill: var(--fill-backlog);      border-top: 3px solid var(--rule-backlog); }
-  .col[data-col="now"]          { --fill: var(--fill-now);          border-top: 3px solid var(--rule-now); }
-  .col[data-col="accomplished"] { --fill: var(--fill-accomplished); border-top: 3px solid var(--rule-accomplished); }
   .col.dragover {
     outline: 2px dashed var(--clay);
     outline-offset: -6px;
@@ -265,7 +326,8 @@
     margin: 0;
     letter-spacing: -0.01em;
   }
-  .col-head .count {
+  .col-head .count,
+  .notes-head .count {
     margin-left: auto;
     font-family: var(--mono);
     font-size: 11px;
@@ -316,18 +378,10 @@
   .composer { display: none; }
   .composer.on { display: block; }
   .composer textarea {
-    width: 100%;
-    resize: vertical;
     min-height: 58px;
-    background: var(--white);
     border: 1.5px solid var(--gray-500);
     border-radius: 8px;
     padding: 9px 10px;
-    font-family: var(--sans);
-    font-size: 13px;
-    line-height: 1.35;
-    color: var(--slate);
-    outline: none;
   }
   .composer textarea:focus { border-color: var(--clay); }
   .composer-row {
@@ -340,23 +394,10 @@
     background: var(--slate);
     color: var(--ivory);
     border: 1.5px solid var(--slate);
-    border-radius: 999px;
-    font-family: var(--mono);
-    font-size: 11px;
     padding: 5px 12px;
-    cursor: pointer;
   }
   .composer .save:hover { background: var(--gray-800); }
-  .composer .cancel {
-    background: transparent;
-    border: none;
-    color: var(--gray-600);
-    font-family: var(--mono);
-    font-size: 11px;
-    cursor: pointer;
-    padding: 5px 2px;
-  }
-  .composer .cancel:hover { color: var(--slate); }
+  .composer .cancel { padding: 5px 2px; }
   .composer .keyhint {
     margin-left: auto;
     font-family: var(--mono);
@@ -370,13 +411,6 @@
   .clearbtn {
     display: block;
     margin-left: auto;
-    background: transparent;
-    border: none;
-    color: var(--gray-600);
-    font-family: var(--mono);
-    font-size: 11px;
-    padding: 4px 2px;
-    cursor: pointer;
   }
   .clearbtn:hover { color: var(--clay-d); }
   .clear-ask {
@@ -397,25 +431,10 @@
     background: var(--white);
     color: var(--clay-d);
     border: 1.5px solid var(--clay-d);
-    border-radius: 999px;
-    font-family: var(--mono);
-    font-size: 11px;
-    padding: 4px 12px;
-    cursor: pointer;
   }
   /* thickens the ring rather than tinting the fill — any tint behind --clay-d
      drops it back under 4.5:1 */
   .clear-ask .yes:hover { box-shadow: 0 0 0 1.5px var(--clay-d); }
-  .clear-ask .no {
-    background: transparent;
-    border: none;
-    color: var(--gray-600);
-    font-family: var(--mono);
-    font-size: 11px;
-    padding: 4px 2px;
-    cursor: pointer;
-  }
-  .clear-ask .no:hover { color: var(--slate); }
 
   /* ---------- card ---------- */
   .card {
@@ -428,9 +447,10 @@
     box-shadow: 0 1px 2px rgba(20,20,19,0.05);
     transition: border-color 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
   }
-  /* Waiting for is set off by being flat, not tinted: its cards take the column
-     fill so only the border and the lift mark them out */
-  .col[data-col="waiting"] .card { background: var(--fill-waiting); }
+  /* A flat column is set off by having no tint of its own, so its cards cannot
+     stand out by being whiter than it. They take its fill and are marked out by
+     the border and the lift alone. */
+  .flat .card { background: var(--fill); }
   .card:hover { border-color: var(--gray-500); box-shadow: 0 2px 5px rgba(20,20,19,0.09); }
   .card:active { cursor: grabbing; }
   .card.dragging { opacity: .4; }
@@ -455,18 +475,10 @@
     line-height: 1.15;
   }
   .card textarea {
-    width: 100%;
-    resize: vertical;
     min-height: 52px;
-    background: var(--white);
     border: 1.5px solid var(--clay);
     border-radius: 6px;
     padding: 7px 8px;
-    font-family: var(--sans);
-    font-size: 13px;
-    line-height: 1.35;
-    color: var(--slate);
-    outline: none;
     margin-bottom: 7px;
   }
   .card-bot {
@@ -474,11 +486,11 @@
     align-items: center;
     gap: 4px;
   }
-  .date {
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--gray-800);
-    letter-spacing: 0.02em;
+  .date { color: var(--gray-800); }
+  /* the one sign a card carries notes while the actions are still hidden */
+  .notemark {
+    color: var(--gray-600);
+    margin-left: 6px;
   }
   .card-actions {
     margin-left: auto;
@@ -490,24 +502,56 @@
   .card:hover .card-actions,
   .card:focus-within .card-actions { opacity: 1; }
   @media (hover: none) { .card-actions { opacity: 1; } }
-  .card-actions button {
-    font-family: var(--mono);
-    font-size: 11px;
-    line-height: 1;
-    color: var(--gray-800);
-    background: var(--white);
-    border: 1.5px solid var(--gray-200);
-    border-radius: 4px;
-    width: 20px;
-    height: 20px;
-    display: flex;
+  .card-actions button.del:hover { border-color: var(--clay); color: var(--clay-d); }
+
+  /* ---------- notes window ---------- */
+  /* A card's notes open in the middle of the page over a scrim. The panel takes
+     the fill and top rule of the card's column, and its body and foot reuse the
+     column's own classes, so a note reads as the same card one level in. */
+  .scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: rgba(20, 20, 19, 0.30);
+    display: none;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
-    padding: 0;
+    padding: 24px;
   }
-  .card-actions button:hover { border-color: var(--gray-500); color: var(--slate); }
-  .card-actions button.del:hover { border-color: var(--clay); color: var(--clay-d); }
+  .scrim.on { display: flex; }
+  .notes {
+    width: 440px;
+    max-width: 100%;
+    max-height: 84vh;
+    background: var(--fill, var(--ivory));
+    border: 1.5px solid var(--gray-200);
+    border-top: 3px solid var(--rule, var(--gray-200));
+    border-radius: 12px;
+    box-shadow: 0 16px 44px rgba(20, 20, 19, 0.22);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .notes .col-body { overflow-y: auto; }
+  .notes-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 14px 11px;
+    border-bottom: 1.5px solid var(--col-rule);
+  }
+  .notes-of { flex: 1; min-width: 0; }
+  .notes-col { margin-bottom: 4px; }
+  /* the card's own text, read-only here — it is still edited on the board */
+  .notes-what {
+    font-size: 14px;
+    margin-bottom: 0;
+  }
+  .notes-close {
+    flex: none;
+    --side: 22px;
+    font-size: 13px;
+  }
 
   /* ---------- undo toast ---------- */
   .toast {
@@ -527,18 +571,14 @@
     opacity: 0;
     pointer-events: none;
     transition: opacity 140ms ease, transform 140ms ease;
-    z-index: 20;
+    /* above the scrim: deleting a note has to leave its Undo reachable */
+    z-index: 40;
   }
   .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
   .toast button {
     background: transparent;
     color: var(--clay);
     border: 1.5px solid var(--gray-800);
-    border-radius: 999px;
-    font-family: var(--mono);
-    font-size: 11px;
-    padding: 4px 12px;
-    cursor: pointer;
   }
   .toast button:hover { border-color: var(--clay); }
 
@@ -585,29 +625,153 @@
   <button id="undoBtn">Undo</button>
 </div>
 
+<div class="scrim" id="scrim">
+  <section class="notes" id="notes" role="dialog" aria-modal="true" aria-labelledby="notesWhat">
+    <div class="notes-head">
+      <div class="notes-of">
+        <div class="notes-col" id="notesCol"></div>
+        <div class="notes-what ctext" id="notesWhat"></div>
+      </div>
+      <span class="count" id="notesCount"></span>
+      <button class="notes-close" id="notesClose" type="button" aria-label="Close notes">×</button>
+    </div>
+    <div class="col-body" id="notesBody"></div>
+    <!-- the add button and its box are built by makeComposer(), the same pair a
+         column foot gets -->
+    <div class="col-foot" id="notesFoot"></div>
+  </section>
+</div>
+
 <script>
   // ---------- config ----------
+  // Everything a column is. A new column is one more entry here and nothing else.
+  //   add        what the add button says, where the label will not do
+  //   divider    draw the hairline that sets a column apart, after this one
+  //   clearable  offer "clear column" in the footer
+  //   palette    take a colour from the picker, in the order the columns are listed
+  //   fill/rule  the colour to wear when the palette does not dress it
+  //   flat       cards take the column's own fill rather than white
   var COLUMNS = [
-    { key: 'waiting',      label: 'Waiting for',  prompt: 'Who or what are you waiting on?',
-      add: 'waiting', divider: true },
-    { key: 'backlog',      label: 'Backlog',      prompt: 'What needs doing?' },
-    { key: 'now',          label: 'Now',          prompt: "What's underway?" },
-    { key: 'accomplished', label: 'Accomplished', prompt: 'What got done?', clearable: true }
+    { key: 'waiting', label: 'Waiting for', prompt: 'Who or what are you waiting on?',
+      add: 'waiting', divider: true,
+      // Waiting for holds what is not yours to move, so it is set apart rather
+      // than coloured: the page's own background, with its cards flat on it.
+      fill: 'var(--ivory)', rule: 'var(--gray-200)', flat: true },
+    { key: 'backlog', label: 'Backlog', prompt: 'What needs doing?', palette: true },
+    { key: 'now', label: 'Now', prompt: "What's underway?", palette: true },
+    { key: 'accomplished', label: 'Accomplished', prompt: 'What got done?',
+      clearable: true, palette: true }
   ];
   var KEYS = COLUMNS.map(function (c) { return c.key; });
-  // the palette only dresses the three doing-columns; Waiting for stays white
-  var PAL_KEYS = ['backlog', 'now', 'accomplished'];
+  var PAL_COLUMNS = COLUMNS.filter(function (c) { return c.palette; });
+
   var STORE = 'personal.board.v1';
-  // earlier names for the same board, newest first; load() carries the first hit over
+  var PAL_KEY = 'personal.palette.v1';
+  // earlier names for the same two things, newest first; readCarried() moves the
+  // first hit over
   var OLD_STORES = ['todo.board.v1', 'backlog.board.v1'];
+  var OLD_PAL_KEYS = ['todo.palette.v1', 'backlog.palette.v1'];
   var GONE_KEY = 'cut';                 // the removed fourth column, see load()
 
+  // ---------- small helpers ----------
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text != null) node.textContent = text;
+    return node;
+  }
+
+  function textBtn(cls, label) {
+    var b = el('button', cls, label);
+    b.type = 'button';
+    return b;
+  }
+
+  function iconBtn(label, title, cls) {
+    var b = textBtn(cls, label);
+    b.title = title;
+    b.setAttribute('aria-label', title);
+    return b;
+  }
+
+  function pick(list, test) {
+    for (var i = 0; i < list.length; i++) {
+      if (test(list[i])) return list[i];
+    }
+    return null;
+  }
+
+  function indexOfId(list, id) {
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === id) return i;
+    }
+    return -1;
+  }
+
+  function plural(n, word) {
+    return n + ' ' + word + (n === 1 ? '' : 's');
+  }
+
+  function colOf(key) {
+    return pick(COLUMNS, function (c) { return c.key === key; });
+  }
+
+  function uid() {
+    return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  function fmtDate(ms) {
+    return new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+
+  // ---------- storage ----------
+  // Storage is not always there to be written to — private browsing, a full
+  // quota, a browser with it switched off. None of that is worth an error
+  // thrown at the page, so every read and write goes through these three.
+  function lsGet(key) {
+    try { return localStorage.getItem(key); } catch (e) { return null; }
+  }
+
+  function lsSet(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      console.warn('Could not save to localStorage:', e);
+    }
+  }
+
+  function lsDel(key) {
+    try { localStorage.removeItem(key); } catch (e) {}
+  }
+
+  // The board and the palette have each been stored under two earlier names, so
+  // both are read through here: what `key` holds, or what an earlier name does.
+  function readCarried(key, olds) {
+    var current = lsGet(key);
+    if (current != null) return current;
+    // Nothing under the name in use, so fall back through the earlier ones,
+    // newest first. Whatever turns up moves over, and every old name is dropped
+    // rather than only the one it came from — an older copy left behind would
+    // otherwise be waiting to come back the next time the board is emptied.
+    var carried = null;
+    olds.forEach(function (old) {
+      if (carried == null) carried = lsGet(old);
+      lsDel(old);
+    });
+    if (carried != null) lsSet(key, carried);
+    return carried;
+  }
+
   // ---------- state ----------
-  // state.cols = { backlog: [card], now: [...], accomplished: [...] }
-  // card = { id, text, created }
+  // state.cols = { waiting: [card], backlog: [...], now: [...], accomplished: [...] }
+  // card = { id, text, created, notes: [note] }; a note has the same shape
   var state = load();
-  var dragId = null;
-  var lastDeleted = null;   // { col, index, cards } — one card, or a whole cleared column
+  // the one card being dragged: { id, level }. The level says what may receive
+  // it — a 'card' lands in a column, a 'note' only in the notes window.
+  var drag = null;
+  // { col, index, cards } for one card or a whole cleared column, or
+  // { noteOf, index, cards } for notes taken off the card with that id
+  var lastDeleted = null;
   var toastTimer = null;
 
   function blank() {
@@ -619,17 +783,7 @@
   function load() {
     var fresh = blank();
     try {
-      var raw = localStorage.getItem(STORE);
-      if (raw == null) {
-        // the board has been renamed twice — pick up whichever old key still holds it
-        for (var i = 0; i < OLD_STORES.length && raw == null; i++) {
-          raw = localStorage.getItem(OLD_STORES[i]);
-        }
-        if (raw != null) {
-          localStorage.setItem(STORE, raw);
-          OLD_STORES.forEach(function (k) { localStorage.removeItem(k); });
-        }
-      }
+      var raw = readCarried(STORE, OLD_STORES);
       if (!raw) return fresh;
       var parsed = JSON.parse(raw);
       if (!parsed || !parsed.cols) return fresh;
@@ -644,10 +798,13 @@
       // the board used to have a fourth "Cut" column. It is gone, but its cards
       // are not thrown away — they land at the end of Backlog to be kept or deleted.
       fresh.cols.backlog = fresh.cols.backlog.concat(normalize(cols[GONE_KEY]));
-    } catch (e) { /* corrupt or unavailable storage — start clean */ }
+    } catch (e) { /* corrupt storage — start clean */ }
     return fresh;
   }
 
+  // A note has a card's shape, so the same pass cleans both, however deep a file
+  // happens to go. Nothing below the first level of notes is ever shown, but it
+  // is not thrown away either.
   function normalize(list) {
     if (!Array.isArray(list)) return [];
     return list.filter(function (c) {
@@ -656,233 +813,251 @@
       return {
         id: c.id || uid(),
         text: c.text,
-        created: typeof c.created === 'number' ? c.created : Date.now()
+        created: typeof c.created === 'number' ? c.created : Date.now(),
+        notes: normalize(c.notes)
       };
     });
   }
 
-  function save() {
-    try {
-      localStorage.setItem(STORE, JSON.stringify(state));
-    } catch (e) {
-      console.warn('Could not save to localStorage:', e);
-    }
+  // Cards and notes are made the same way, so neither can be born missing a
+  // field the other has.
+  function newItem(text) {
+    return { id: uid(), text: text, created: Date.now(), notes: [] };
   }
 
-  function uid() {
-    return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  function save() {
+    lsSet(STORE, JSON.stringify(state));
+  }
+
+  // every change to the board ends the same way
+  function commit() {
+    save();
+    render();
   }
 
   function find(id) {
     for (var i = 0; i < KEYS.length; i++) {
       var list = state.cols[KEYS[i]];
-      for (var j = 0; j < list.length; j++) {
-        if (list[j].id === id) return { col: KEYS[i], index: j, card: list[j] };
-      }
+      var at = indexOfId(list, id);
+      if (at >= 0) return { col: KEYS[i], index: at, card: list[at] };
     }
     return null;
   }
 
-  function fmtDate(ms) {
-    var d = new Date(ms);
-    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  }
-
-  // ---------- build columns ----------
-  var board = document.getElementById('board');
-  var bodies = {};
-  var counts = {};
-  var clearRows = {};
-
-  COLUMNS.forEach(function (c) {
-    var col = document.createElement('section');
-    col.className = 'col';
-    col.dataset.col = c.key;
-
-    var head = document.createElement('div');
-    head.className = 'col-head';
-    var h2 = document.createElement('h2');
-    h2.textContent = c.label;
-    var count = document.createElement('span');
-    count.className = 'count';
-    head.appendChild(h2);
-    head.appendChild(count);
-
-    var body = document.createElement('div');
-    body.className = 'col-body';
-
-    var foot = document.createElement('div');
-    foot.className = 'col-foot';
-
-    var addBtn = document.createElement('button');
-    addBtn.className = 'addbtn';
-    addBtn.type = 'button';
-    addBtn.textContent = '+ add to ' + (c.add || c.label.toLowerCase());
-
-    var composer = document.createElement('div');
-    composer.className = 'composer';
-    var ta = document.createElement('textarea');
+  // ---------- composer ----------
+  // A "+ add" button and the box it opens: one in every column foot, one in the
+  // notes window. The box stays open after each entry so a run of cards can be
+  // typed one after another. spec.onAdd(text) puts the text where it belongs.
+  function makeComposer(host, spec) {
+    var add = textBtn('addbtn', spec.add);
+    var box = el('div', 'composer');
+    var ta = el('textarea');
     ta.rows = 2;
-    ta.placeholder = c.prompt;
-    var row = document.createElement('div');
-    row.className = 'composer-row';
-    var saveBtn = document.createElement('button');
-    saveBtn.type = 'button';
-    saveBtn.className = 'save';
-    saveBtn.textContent = 'Add';
-    var cancelBtn = document.createElement('button');
-    cancelBtn.type = 'button';
-    cancelBtn.className = 'cancel';
-    cancelBtn.textContent = 'cancel';
-    var hint = document.createElement('span');
-    hint.className = 'keyhint';
-    hint.textContent = '⏎ add · esc close';
+    ta.placeholder = spec.placeholder;
+    var saveBtn = textBtn('save', 'Add');
+    var cancelBtn = textBtn('cancel', 'cancel');
+    var row = el('div', 'composer-row');
     row.appendChild(saveBtn);
     row.appendChild(cancelBtn);
-    row.appendChild(hint);
-    composer.appendChild(ta);
-    composer.appendChild(row);
+    row.appendChild(el('span', 'keyhint', '⏎ add · esc close'));
+    box.appendChild(ta);
+    box.appendChild(row);
+    host.appendChild(add);
+    host.appendChild(box);
 
-    foot.appendChild(addBtn);
-    foot.appendChild(composer);
-
-    // ---- clear the whole column, but only after an explicit yes ----
-    if (c.clearable) {
-      var clearRow = document.createElement('div');
-      clearRow.className = 'clear-row';
-
-      var clearBtn = document.createElement('button');
-      clearBtn.type = 'button';
-      clearBtn.className = 'clearbtn';
-      clearBtn.textContent = 'clear column';
-      clearBtn.setAttribute('aria-label', 'Clear the ' + c.label + ' column');
-
-      var ask = document.createElement('div');
-      ask.className = 'clear-ask';
-      var q = document.createElement('span');
-      q.className = 'q';
-      var yes = document.createElement('button');
-      yes.type = 'button';
-      yes.className = 'yes';
-      yes.textContent = 'clear';
-      var no = document.createElement('button');
-      no.type = 'button';
-      no.className = 'no';
-      no.textContent = 'cancel';
-      ask.appendChild(q);
-      ask.appendChild(yes);
-      ask.appendChild(no);
-
-      clearRow.appendChild(clearBtn);
-      clearRow.appendChild(ask);
-      foot.appendChild(clearRow);
-
-      var closeAsk = function () {
-        ask.classList.remove('on');
-        clearBtn.style.display = '';
-      };
-      clearRow.closeAsk = closeAsk;
-
-      clearBtn.addEventListener('click', function () {
-        var n = state.cols[c.key].length;
-        if (!n) return;
-        var what = n + ' card' + (n === 1 ? '' : 's');
-        q.textContent = 'clear ' + what + '?';
-        yes.setAttribute('aria-label', 'Yes, clear ' + what + ' from ' + c.label);
-        clearBtn.style.display = 'none';
-        ask.classList.add('on');
-        yes.focus();
-      });
-      no.addEventListener('click', function () {
-        closeAsk();
-        clearBtn.focus();
-      });
-      yes.addEventListener('click', function () {
-        closeAsk();
-        clearColumn(c.key);
-      });
-
-      clearRows[c.key] = clearRow;
-    }
-
-    col.appendChild(head);
-    col.appendChild(body);
-    col.appendChild(foot);
-    board.appendChild(col);
-
-    if (c.divider) {
-      var rule = document.createElement('div');
-      rule.className = 'col-divider';
-      rule.setAttribute('aria-hidden', 'true');
-      board.appendChild(rule);
-    }
-
-    bodies[c.key] = body;
-    counts[c.key] = count;
-
-    function openComposer() {
+    function open() {
       closeComposers();
-      composer.classList.add('on');
-      addBtn.style.display = 'none';
+      box.classList.add('on');
+      add.style.display = 'none';
       ta.focus();
     }
-    function closeComposer() {
-      composer.classList.remove('on');
-      addBtn.style.display = '';
+
+    function close() {
+      box.classList.remove('on');
+      add.style.display = '';
       ta.value = '';
     }
-    composer.close = closeComposer;
 
-    function commit(keepOpen) {
+    function submit() {
       var text = ta.value.trim();
-      if (!text) { closeComposer(); return; }
-      state.cols[c.key].push({ id: uid(), text: text, created: Date.now() });
-      save();
-      render();
+      if (!text) { close(); return; }
       ta.value = '';
-      if (keepOpen) { ta.focus(); } else { closeComposer(); }
+      spec.onAdd(text);
+      ta.focus();
     }
 
-    addBtn.addEventListener('click', openComposer);
-    saveBtn.addEventListener('click', function () { commit(true); });
-    cancelBtn.addEventListener('click', closeComposer);
+    // how closeComposers() reaches an open box through the DOM
+    box.close = close;
+
+    add.addEventListener('click', open);
+    saveBtn.addEventListener('click', submit);
+    cancelBtn.addEventListener('click', close);
     ta.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); commit(true); }
-      else if (e.key === 'Escape') { e.preventDefault(); closeComposer(); }
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submit();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        // the notes window closes on Escape too, so a box inside it stops the key
+        if (spec.inner) e.stopPropagation();
+        close();
+        add.focus();
+      }
     });
 
-    // ---- drop target ----
-    col.addEventListener('dragover', function (e) {
-      if (!dragId) return;
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      col.classList.add('dragover');
-    });
-    col.addEventListener('dragleave', function (e) {
-      if (!col.contains(e.relatedTarget)) col.classList.remove('dragover');
-    });
-    col.addEventListener('drop', function (e) {
-      e.preventDefault();
-      col.classList.remove('dragover');
-      if (!dragId) return;
-      var at = insertIndex(body, e.clientY);
-      moveCard(dragId, c.key, at);
-    });
-  });
+    return { open: open, close: close };
+  }
 
   function closeComposers() {
-    document.querySelectorAll('.composer.on').forEach(function (el) {
-      if (el.close) el.close();
+    document.querySelectorAll('.composer.on').forEach(function (box) {
+      if (box.close) box.close();
     });
+  }
+
+  // ---------- clear a whole column ----------
+  // Emptying a column is the one action that can lose a lot at once, so it asks
+  // in the footer first — and is still undoable after that.
+  function makeClearRow(c) {
+    var row = el('div', 'clear-row');
+    var open = textBtn('clearbtn', 'clear column');
+    open.setAttribute('aria-label', 'Clear the ' + c.label + ' column');
+
+    var ask = el('div', 'clear-ask');
+    var question = el('span', 'q');
+    var yes = textBtn('yes', 'clear');
+    var no = textBtn('no', 'cancel');
+    ask.appendChild(question);
+    ask.appendChild(yes);
+    ask.appendChild(no);
+
+    row.appendChild(open);
+    row.appendChild(ask);
+
+    function closeAsk() {
+      ask.classList.remove('on');
+      open.style.display = '';
+    }
+    row.closeAsk = closeAsk;
+
+    open.addEventListener('click', function () {
+      var n = state.cols[c.key].length;
+      if (!n) return;
+      var what = plural(n, 'card');
+      question.textContent = 'clear ' + what + '?';
+      yes.setAttribute('aria-label', 'Yes, clear ' + what + ' from ' + c.label);
+      open.style.display = 'none';
+      ask.classList.add('on');
+      yes.focus();
+    });
+    no.addEventListener('click', function () {
+      closeAsk();
+      open.focus();
+    });
+    yes.addEventListener('click', function () {
+      closeAsk();
+      clearColumn(c.key);
+    });
+
+    return row;
   }
 
   function closeClearAsks() {
     KEYS.forEach(function (k) {
-      if (clearRows[k]) clearRows[k].closeAsk();
+      if (views[k].clear) views[k].clear.closeAsk();
     });
   }
 
-  // where in the target column should the dragged card land?
+  // ---------- build the board ----------
+  var board = document.getElementById('board');
+  var views = {};        // key -> the parts of that column that get redrawn
+
+  COLUMNS.forEach(function (c) {
+    var column = el('section', 'col');
+    column.dataset.col = c.key;
+
+    var head = el('div', 'col-head');
+    head.appendChild(el('h2', null, c.label));
+    var count = el('span', 'count');
+    head.appendChild(count);
+
+    var body = el('div', 'col-body');
+    var foot = el('div', 'col-foot');
+
+    makeComposer(foot, {
+      add: '+ add to ' + (c.add || c.label.toLowerCase()),
+      placeholder: c.prompt,
+      onAdd: function (text) {
+        state.cols[c.key].push(newItem(text));
+        commit();
+      }
+    });
+
+    var clear = c.clearable ? makeClearRow(c) : null;
+    if (clear) foot.appendChild(clear);
+
+    column.appendChild(head);
+    column.appendChild(body);
+    column.appendChild(foot);
+    board.appendChild(column);
+
+    if (c.divider) {
+      var rule = el('div', 'col-divider');
+      rule.setAttribute('aria-hidden', 'true');
+      board.appendChild(rule);
+    }
+
+    wireDrop(column, body, {
+      level: 'card',
+      onDrop: function (id, at) { moveCard(id, c.key, at); }
+    });
+
+    views[c.key] = { el: column, body: body, count: count, clear: clear };
+  });
+
+  // ---------- dragging ----------
+  function wireDrag(card, id, level) {
+    card.addEventListener('dragstart', function (e) {
+      drag = { id: id, level: level };
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', id);
+    });
+    card.addEventListener('dragend', function () {
+      drag = null;
+      card.classList.remove('dragging');
+      document.querySelectorAll('.dragover').forEach(function (zone) {
+        zone.classList.remove('dragover');
+      });
+    });
+  }
+
+  // what is being dragged, if this level is allowed to receive it
+  function dragged(level) {
+    return drag && drag.level === level ? drag.id : null;
+  }
+
+  // A zone takes cards of one level and lays them where they were dropped. It
+  // marks itself while one is over it; only a column has a look for that, so on
+  // the notes window the mark is carried and styled by nothing.
+  function wireDrop(zone, body, spec) {
+    zone.addEventListener('dragover', function (e) {
+      if (!dragged(spec.level)) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      zone.classList.add('dragover');
+    });
+    zone.addEventListener('dragleave', function (e) {
+      if (!zone.contains(e.relatedTarget)) zone.classList.remove('dragover');
+    });
+    zone.addEventListener('drop', function (e) {
+      e.preventDefault();
+      zone.classList.remove('dragover');
+      var id = dragged(spec.level);
+      if (id) spec.onDrop(id, insertIndex(body, e.clientY));
+    });
+  }
+
+  // where in the target list should the dragged card land?
   function insertIndex(body, y) {
     var cards = [].slice.call(body.querySelectorAll('.card:not(.dragging)'));
     for (var i = 0; i < cards.length; i++) {
@@ -892,43 +1067,63 @@
     return cards.length;
   }
 
+  // ---------- moving and removing ----------
+  // Cards and notes sit in plain arrays, so one move and one removal serve the
+  // board and the notes window alike.
+  function moveItem(from, to, id, at) {
+    var i = indexOfId(from, id);
+    if (i < 0) return;
+    // `at` already excludes the dragged card (insertIndex skips .dragging), so
+    // no index adjustment is needed when reordering within one list.
+    var item = from.splice(i, 1)[0];
+    if (at == null || at > to.length) at = to.length;
+    to.splice(at, 0, item);
+    commit();
+  }
+
   function moveCard(id, toCol, at) {
     var found = find(id);
-    if (!found) return;
-    // `at` already excludes the dragged card (insertIndex skips .dragging),
-    // so no index adjustment is needed when reordering within a column.
-    state.cols[found.col].splice(found.index, 1);
-    var list = state.cols[toCol];
-    if (at == null || at > list.length) at = list.length;
-    list.splice(at, 0, found.card);
-    save();
-    render();
+    if (found) moveItem(state.cols[found.col], state.cols[toCol], id, at);
+  }
+
+  function moveNote(id, at) {
+    var list = notesList();
+    if (list) moveItem(list, list, id, at);
+  }
+
+  // Everything that takes cards out of a list ends here, so one Undo covers a
+  // card, a note, and a whole cleared column alike. `rec` says where they were.
+  function discard(rec, msg) {
+    lastDeleted = rec;
+    commit();
+    showToast(msg);
   }
 
   function removeCard(id) {
     var found = find(id);
     if (!found) return;
     state.cols[found.col].splice(found.index, 1);
-    lastDeleted = { col: found.col, index: found.index, cards: [found.card] };
-    save();
-    render();
-    showToast('Card deleted');
+    discard({ col: found.col, index: found.index, cards: [found.card] }, 'Card deleted');
   }
 
-  // emptying a column is the one action that can lose a lot at once, so it takes
-  // a confirmation in the footer first — and is still undoable after that.
+  function removeNote(id) {
+    var list = notesList();
+    if (!list) return;
+    var i = indexOfId(list, id);
+    if (i < 0) return;
+    discard({ noteOf: openCardId, index: i, cards: list.splice(i, 1) }, 'Note deleted');
+  }
+
   function clearColumn(key) {
-    var cards = state.cols[key];
-    if (!cards.length) return;
-    lastDeleted = { col: key, index: 0, cards: cards.slice() };
+    var taken = state.cols[key];
+    if (!taken.length) return;
     state.cols[key] = [];
-    save();
-    render();
-    showToast(cards.length + ' card' + (cards.length === 1 ? '' : 's') + ' cleared');
+    discard({ col: key, index: 0, cards: taken }, plural(taken.length, 'card') + ' cleared');
   }
 
   // ---------- toast ----------
   var toast = document.getElementById('toast');
+
   function showToast(msg) {
     document.getElementById('toastMsg').textContent = msg;
     toast.classList.add('on');
@@ -938,19 +1133,100 @@
       lastDeleted = null;
     }, 6000);
   }
-  document.getElementById('undoBtn').addEventListener('click', function () {
-    if (!lastDeleted) return;
-    var list = state.cols[lastDeleted.col];
-    var at = Math.min(lastDeleted.index, list.length);
-    list.splice.apply(list, [at, 0].concat(lastDeleted.cards));
-    lastDeleted = null;
+
+  function hideToast() {
     clearTimeout(toastTimer);
     toast.classList.remove('on');
-    save();
-    render();
+  }
+
+  // where the undone cards go back to: a column, or the notes of one card. That
+  // card may itself have been deleted in the meantime, in which case there is
+  // nowhere to put them and the toast just goes away.
+  function undoList(rec) {
+    if (!rec.noteOf) return state.cols[rec.col];
+    var found = find(rec.noteOf);
+    return found ? found.card.notes : null;
+  }
+
+  document.getElementById('undoBtn').addEventListener('click', function () {
+    if (!lastDeleted) return;
+    var list = undoList(lastDeleted);
+    if (list) {
+      var at = Math.min(lastDeleted.index, list.length);
+      list.splice.apply(list, [at, 0].concat(lastDeleted.cards));
+    }
+    lastDeleted = null;
+    hideToast();
+    commit();
   });
 
   // ---------- card ----------
+  // A board card and a note are the same object wearing the same furniture: text
+  // that opens for editing on a click, a date, and a row of actions. `spec` is
+  // the little that differs between the two.
+  //   level    which drag this card belongs to
+  //   redraw   what to run after an edit — the board, or the notes list
+  //   mark     an optional word after the date
+  //   buttons  the actions, in order: { label, title, cls, onClick }
+  function makeItem(item, spec) {
+    var card = el('article', 'card');
+    card.draggable = true;
+    card.dataset.id = item.id;
+
+    var text = el('div', 'ctext');
+    renderText(text, item.text);
+    text.addEventListener('click', function () { editItem(card, text, item, spec.redraw); });
+
+    var bot = el('div', 'card-bot');
+    bot.appendChild(el('span', 'date', fmtDate(item.created)));
+    if (spec.mark) bot.appendChild(el('span', 'notemark', spec.mark));
+
+    var actions = el('div', 'card-actions');
+    spec.buttons.forEach(function (b) {
+      var button = iconBtn(b.label, b.title, b.cls);
+      button.addEventListener('click', function (e) {
+        e.stopPropagation();
+        b.onClick();
+      });
+      actions.appendChild(button);
+    });
+    bot.appendChild(actions);
+
+    card.appendChild(text);
+    card.appendChild(bot);
+    wireDrag(card, item.id, spec.level);
+    return card;
+  }
+
+  // Swap the text for a box holding it. Enter and leaving the box keep the
+  // change, Escape drops it, and an empty box counts as no change at all.
+  function editItem(card, text, item, redraw) {
+    var ta = el('textarea');
+    ta.value = item.text;
+    card.draggable = false;
+    card.replaceChild(ta, text);
+    ta.focus();
+    ta.setSelectionRange(ta.value.length, ta.value.length);
+
+    var done = false;
+    function finish(keep) {
+      if (done) return;
+      done = true;
+      card.draggable = true;
+      if (keep) {
+        var v = ta.value.trim();
+        if (v) { item.text = v; save(); }
+      }
+      redraw();
+    }
+
+    ta.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); finish(true); }
+      else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+    });
+    ta.addEventListener('blur', function () { finish(true); });
+  }
+
   // Split raw card text into the segments it displays as, in order. A run between
   // two backticks is code; everything else is plain. So 'run `npm test` now' gives
   // [{text: 'run ', code: false}, {text: 'npm test', code: true},
@@ -968,86 +1244,47 @@
     });
   }
 
-  function makeCard(card, colKey) {
-    var el = document.createElement('article');
-    el.className = 'card';
-    el.draggable = true;
-    el.dataset.id = card.id;
-
-    var text = document.createElement('div');
-    text.className = 'ctext';
-    renderText(text, card.text);
-
-    var bot = document.createElement('div');
-    bot.className = 'card-bot';
-    var date = document.createElement('span');
-    date.className = 'date';
-    date.textContent = fmtDate(card.created);
-
-    var actions = document.createElement('div');
-    actions.className = 'card-actions';
-    var del = mkBtn('×', 'delete');
-    del.className = 'del';
-    actions.appendChild(del);
-
-    bot.appendChild(date);
-    bot.appendChild(actions);
-    el.appendChild(text);
-    el.appendChild(bot);
-
-    del.addEventListener('click', function (e) { e.stopPropagation(); removeCard(card.id); });
-
-    // ---- inline edit ----
-    text.addEventListener('click', function () {
-      var ta = document.createElement('textarea');
-      ta.value = card.text;
-      el.draggable = false;
-      el.replaceChild(ta, text);
-      ta.focus();
-      ta.setSelectionRange(ta.value.length, ta.value.length);
-
-      var done = false;
-      function finish(keep) {
-        if (done) return;
-        done = true;
-        el.draggable = true;
-        if (keep) {
-          var v = ta.value.trim();
-          if (v) { card.text = v; save(); }
-        }
-        render();
-      }
-      ta.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); finish(true); }
-        else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
-      });
-      ta.addEventListener('blur', function () { finish(true); });
+  function makeCard(card) {
+    return makeItem(card, {
+      level: 'card',
+      redraw: render,
+      mark: noteMark(card),
+      buttons: [
+        { label: '≡', title: 'notes', cls: 'notesbtn',
+          onClick: function () { openNotes(card.id); } },
+        { label: '×', title: 'delete', cls: 'del',
+          onClick: function () { removeCard(card.id); } }
+      ]
     });
-
-    el.addEventListener('dragstart', function (e) {
-      dragId = card.id;
-      el.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', card.id);
-    });
-    el.addEventListener('dragend', function () {
-      dragId = null;
-      el.classList.remove('dragging');
-      document.querySelectorAll('.col.dragover').forEach(function (c) {
-        c.classList.remove('dragover');
-      });
-    });
-
-    return el;
   }
 
-  function mkBtn(label, title) {
-    var b = document.createElement('button');
-    b.type = 'button';
-    b.textContent = label;
-    b.title = title;
-    b.setAttribute('aria-label', title);
-    return b;
+  function makeNote(note) {
+    return makeItem(note, {
+      level: 'note',
+      redraw: redrawNotes,
+      buttons: [
+        { label: '×', title: 'delete note', cls: 'del',
+          onClick: function () { removeNote(note.id); } }
+      ]
+    });
+  }
+
+  // What a board card says about its notes, in the small line after its date.
+  // The actions row is hidden until the card is hovered, so this is the only
+  // standing sign that a card holds anything. Return '' to say nothing.
+  function noteMark(card) {
+    return card.notes.length ? '· ' + plural(card.notes.length, 'note') : '';
+  }
+
+  // Draw a list of items into a body, or the one line that stands in for an
+  // empty one. Columns and the notes window are both filled this way.
+  function fillBody(body, items, emptyText, make) {
+    body.innerHTML = '';
+    if (!items.length) {
+      body.appendChild(el('div', 'empty', emptyText));
+      return;
+    }
+    items.forEach(function (item) { body.appendChild(make(item)); });
   }
 
   // Fill el with the card's text, each code segment as a <code> chip. The stored
@@ -1066,34 +1303,98 @@
     });
   }
 
+  // ---------- notes window ----------
+  // A card's notes are cards themselves and live on the card, so a deleted card
+  // takes its notes with it and Undo brings back the lot. The window borrows the
+  // column's own body and foot, and wears the colour of the column its card is in.
+  var scrim = document.getElementById('scrim');
+  var notesPanel = document.getElementById('notes');
+  var notesBody = document.getElementById('notesBody');
+  var notesClose = document.getElementById('notesClose');
+  var openCardId = null;    // the card whose notes are showing, if any
+
+  var notesComposer = makeComposer(document.getElementById('notesFoot'), {
+    add: '+ add a note',
+    placeholder: 'What is worth remembering?',
+    inner: true,
+    onAdd: function (text) {
+      var list = notesList();
+      if (!list) return;
+      list.push(newItem(text));
+      commit();
+    }
+  });
+
+  function notesList() {
+    var found = openCardId ? find(openCardId) : null;
+    return found ? found.card.notes : null;
+  }
+
+  function openNotes(cardId) {
+    closeComposers();
+    openCardId = cardId;
+    scrim.classList.add('on');
+    redrawNotes();
+    notesClose.focus();
+  }
+
+  function closeNotes() {
+    if (!openCardId) return;
+    notesComposer.close();
+    // the board is redrawn on every change, so hand focus back by id, not by
+    // holding on to the button that opened the window
+    var back = document.querySelector('.card[data-id="' + openCardId + '"] .notesbtn');
+    openCardId = null;
+    scrim.classList.remove('on');
+    if (back) back.focus();
+  }
+
+  function redrawNotes() {
+    if (!openCardId) return;
+    var found = find(openCardId);
+    // the card went away under the window — another tab, or an import
+    if (!found) { closeNotes(); return; }
+
+    paint(notesPanel, found.col);
+    document.getElementById('notesCol').textContent = colOf(found.col).label;
+    renderText(document.getElementById('notesWhat'), found.card.text);
+    document.getElementById('notesCount').textContent = found.card.notes.length;
+    fillBody(notesBody, found.card.notes, 'no notes yet', makeNote);
+  }
+
+  notesClose.addEventListener('click', closeNotes);
+  // a click on the panel itself is not a click outside it
+  scrim.addEventListener('click', function (e) { if (e.target === scrim) closeNotes(); });
+  wireDrop(notesBody, notesBody, { level: 'note', onDrop: moveNote });
+
   // ---------- render ----------
   function render() {
     COLUMNS.forEach(function (c) {
-      var body = bodies[c.key];
-      body.innerHTML = '';
       var list = state.cols[c.key];
-      if (!list.length) {
-        var empty = document.createElement('div');
-        empty.className = 'empty';
-        empty.textContent = 'nothing here';
-        body.appendChild(empty);
-      } else {
-        list.forEach(function (card) { body.appendChild(makeCard(card, c.key)); });
-      }
-      counts[c.key].textContent = list.length;
-
-      var clearRow = clearRows[c.key];
-      if (clearRow) {
+      var view = views[c.key];
+      fillBody(view.body, list, 'nothing here', makeCard);
+      view.count.textContent = list.length;
+      if (view.clear) {
         // any state change drops a pending confirmation — it was asked about a
         // count that may no longer hold
-        clearRow.closeAsk();
-        clearRow.classList.toggle('off', !list.length);
+        view.clear.closeAsk();
+        view.clear.classList.toggle('off', !list.length);
       }
     });
+    renderSummary();
+    // an open notes window is another view of the same state, so it redraws too
+    redrawNotes();
+  }
 
-    document.getElementById('summary').innerHTML = COLUMNS.map(function (c) {
-      return '<b>' + state.cols[c.key].length + '</b>&nbsp;' + c.key;
-    }).join('<span class="dot">·</span>');
+  function renderSummary() {
+    var out = document.getElementById('summary');
+    out.textContent = '';
+    COLUMNS.forEach(function (c, i) {
+      if (i) out.appendChild(el('span', 'dot', '·'));
+      out.appendChild(el('b', null, String(state.cols[c.key].length)));
+      // a hard space, so a count never wraps away from the word it counts
+      out.appendChild(document.createTextNode('\u00a0' + c.key));
+    });
   }
 
   // ---------- export / import ----------
@@ -1127,10 +1428,9 @@
           if (Array.isArray(parsed.cols[k])) total += parsed.cols[k].length;
         });
         if (!confirm('Replace the current board with ' + total + ' card(s) from this file?')) return;
-        localStorage.setItem(STORE, JSON.stringify(parsed));
+        lsSet(STORE, JSON.stringify(parsed));
         state = load();
-        save();
-        render();
+        commit();
       } catch (e) {
         alert("That file doesn't look like a personal board export.");
       }
@@ -1149,12 +1449,12 @@
   // names the combination after, and the lead colour its family is grouped by, sit
   // within those first three.
   // Each column takes its colour at 12% over ivory, exactly like the default.
-  // Order is always [backlog, now, accomplished] — Waiting for takes no palette
-  // colour, it is white throughout.
-  var PAL_KEY = 'personal.palette.v1';
-  var OLD_PAL_KEYS = ['todo.palette.v1', 'backlog.palette.v1'];
-  var IVORY_RGB = [250, 249, 245];
+  // The colours go to the columns marked `palette` in COLUMNS, in the order they
+  // are listed there. Waiting for takes none of them.
   var TINT = 0.12;
+  // the page's own background, read off the stylesheet so the tint arithmetic
+  // and the icon do not each keep a copy of it
+  var IVORY = getComputedStyle(document.documentElement).getPropertyValue('--ivory').trim();
 
   var FAMILIES = [
     { id: 'studio', name: 'Studio', note: 'the original three', palettes: [
@@ -1334,122 +1634,155 @@
     f.palettes.forEach(function (p) { p.family = f; PALETTES.push(p); });
   });
 
-  function tintOf(hex) {
+  function rgbOf(hex) {
     var h = hex.replace('#', '');
-    var out = '#';
-    for (var i = 0; i < 3; i++) {
-      var v = parseInt(h.substr(i * 2, 2), 16);
-      var m = Math.round(v * TINT + IVORY_RGB[i] * (1 - TINT));
-      out += ('0' + m.toString(16)).slice(-2);
-    }
-    return out.toUpperCase();
+    return [0, 1, 2].map(function (i) { return parseInt(h.substr(i * 2, 2), 16); });
   }
 
-  // the icon is the board itself: three bars, one per palette column, in the
-  // palette's colours. The tints are too pale to survive 16px, so the bars run
-  // solid — which is also why white Waiting for gets no bar.
+  // a colour laid over the page at TINT strength — what a column is filled with
+  function tintOf(hex) {
+    var under = rgbOf(IVORY);
+    return '#' + rgbOf(hex).map(function (v, i) {
+      var m = Math.round(v * TINT + under[i] * (1 - TINT));
+      return ('0' + m.toString(16)).slice(-2);
+    }).join('').toUpperCase();
+  }
+
+  // the icon is the board itself: one bar per palette column, in the palette's
+  // colours. The tints are too pale to survive 16px, so the bars run solid —
+  // which is also why white Waiting for gets no bar.
   function setFavicon(colors) {
     var link = document.getElementById('favicon');
     if (!link) return;
     var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">' +
-      '<rect width="32" height="32" rx="7" fill="#FAF9F5"/>';
-    [4, 13, 22].forEach(function (x, i) {
-      svg += '<rect x="' + x + '" y="5" width="6" height="22" rx="2" fill="' + colors[i] + '"/>';
+      '<rect width="32" height="32" rx="7" fill="' + IVORY + '"/>';
+    colors.forEach(function (c, i) {
+      svg += '<rect x="' + (4 + i * 9) + '" y="5" width="6" height="22" rx="2" fill="' + c + '"/>';
     });
     link.href = 'data:image/svg+xml,' + encodeURIComponent(svg + '</svg>');
   }
 
+  // What each column is wearing now: its own colour, or the one the palette
+  // handed it. Written onto the elements that show it.
+  var tone = {};
+  COLUMNS.forEach(function (c) { tone[c.key] = { fill: c.fill, rule: c.rule }; });
+
+  function paint(target, key) {
+    target.style.setProperty('--fill', tone[key].fill);
+    target.style.setProperty('--rule', tone[key].rule);
+    target.classList.toggle('flat', !!colOf(key).flat);
+  }
+
   function applyPalette(id) {
-    var p = PALETTES.filter(function (x) { return x.id === id; })[0] || PALETTES[0];
-    var root = document.documentElement;
+    var p = pick(PALETTES, function (x) { return x.id === id; }) || PALETTES[0];
     currentPal = p.id;
-    PAL_KEYS.forEach(function (k, i) {
-      root.style.setProperty('--fill-' + k, tintOf(p.colors[i]));
-      root.style.setProperty('--rule-' + k, p.colors[i]);
+    PAL_COLUMNS.forEach(function (c, i) {
+      tone[c.key] = { fill: tintOf(p.colors[i]), rule: p.colors[i] };
     });
+    KEYS.forEach(function (k) { paint(views[k].el, k); });
+    // the notes window is wearing one of these colours too, if it is open
+    redrawNotes();
     setFavicon(p.colors);
-    try { localStorage.setItem(PAL_KEY, p.id); } catch (e) {}
+    lsSet(PAL_KEY, p.id);
   }
 
   var palPanel = document.getElementById('palettePanel');
   var palBtn = document.getElementById('paletteBtn');
-  var palView = null;      // null = family list, otherwise a family id
+  var palView = null;      // null = the family list, otherwise a family id
   var currentPal = 'studio';
 
+  // One button shape serves both views of the panel: a name with a number to its
+  // right, a strip of colour beneath, and a line of small print under that.
+  function palButton(spec) {
+    var b = textBtn('pal');
+    var top = el('span', 'pal-top');
+    top.appendChild(el('span', 'pal-name', spec.name));
+    top.appendChild(el('span', 'pal-num', spec.num));
+    b.appendChild(top);
+    b.appendChild(spec.strip);
+    b.appendChild(el('span', 'pal-cols', spec.note));
+    b.addEventListener('click', function (e) {
+      e.stopPropagation();
+      spec.onClick();
+    });
+    return b;
+  }
+
+  // one bar per column the palette dresses, tinted as that column will be
   function palBars(p) {
-    return '<span class="pal-bars">' + p.colors.map(function (c) {
-      return '<span class="pal-bar" style="--r:' + c + ';--t:' + tintOf(c) + '"></span>';
-    }).join('') + '</span>';
+    var bars = el('span', 'pal-bars');
+    p.colors.forEach(function (c) {
+      var bar = el('span', 'pal-bar');
+      bar.style.setProperty('--r', c);
+      bar.style.setProperty('--t', tintOf(c));
+      bars.appendChild(bar);
+    });
+    return bars;
+  }
+
+  // one dot per palette in the family, each showing that palette's lead colour —
+  // the one the family is named for. So the strip previews count and character.
+  function famDots(f) {
+    var dots = el('span', 'fam-strip');
+    f.palettes.forEach(function (p) {
+      var dot = el('span', 'fam-dot');
+      dot.style.setProperty('--c', p.lead);
+      dots.appendChild(dot);
+    });
+    return dots;
   }
 
   function renderPanel() {
     palPanel.innerHTML = '';
+    if (palView) renderFamily(pick(FAMILIES, function (f) { return f.id === palView; }));
+    else renderFamilies();
+  }
 
-    if (palView) {
-      var fam = FAMILIES.filter(function (f) { return f.id === palView; })[0];
-      var back = document.createElement('button');
-      back.type = 'button';
-      back.className = 'pal-back';
-      back.innerHTML = '<span class="arrow">&lsaquo;</span> all families · ' + fam.name;
-      back.addEventListener('click', function (e) {
-        e.stopPropagation();
-        palView = null;
-        renderPanel();
+  function renderFamilies() {
+    palPanel.appendChild(el('div', 'cap', 'Sanzo Wada · 38 combinations, trimmed to three'));
+    FAMILIES.forEach(function (f) {
+      var b = palButton({
+        name: f.name,
+        num: String(f.palettes.length),
+        strip: famDots(f),
+        note: f.note,
+        onClick: function () { palView = f.id; renderPanel(); }
       });
-      palPanel.appendChild(back);
+      b.dataset.fam = f.id;
+      if (pick(f.palettes, function (p) { return p.id === currentPal; })) b.classList.add('on');
+      palPanel.appendChild(b);
+    });
+  }
 
-      fam.palettes.forEach(function (p) {
-        var b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'pal';
-        b.dataset.pal = p.id;
-        if (p.id === currentPal) b.classList.add('on');
-        b.innerHTML =
-          '<span class="pal-top"><span class="pal-name">' + p.name + '</span>' +
-          '<span class="pal-num">' + (p.num ? 'no. ' + p.num : 'default') + '</span></span>' +
-          palBars(p) +
-          '<span class="pal-cols">' + p.names + '</span>';
-        b.addEventListener('click', function (e) {
-          e.stopPropagation();
+  function renderFamily(f) {
+    var back = textBtn('pal-back');
+    back.appendChild(el('span', 'arrow', '‹'));
+    back.appendChild(document.createTextNode(' all families · ' + f.name));
+    back.addEventListener('click', function (e) {
+      e.stopPropagation();
+      palView = null;
+      renderPanel();
+    });
+    palPanel.appendChild(back);
+
+    f.palettes.forEach(function (p) {
+      var b = palButton({
+        name: p.name,
+        num: p.num ? 'no. ' + p.num : 'default',
+        strip: palBars(p),
+        note: p.names,
+        onClick: function () {
           applyPalette(p.id);
           // stay open so several palettes can be tried in a row — the panel only
           // closes on a click outside or Escape. Move the marker in place rather
           // than re-rendering, which would throw away the scroll position.
-          Array.prototype.forEach.call(palPanel.querySelectorAll('.pal'), function (el) {
-            el.classList.toggle('on', el.dataset.pal === p.id);
+          palPanel.querySelectorAll('.pal').forEach(function (other) {
+            other.classList.toggle('on', other.dataset.pal === p.id);
           });
-        });
-        palPanel.appendChild(b);
+        }
       });
-      return;
-    }
-
-    var cap = document.createElement('div');
-    cap.className = 'cap';
-    cap.textContent = 'Sanzo Wada · 38 combinations, trimmed to three';
-    palPanel.appendChild(cap);
-
-    FAMILIES.forEach(function (f) {
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'pal';
-      b.dataset.fam = f.id;
-      if (f.palettes.some(function (p) { return p.id === currentPal; })) b.classList.add('on');
-      // one dot per palette, each showing that palette's lead colour — the one the
-      // family is named for. So the strip previews both the count and the character.
-      var dots = f.palettes.map(function (p) {
-        return '<span class="fam-dot" style="--c:' + p.lead + '"></span>';
-      }).join('');
-      b.innerHTML =
-        '<span class="pal-top"><span class="pal-name">' + f.name + '</span>' +
-        '<span class="pal-num">' + f.palettes.length + '</span></span>' +
-        '<span class="fam-strip">' + dots + '</span>' +
-        '<span class="pal-cols">' + f.note + '</span>';
-      b.addEventListener('click', function (e) {
-        e.stopPropagation();
-        palView = f.id;
-        renderPanel();
-      });
+      b.dataset.pal = p.id;
+      if (p.id === currentPal) b.classList.add('on');
       palPanel.appendChild(b);
     });
   }
@@ -1475,19 +1808,11 @@
     if (e.key !== 'Escape') return;
     closePalette();
     closeClearAsks();
+    closeNotes();
   });
 
-  var savedPal = 'studio';
-  try {
-    // same carry-over chain as the board; applyPalette writes it back under PAL_KEY
-    var pal = localStorage.getItem(PAL_KEY);
-    OLD_PAL_KEYS.forEach(function (k) {
-      if (pal == null) pal = localStorage.getItem(k);
-      localStorage.removeItem(k);
-    });
-    savedPal = pal || 'studio';
-  } catch (e) {}
-  applyPalette(savedPal);
+  // applyPalette writes the choice back under the current key
+  applyPalette(readCarried(PAL_KEY, OLD_PAL_KEYS) || 'studio');
 
   // keep two tabs of the same board in sync
   window.addEventListener('storage', function (e) {

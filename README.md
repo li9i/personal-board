@@ -19,6 +19,11 @@ Open `index.html` directly (`file://` is fine).
 - **Backticks** mark inline code: `` `npm test` `` shows as a monospace chip. The
   card keeps the backticks, so they are there again when you edit it. A span has
   to hold something and stay on one line, so a stray backtick is just a backtick.
+- **≡** on a card opens its notes, in a small window in the middle of the page.
+  Notes are cards themselves: the same editing, backticks, dates, dragging to
+  reorder and **×** to delete with an Undo. The window takes the colour of the
+  column the card sits in. A card that holds notes says so next to its date.
+  Escape or a click outside closes the window.
 - **Drag a card** to move it within a column or across to another one.
 - **×** on a card deletes it. **clear column** empties Accomplished. Both raise a
   toast with an **Undo**.
@@ -28,6 +33,10 @@ Open `index.html` directly (`file://` is fine).
 - **Export** downloads the board as JSON; **Import** reads one back in.
 
 ## Storage
+
+A card's notes are kept on the card, so they travel with Export and Import,
+deleting a card takes its notes with it, and Undo brings the lot back. A board
+saved before notes existed opens with none.
 
 The board lives in `localStorage` under `personal.board.v1`, the chosen palette
 under `personal.palette.v1` — per browser, per machine. Export is the way to move
