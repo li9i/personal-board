@@ -439,6 +439,18 @@
     word-break: break-word;
     margin-bottom: 7px;
   }
+  .ctext code {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--gray-800);
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 4px;
+    padding: 0 3px;
+    /* a chip is taller than the run of text it sits in, so hold its own line
+       tight to stop it prising the card's lines apart */
+    line-height: 1.15;
+  }
   .card textarea {
     width: 100%;
     resize: vertical;
@@ -936,6 +948,23 @@
   });
 
   // ---------- card ----------
+  // Split raw card text into the segments it displays as, in order. A run between
+  // two backticks is code; everything else is plain. So 'run `npm test` now' gives
+  // [{text: 'run ', code: false}, {text: 'npm test', code: true},
+  //  {text: ' now', code: false}]. A code segment's text drops the backticks that
+  // marked it.
+  // A span has to hold at least one character and stay on one line, so '``' and a
+  // stray backtick are left as the characters they are, and a tick opened on one
+  // line cannot swallow the ones below it. split keeps the capture, which lands the
+  // code runs on the odd indices.
+  function codeSpans(s) {
+    return s.split(/`([^`\n]+)`/).map(function (part, i) {
+      return { text: part, code: i % 2 === 1 };
+    }).filter(function (seg) {
+      return seg.text !== '';
+    });
+  }
+
   function makeCard(card, colKey) {
     var el = document.createElement('article');
     el.className = 'card';
@@ -944,7 +973,7 @@
 
     var text = document.createElement('div');
     text.className = 'ctext';
-    text.textContent = card.text;
+    renderText(text, card.text);
 
     var bot = document.createElement('div');
     bot.className = 'card-bot';
@@ -1016,6 +1045,22 @@
     b.title = title;
     b.setAttribute('aria-label', title);
     return b;
+  }
+
+  // Fill el with the card's text, each code segment as a <code> chip. The stored
+  // text keeps its backticks, so editing a card shows them again. Built from text
+  // nodes throughout, so card text never passes through innerHTML.
+  function renderText(el, s) {
+    el.textContent = '';
+    codeSpans(s).forEach(function (seg) {
+      if (seg.code) {
+        var code = document.createElement('code');
+        code.textContent = seg.text;
+        el.appendChild(code);
+      } else {
+        el.appendChild(document.createTextNode(seg.text));
+      }
+    });
   }
 
   // ---------- render ----------

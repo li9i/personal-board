@@ -16,6 +16,9 @@ Open `index.html` directly (`file://` is fine).
 - **+ add** at the bottom of a column writes a new card. Enter saves, Shift+Enter
   makes a new line, Escape cancels.
 - **Click a card** to edit its text; same keys apply.
+- **Backticks** mark inline code: `` `npm test` `` shows as a monospace chip. The
+  card keeps the backticks, so they are there again when you edit it. A span has
+  to hold something and stay on one line, so a stray backtick is just a backtick.
 - **Drag a card** to move it within a column or across to another one.
 - **×** on a card deletes it. **clear column** empties Accomplished. Both raise a
   toast with an **Undo**.
