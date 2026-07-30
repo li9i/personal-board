@@ -28,16 +28,25 @@ Open `index.html` directly (`file://` is fine).
 - **Drag a card** to move it within a column or across to another one.
 - **×** on a card deletes it. **clear column** empties Accomplished. Both raise a
   toast with an **Undo**.
+- **↗** on a card writes that one card to a file, notes and all, to pass to
+  someone else. Import puts it on the board without touching what is already
+  there, in the column it was sent from, or in Backlog if this board has no such
+  column. It arrives as a new card, so the same file imported twice gives two.
 - **Palette** swaps the colours of Backlog, Now and Accomplished — pick a family,
   then a combination. The panel stays open while you try them, and closes on a
   click outside or Escape.
-- **Export** downloads the board as JSON; **Import** reads one back in.
+- **Export** downloads the whole board as JSON; **Import** reads back either a
+  board or a single card.
 
 ## Storage
 
-A card's notes are kept on the card, so they travel with Export and Import,
-deleting a card takes its notes with it, and Undo brings the lot back. A board
-saved before notes existed opens with none.
+A card's notes are kept on the card, so a card is whole on its own: notes travel
+with Export and Import, deleting a card takes its notes with it, and Undo brings
+the lot back. A board saved before notes existed opens with none.
+
+Two shapes leave the board and come back. A whole board is `{"cols": ...}` and
+replaces what is here. One card is `{"card": ..., "col": ...}` and joins it.
+Import is given a file and tells the two apart by which of the fields it carries.
 
 The board lives in `localStorage` under `personal.board.v1`, the chosen palette
 under `personal.palette.v1` — per browser, per machine. Export is the way to move

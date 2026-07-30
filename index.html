@@ -1268,6 +1268,8 @@
       buttons: [
         { label: '≡', title: 'notes', cls: 'notesbtn',
           onClick: function () { openNotes(card.id); } },
+        { label: '↗', title: 'export this card',
+          onClick: function () { exportCard(card.id); } },
         { label: '×', title: 'delete', cls: 'del',
           onClick: function () { removeCard(card.id); } }
       ]
@@ -1414,17 +1416,74 @@
   }
 
   // ---------- export / import ----------
-  document.getElementById('exportBtn').addEventListener('click', function () {
-    var blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  // Two shapes leave the board and come back. A whole board is { cols: ... } and
+  // replaces what is here. One card is { card: ..., col: ... } and joins what is
+  // here, which is how a card is passed to someone else. Import is given a file
+  // and tells the two apart by which of the fields it carries.
+  function download(name, data) {
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
-    a.download = 'personal-board-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.download = name + '-' + new Date().toISOString().slice(0, 10) + '.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  // A card's notes live on the card, so a card is already whole on its own and
+  // goes out as it stands. The column travels with it so it can land in the same
+  // one on the other side.
+  function exportCard(id) {
+    var found = find(id);
+    if (!found) return;
+    download('personal-board-card', { card: found.card, col: found.col });
+  }
+
+  document.getElementById('exportBtn').addEventListener('click', function () {
+    download('personal-board', state);
   });
+
+  function importBoard(parsed) {
+    var total = 0;
+    // an older export may still carry a Cut column; load() folds it into Backlog
+    KEYS.concat(GONE_KEY).forEach(function (k) {
+      if (Array.isArray(parsed.cols[k])) total += parsed.cols[k].length;
+    });
+    if (!confirm('Replace the current board with ' + total + ' card(s) from this file?')) return;
+    lsSet(STORE, JSON.stringify(parsed));
+    state = load();
+    commit();
+  }
+
+  // A card arrives with the ids it wore on the board it left, and the same file
+  // may be imported twice. find() answers by id, so the card and every note
+  // under it is given a fresh one on the way in.
+  function reid(item) {
+    return {
+      id: uid(),
+      text: item.text,
+      created: item.created,
+      notes: item.notes.map(reid)
+    };
+  }
+
+  // One shared card joins the board. Nothing already here is disturbed.
+  function importCard(parsed) {
+    var arriving = normalize([parsed.card]);
+    if (!arriving.length) throw new Error('bad shape');
+    var card = reid(arriving[0]);
+    // it was exported from a column, but a card made elsewhere may name one this
+    // board does not have, or none at all. Anything unplaced belongs in Backlog.
+    var col = colOf(parsed.col) || colOf('backlog');
+    var brought = card.notes.length ? ' and ' + plural(card.notes.length, 'note') : '';
+    var says = card.text.length > 60 ? card.text.slice(0, 60) + '...' : card.text;
+    if (!confirm('Add this card' + brought + ' to ' + col.label + '?\n\n' + says)) return;
+    // the newest card sits at the bottom of a column, the same as one written here
+    state.cols[col.key].push(card);
+    commit();
+  }
 
   var fileInput = document.getElementById('fileInput');
   document.getElementById('importBtn').addEventListener('click', function () {
@@ -1437,16 +1496,10 @@
     reader.onload = function () {
       try {
         var parsed = JSON.parse(reader.result);
-        if (!parsed || !parsed.cols) throw new Error('bad shape');
-        var total = 0;
-        // an older export may still carry a Cut column; load() folds it into Backlog
-        KEYS.concat(GONE_KEY).forEach(function (k) {
-          if (Array.isArray(parsed.cols[k])) total += parsed.cols[k].length;
-        });
-        if (!confirm('Replace the current board with ' + total + ' card(s) from this file?')) return;
-        lsSet(STORE, JSON.stringify(parsed));
-        state = load();
-        commit();
+        if (!parsed) throw new Error('bad shape');
+        if (parsed.card) importCard(parsed);
+        else if (parsed.cols) importBoard(parsed);
+        else throw new Error('bad shape');
       } catch (e) {
         alert("That file doesn't look like a personal board export.");
       }
