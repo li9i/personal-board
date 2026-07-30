@@ -5,7 +5,8 @@ single HTML file. No build, no dependencies, no server: open `index.html` in a
 browser and it works.
 
 **Waiting for** holds what is blocked on someone else. It is set slightly apart
-from the other three by a hairline, and stays white whatever palette is chosen.
+from the other three by a hairline, and stays uncoloured whatever palette is
+chosen: the page's own background, with white cards and grey text on it.
 
 ![The board with a few cards in each column](doc/board.png)
 
