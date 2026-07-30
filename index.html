@@ -527,8 +527,11 @@
   }
   .scrim.on { display: flex; }
   .notes {
-    width: 440px;
+    width: 620px;
     max-width: 100%;
+    /* a floor as well as a ceiling: a card with one note should still open a
+       panel worth looking at, and .col-body takes up the slack */
+    min-height: min(460px, 84vh);
     max-height: 84vh;
     background: var(--fill, var(--ivory));
     border: 1.5px solid var(--gray-200);
