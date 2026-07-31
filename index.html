@@ -13,6 +13,10 @@
     --slate: #141413;
     --clay: #D97757;
     --clay-d: #B85C3E;
+    /* the same clay a step darker again: --clay-d clears 4.5:1 as ink on white by
+       so little that any tint behind it costs it the ratio, and this one is for
+       red words that come to rest on a tint rather than on white */
+    --clay-dd: #A85033;
     --oat: #E3DACC;
     --olive: #788C5D;
     --gray-50: #F0EEE6;
@@ -53,7 +57,6 @@
   button.ghost,
   .composer .save,
   .clear-ask .yes,
-  .card-menu .menu-ask .yes,
   .toast button {
     border-radius: 999px;
     font-family: var(--mono);
@@ -553,70 +556,84 @@
     /* over the notes window, under the undo toast — deleting a note from the
        list has to leave its Undo reachable */
     z-index: 35;
-    min-width: 150px;
+    /* One width for both lists, so a note's two words and a card's four stand as
+       the same object, and no wider than the longest of them needs: the words are
+       what the panel is for, and air to the right of them is air the panel does
+       not need. */
+    min-width: 140px;
     background: var(--white);
-    border: 1.5px solid var(--gray-200);
-    border-radius: 9px;
-    padding: 5px;
-    box-shadow: 0 6px 22px rgba(20,20,19,0.10);
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    padding: 4px;
+    /* a near line to sit the panel off the page and a far one to cast it, so the
+       edge reads on a column's fill as well as on the page */
+    box-shadow: 0 1px 2px rgba(20,20,19,0.04), 0 8px 24px rgba(20,20,19,0.10);
     display: none;
     flex-direction: column;
     gap: 1px;
   }
   .card-menu.on { display: flex; }
+  /* The words in the list are read rather than scanned, so they take the reading
+     face — the mono the rest of a card's furniture wears is for dates and marks,
+     not for sentences. They are read a step under the card's own words: the list
+     stands over the board it belongs to, and nothing on top of a card may speak
+     as loudly as the card. A step and no more, or they fall to the size of the
+     date line and stop outranking it. Each row stands as tall as something meant
+     to be pressed, not as tall as its text. */
   .card-menu button {
     display: flex;
     align-items: center;
-    gap: 9px;
+    gap: 8px;
     width: 100%;
-    padding: 6px 8px;
+    padding: 5px 8px;
     background: transparent;
     border: none;
-    border-radius: 6px;
-    color: var(--gray-800);
-    font-family: var(--mono);
-    font-size: 11px;
+    border-radius: 8px;
+    color: var(--slate);
+    font-family: var(--sans);
+    font-size: 12px;
+    line-height: 1.15;
     text-align: left;
     cursor: pointer;
   }
-  .card-menu button:hover { background: var(--gray-50); color: var(--slate); }
+  .card-menu button:hover { background: var(--gray-50); }
   .card-menu button:focus-visible { outline: 2px solid var(--clay); outline-offset: -2px; }
-  .card-menu button.del:hover { color: var(--clay-d); }
-  /* the same character the button used to wear, kept as the mark of the action
-     and quietened, since the word beside it is what is read */
+  /* The one row that takes something off the board stands apart from the rows
+     that only open it, and wears the warning colour at rest rather than waiting
+     for a pointer. The line is drawn as a mark above the row and not as a border
+     on it, so the hover ground stops short of the line instead of meeting it. */
+  .card-menu button.del {
+    position: relative;
+    margin-top: 6px;
+    /* the darker clay, and the same one at rest as under the pointer: this row
+       hovers to the --gray-50 ground the other rows do, and --clay-d holds 3.9:1
+       on it while this holds 4.9:1. One colour in both states, so the row reads
+       as the same warning whether it is pointed at or not. */
+    color: var(--clay-dd);
+  }
+  .card-menu button.del::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -3px;
+    border-top: 1px solid var(--col-rule);
+  }
+  /* A drawn mark rather than a character, so it keeps to the row's height and not
+     the font's, and takes the row's own colour — which makes the mark on the
+     delete row as red as the word beside it. Sized off the word it stands beside,
+     a shade larger, so it holds its share of the row at whatever size the row is
+     read at. */
   .card-menu .glyph {
-    width: 12px;
-    text-align: center;
-    color: var(--gray-500);
-  }
-  .card-menu button:hover .glyph { color: inherit; }
-  /* the question a word asks before it does what it says, worn in the list where
-     the words were. The same shape the clear row asks in, one level in. */
-  .card-menu .menu-ask {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 4px 3px;
+    flex: none;
+    width: 14px;
+    height: 14px;
   }
-  .card-menu .menu-ask .q {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--gray-800);
+  .card-menu .glyph svg {
+    width: 14px;
+    height: 14px;
   }
-  .card-menu .menu-ask button { width: auto; }
-  /* outlined, not filled, for the reason the clear row is */
-  .card-menu .menu-ask .yes {
-    margin-left: auto;
-    background: var(--white);
-    color: var(--clay-d);
-    border: 1.5px solid var(--clay-d);
-  }
-  .card-menu .menu-ask .yes:hover {
-    background: var(--white);
-    color: var(--clay-d);
-    box-shadow: 0 0 0 1.5px var(--clay-d);
-  }
-  .card-menu .menu-ask .no { color: var(--gray-600); }
 
   /* ---------- notes window ---------- */
   /* A card's notes open in the middle of the page over a scrim. The panel is
@@ -808,6 +825,28 @@
     var b = el('button', cls, label);
     b.type = 'button';
     return b;
+  }
+
+  // The marks the list wears beside its words. Drawn as lines on a 24 grid and
+  // shown at 16px, so a mark is a mark at any size and never a character the
+  // reader's font gets to reinterpret. Every one takes its colour from the row it
+  // sits in, so nothing here says what colour it is.
+  var MARKS = {
+    pencil: 'M17 3a2.83 2.83 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z M15 5l4 4',
+    page: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z '
+        + 'M14 2v6h6 M9 13h6 M9 17h6',
+    send: 'M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8 M16 6l-4-4-4 4 M12 2v13',
+    bin: 'M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6 '
+       + 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'
+  };
+
+  function icon(name) {
+    var box = el('span', 'glyph');
+    box.setAttribute('aria-hidden', 'true');
+    box.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+      + ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+      + '<path d="' + MARKS[name] + '"/></svg>';
+    return box;
   }
 
   function iconBtn(label, title, cls) {
@@ -1312,7 +1351,21 @@
   }
 
   function openMenu(card, button, actions) {
-    fillMenu(actions, button);
+    menu.innerHTML = '';
+    actions.forEach(function (a) {
+      var row = textBtn(a.cls);
+      row.setAttribute('role', 'menuitem');
+      // the mark is for the eye to find the row by; the word beside it is the
+      // whole of what the row is called, so the mark is hidden from a reader
+      row.appendChild(icon(a.icon));
+      row.appendChild(document.createTextNode(a.title));
+      row.addEventListener('click', function (e) {
+        e.stopPropagation();
+        closeMenu();
+        a.onClick();
+      });
+      menu.appendChild(row);
+    });
     menuOwner = button;
     button.setAttribute('aria-expanded', 'true');
     card.classList.add('menuopen');
@@ -1320,65 +1373,6 @@
     menu.classList.add('on');
     placeMenu(button);
     menu.firstChild.focus();
-  }
-
-  // The words the list stands as. An action that carries `confirm` does not run
-  // on the press: the list gives up its words for that question, and only `yes`
-  // reaches the action.
-  function fillMenu(actions, button) {
-    menu.innerHTML = '';
-    actions.forEach(function (a) {
-      var row = textBtn(a.cls);
-      row.setAttribute('role', 'menuitem');
-      // the character is the mark the button used to wear, kept for the eye; the
-      // word beside it is the whole of what the row is called
-      var glyph = el('span', 'glyph', a.label);
-      glyph.setAttribute('aria-hidden', 'true');
-      row.appendChild(glyph);
-      row.appendChild(document.createTextNode(a.title));
-      row.addEventListener('click', function (e) {
-        e.stopPropagation();
-        if (a.confirm) { askInMenu(a, actions, button); return; }
-        closeMenu();
-        a.onClick();
-      });
-      menu.appendChild(row);
-    });
-  }
-
-  // Undo takes a wrong press back, but only until the toast goes, and a card is
-  // a lot to lose to a slip of the hand on a small button. The question is asked
-  // in the list itself: nothing else on the page moves, and no is one press away.
-  function askInMenu(action, actions, button) {
-    menu.innerHTML = '';
-    var ask = el('div', 'menu-ask');
-    ask.appendChild(el('span', 'q', action.confirm));
-    var yes = textBtn('yes', 'yes');
-    yes.setAttribute('role', 'menuitem');
-    yes.setAttribute('aria-label', 'Yes, ' + action.title);
-    var no = textBtn('no', 'no');
-    no.setAttribute('role', 'menuitem');
-    no.setAttribute('aria-label', 'No, keep it');
-    ask.appendChild(yes);
-    ask.appendChild(no);
-    menu.appendChild(ask);
-    // asked in fewer words than it offered: the list has a new size to be aimed by
-    placeMenu(button);
-
-    yes.addEventListener('click', function (e) {
-      e.stopPropagation();
-      closeMenu();
-      action.onClick();
-    });
-    // back to the words, rather than away altogether: the press that opened the
-    // list was not the one being taken back
-    no.addEventListener('click', function (e) {
-      e.stopPropagation();
-      fillMenu(actions, button);
-      placeMenu(button);
-      menu.firstChild.focus();
-    });
-    yes.focus();
   }
 
   // Says whether it had anything to put away, so Escape can be spent on the list
@@ -1410,8 +1404,7 @@
   menu.addEventListener('keydown', function (e) {
     if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
     e.preventDefault();
-    // every button in the list, since a question stands as one row holding two
-    var rows = [].slice.call(menu.querySelectorAll('button'));
+    var rows = [].slice.call(menu.children);
     var at = rows.indexOf(document.activeElement);
     rows[(at + (e.key === 'ArrowDown' ? 1 : rows.length - 1)) % rows.length].focus();
   });
@@ -1429,9 +1422,8 @@
   //   level    which drag this card belongs to
   //   redraw   what to run after an edit — the board, or the notes list
   //   mark     an optional word after the date
-  //   buttons  what the list offers, in order:
-  //            { label, title, cls, onClick, confirm } — confirm is the question
-  //            asked in the list before onClick is allowed to run
+  //   buttons  what the list offers, in order: { icon, title, cls, onClick },
+  //            where icon names a mark in MARKS
   function makeItem(item, spec) {
     var card = el('article', 'card');
     card.draggable = true;
@@ -1454,7 +1446,7 @@
     // itself, and a card that is nothing but a link would have nowhere to press.
     var actions = el('div', 'card-actions');
     actions.appendChild(makeMenuButton(card, [
-      { label: '✎', title: 'edit',
+      { icon: 'pencil', title: 'Edit',
         onClick: function () { editItem(card, text, item, spec.redraw); } }
     ].concat(spec.buttons)));
     bot.appendChild(actions);
@@ -1593,13 +1585,11 @@
       redraw: render,
       mark: noteMark(card),
       buttons: [
-        // a small ruled page, and no more of an emoji than the ≡ that opened the
-        // list — every mark on this board has to arrive as text, not as a picture
-        { label: '▤', title: 'notes',
+        { icon: 'page', title: 'Notes',
           onClick: function () { openNotes(card.id); } },
-        { label: '↗', title: 'export this card',
+        { icon: 'send', title: 'Export this card',
           onClick: function () { exportCard(card.id); } },
-        { label: '×', title: 'delete', cls: 'del', confirm: 'delete card?',
+        { icon: 'bin', title: 'Delete', cls: 'del',
           onClick: function () { removeCard(card.id); } }
       ]
     });
@@ -1610,7 +1600,7 @@
       level: 'note',
       redraw: redrawNotes,
       buttons: [
-        { label: '×', title: 'delete note', cls: 'del', confirm: 'delete note?',
+        { icon: 'bin', title: 'Delete note', cls: 'del',
           onClick: function () { removeNote(note.id); } }
       ]
     });

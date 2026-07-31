@@ -17,9 +17,9 @@ Open `index.html` directly. A `file://` address works.
 - **+ add** at the bottom of a column writes a new card. Enter saves the card.
   Shift+Enter makes a new line. Escape cancels.
 - **Click a card** to edit the text of the card. The same keys apply.
-- **≡** on a card opens the list. The list holds **edit**, **notes**, **export
-  this card** and **delete**. A note carries the same button, with **edit** and
-  **delete note**. Escape or a click outside closes the list.
+- **≡** on a card opens the list. The list holds **Edit**, **Notes**, **Export
+  this card** and **Delete**. A note carries the same button, with **Edit** and
+  **Delete note**. Escape or a click outside closes the list.
 - **Backticks** mark inline code. `` `npm test` `` shows as a monospace chip. The
   card keeps the backticks, so you see them again when you edit the card. A chip
   must hold text and stay on one line. A single backtick therefore stays a
@@ -31,20 +31,19 @@ Open `index.html` directly. A `file://` address works.
   `javascript:` address is not a link. An address inside backticks is code, not a
   link. The card keeps the text you typed, so you see it again when you edit the
   card. A link opens in a new tab. A click on a link follows the link and does
-  not open the card for editing. When a link is all that a card says, use **edit**
+  not open the card for editing. When a link is all that a card says, use **Edit**
   in the list to open the card.
-- **notes** opens the notes of the card, in a small window in the middle of the
+- **Notes** opens the notes of the card, in a small window in the middle of the
   page. Notes are cards themselves. They take the same editing, backticks, links,
   dates and dragging to reorder. They have a list of their own, with a delete and
   an Undo. The window takes the colour of the column that holds the card. A card
   with notes says so next to its date. Escape or a click outside closes the
   window.
 - **Drag a card** to move it within a column or to another column.
-- **delete** takes a card off the board. It first asks **delete card?** in the
-  list. **yes** deletes the card. **no** shows the words of the list again.
-  **delete note** asks **delete note?** in the same way. **clear column** empties
-  Accomplished and also asks first. All three raise a toast with an **Undo**.
-- **export this card** writes one card to a file, with its notes. Use the file to
+- **Delete** takes a card off the board. **Delete note** takes a note off a card.
+  Neither asks first. **clear column** empties Accomplished and does ask first.
+  All three raise a toast with an **Undo**.
+- **Export this card** writes one card to a file, with its notes. Use the file to
   pass the card to someone else. Import adds the card to the board and does not
   change the other cards. The card goes to the column it was sent from. If this
   board has no such column, the card goes to Backlog. The card arrives as a new
