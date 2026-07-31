@@ -801,7 +801,7 @@
   <header>
     <div class="eyebrow">personal / board</div>
     <h1>Personal Board</h1>
-    <div class="hintline">click “+ add” in a column &nbsp;·&nbsp; drag cards between columns &nbsp;·&nbsp; ≡ on a card to edit</div>
+    <div class="hintline">click “+ add” in a column &nbsp;·&nbsp; drag cards between columns &nbsp;·&nbsp; double-click a card to edit &nbsp;·&nbsp; ≡ for more</div>
   </header>
 
   <div class="toolbar">
@@ -1507,9 +1507,9 @@
       bot.appendChild(mark);
     }
 
-    // The menu is the only way to reach an edit. The words of a card hold links,
-    // code and headings. A click that opened the card for an edit would take the
-    // click that a link needs, and put a box over text that you want to read.
+    // The menu offers an edit, and so does a double-click on the card. One click
+    // is not enough: the words of a card hold links, and that click belongs to
+    // them. A box over the text on every read would be in the way as well.
     var actions = el('div', 'card-actions');
     actions.appendChild(makeMenuButton(card, [
       { icon: 'pencil', title: 'Edit',
@@ -1520,6 +1520,15 @@
     card.appendChild(text);
     card.appendChild(bot);
     wireDrag(card, item.id, spec.level);
+
+    // The parts of a card that answer a press of their own keep it. A link opens,
+    // the note mark opens the notes, the button opens the menu, and none of them
+    // opens the box. Inside the box itself a double-click picks a word, and
+    // editItem() has nothing left to replace by then.
+    card.addEventListener('dblclick', function (e) {
+      if (e.target.closest('a, button, .notemark')) return;
+      editItem(card, text, item, spec.redraw);
+    });
     return card;
   }
 
