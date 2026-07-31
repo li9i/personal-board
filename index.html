@@ -513,6 +513,35 @@
     outline-offset: 1px;
     border-radius: 2px;
   }
+  /* The blocks a card's lines fall into. Every block sits flush with the card and
+     a gap only ever falls between two of them, so the first and last lines of a
+     card keep the padding the card set and nothing else. */
+  .ctext > * { margin: 0; }
+  .ctext > * + * { margin-top: 7px; }
+  /* a heading stays near the size of the line it heads: a card is 13px in a narrow
+     column, and the browser's own h1 would take a third of one */
+  .ctext h1, .ctext h2, .ctext h3,
+  .ctext h4, .ctext h5, .ctext h6 {
+    font-weight: 600;
+    font-size: 13px;
+    line-height: 1.25;
+  }
+  .ctext h1 { font-size: 16px; }
+  .ctext h2 { font-size: 15px; }
+  .ctext h3 { font-size: 14px; }
+  .ctext strong { font-weight: 600; }
+  /* a quote is marked by the bar at its edge rather than by paler ink: ink pale
+     enough to read as quoted drops under 4.5:1 on the fills a palette makes */
+  .ctext blockquote {
+    border-left: 2px solid var(--gray-500);
+    padding-left: 8px;
+  }
+  .ctext hr {
+    border: 0;
+    border-top: 1px solid var(--gray-200);
+  }
+  .ctext ul, .ctext ol { padding-left: 18px; }
+  .ctext li::marker { color: var(--gray-600); }
   .card textarea {
     min-height: 52px;
     border: 1.5px solid var(--clay);
@@ -1568,13 +1597,108 @@
     return out;
   }
 
-  // Everything a card's text displays as, in order. Backticks are read first, so
-  // an address inside them is code and stays on the card as the address it is.
+  // Pick the marked runs out of a run of plain text: **bold**, *italic* and
+  // ~~struck through~~. A marked run carries the tag it displays as — 'strong',
+  // 'em' or 'del' — and everything else carries none.
+  // The rule a code chip goes by holds here too: a run has to have text in it and
+  // stay on one line, so '**' and a mark left open are the characters they were
+  // typed as, and a mark opened on one line cannot swallow the lines below it.
+  // In the order they are read, which is what settles '**bold**' against
+  // '*italic*': the pair is taken first, so the single one never sees it. Italic
+  // holds no star of its own, so it cannot reach across a bold mark to close.
+  // One capture each, so split lands the marked runs on the odd indices.
+  var EMPHASIS = [
+    { tag: 'strong', re: /\*\*([^\n]+?)\*\*/ },
+    { tag: 'em', re: /\*([^*\n]+)\*/ },
+    { tag: 'del', re: /~~([^\n]+?)~~/ }
+  ];
+
+  function emphasisSpans(s) {
+    return markSpans(s, 0);
+  }
+
+  // Read the mark at `at` over the text, then hand what is left of it plain to
+  // the mark after that one. A run that carries a mark is finished with, so the
+  // marks do not nest: the text of a bold run is the characters it holds.
+  function markSpans(s, at) {
+    if (at === EMPHASIS.length) return s === '' ? [] : [{ text: s, code: false }];
+    var mark = EMPHASIS[at];
+    var out = [];
+    s.split(mark.re).forEach(function (part, i) {
+      if (part === '') return;
+      if (i % 2 === 1) out.push({ text: part, tag: mark.tag });
+      else markSpans(part, at + 1).forEach(function (seg) { out.push(seg); });
+    });
+    return out;
+  }
+
+  // Everything a line of a card's text displays as, in order. Backticks are read
+  // first, so an address inside them is code and stays on the card as the address
+  // it is, and an address is read before the emphasis marks, so a '*' inside one
+  // stays part of the address.
   function inlineSpans(s) {
     var out = [];
     codeSpans(s).forEach(function (seg) {
-      if (seg.code) out.push(seg);
-      else linkSpans(seg.text).forEach(function (part) { out.push(part); });
+      if (seg.code) { out.push(seg); return; }
+      linkSpans(seg.text).forEach(function (part) {
+        if (part.href) { out.push(part); return; }
+        emphasisSpans(part.text).forEach(function (bit) { out.push(bit); });
+      });
+    });
+    return out;
+  }
+
+  // The marks that take a whole line. Each sits at the head of its line, under
+  // three spaces at the most, and what it opens runs to the end of that line.
+  var RULE = /^ {0,3}(?:-{3,}|\*{3,}|_{3,})\s*$/;
+  var HEADING = /^ {0,3}(#{1,6})\s+(.*)$/;
+  var QUOTE = /^ {0,3}>\s?(.*)$/;
+  var BULLET = /^ {0,3}[-*+]\s+(.*)$/;
+  var NUMBER = /^ {0,3}(\d+)[.)]\s+(.*)$/;
+
+  // Group the lines of a card into the blocks they display as, in order. A line
+  // wearing a line mark is the block that mark names; every other line is prose,
+  // and a run of prose lines is one paragraph. A blank line closes whatever is
+  // open, and a quote or a list takes as many lines in a row as it is given.
+  //   {kind: 'para', text}            {kind: 'quote', text}
+  //   {kind: 'heading', level, text}  {kind: 'list', ordered, start, items}
+  //   {kind: 'rule'}
+  // A rule is read before a bullet, so '---' is the line it draws rather than an
+  // item with two dashes for its text.
+  function blocks(s) {
+    var out = [];
+    var open = null;    // the block the line above left open, if it left one
+    function start(b) { out.push(b); open = b; }
+    s.split('\n').forEach(function (line) {
+      var m;
+      if (RULE.test(line)) { out.push({ kind: 'rule' }); open = null; return; }
+      if ((m = HEADING.exec(line))) {
+        out.push({ kind: 'heading', level: m[1].length, text: m[2] });
+        open = null;
+        return;
+      }
+      if ((m = QUOTE.exec(line))) {
+        if (open && open.kind === 'quote') open.text += '\n' + m[1];
+        else start({ kind: 'quote', text: m[1] });
+        return;
+      }
+      var bullet = BULLET.exec(line);
+      m = bullet || NUMBER.exec(line);
+      if (m) {
+        // a numbered list under a bulleted one is a list of its own, and the
+        // other way about
+        var ordered = !bullet;
+        if (open && open.kind === 'list' && open.ordered === ordered) {
+          open.items.push(ordered ? m[2] : m[1]);
+        } else {
+          start({ kind: 'list', ordered: ordered, start: ordered ? Number(m[1]) : 1,
+            items: [ordered ? m[2] : m[1]] });
+        }
+        return;
+      }
+      if (!line.trim()) { open = null; return; }
+      if (open && open.kind === 'para') open.text += '\n' + line;
+      else start({ kind: 'para', text: line });
     });
     return out;
   }
@@ -1624,12 +1748,39 @@
     items.forEach(function (item) { body.appendChild(make(item)); });
   }
 
-  // Fill el with the card's text, each code segment as a <code> chip and each
-  // address as a link. The stored text keeps its backticks and its brackets, so
-  // editing a card shows them again. Built from text nodes throughout, so card
-  // text never passes through innerHTML.
+  // The element a block displays as, holding the marked runs of its own text.
+  function makeBlock(b) {
+    if (b.kind === 'rule') return document.createElement('hr');
+    if (b.kind === 'list') {
+      var list = document.createElement(b.ordered ? 'ol' : 'ul');
+      // a list that starts at 3 counts from 3
+      if (b.ordered && b.start !== 1) list.start = b.start;
+      b.items.forEach(function (text) {
+        var li = document.createElement('li');
+        fillInline(li, text);
+        list.appendChild(li);
+      });
+      return list;
+    }
+    var box = document.createElement(b.kind === 'heading' ? 'h' + b.level
+      : b.kind === 'quote' ? 'blockquote' : 'p');
+    fillInline(box, b.text);
+    return box;
+  }
+
+  // Fill el with the card's text: the blocks its lines fall into, and inside each
+  // of them the chips, addresses and marked runs its characters ask for. The
+  // stored text keeps every mark it was typed with, so editing a card shows them
+  // again. Built from text nodes throughout, so card text never passes through
+  // innerHTML.
   function renderText(el, s) {
     el.textContent = '';
+    blocks(s).forEach(function (b) { el.appendChild(makeBlock(b)); });
+  }
+
+  // One block's worth of text, each code segment as a <code> chip, each address
+  // as a link, and each marked run as the tag it named.
+  function fillInline(el, s) {
     inlineSpans(s).forEach(function (seg) {
       if (seg.href) {
         var a = document.createElement('a');
@@ -1646,6 +1797,10 @@
         var code = document.createElement('code');
         code.textContent = seg.text;
         el.appendChild(code);
+      } else if (seg.tag) {
+        var mark = document.createElement(seg.tag);
+        mark.textContent = seg.text;
+        el.appendChild(mark);
       } else {
         el.appendChild(document.createTextNode(seg.text));
       }

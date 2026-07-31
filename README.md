@@ -33,6 +33,17 @@ Open `index.html` directly. A `file://` address works.
   card. A link opens in a new tab. A click on a link follows the link and does
   not open the card for editing. When a link is all that a card says, use **Edit**
   in the list to open the card.
+- **Markdown**: the board reads some of the Markdown marks. Inside a line,
+  `**bold**`, `*italic*` and `~~struck through~~` mark the words between them.
+  Use asterisks for bold and italic. An underscore is a character, not a mark, so
+  a name such as `max_speed` stays as it is. At the head of a line, `#` to
+  `######` make a heading, `>` makes a quote, and `-`, `*` or `+` make a list.
+  `1.` or `1)` makes a numbered list, which counts from the first number you
+  write. Three or more of `-`, `*` or `_` alone on a line draw a rule across the
+  card. A blank line closes a paragraph, a quote or a list. A mark must hold text
+  and stay on one line. The board reads no other Markdown. There are no tables, no
+  images and no fenced code blocks. The card keeps the marks you typed, so you see
+  them again when you edit the card.
 - **Notes** opens the notes of the card, in a small window in the middle of the
   page. Notes are cards themselves. They take the same editing, backticks, links,
   dates and dragging to reorder. They have a list of their own, with a delete and
