@@ -78,6 +78,9 @@ Open `index.html` directly. A `file://` address works.
 - **Palette** changes the colours of Backlog, Now and Accomplished. You select a
   family, then a combination from that family. The panel stays open while you try
   the combinations. A click outside or Escape closes the panel.
+  - Click the combination that is on the board again and its three colours turn
+    by one place. Three clicks give the order in the book again. The bars in the
+    panel show the order that the board has.
 - **Export** downloads the whole board as JSON. **Import** reads a board or a
   single card.
 
@@ -106,3 +109,7 @@ The colour combinations come from Sanzo Wada's *A Dictionary of Color
 Combinations*. The board groups the combinations into families by their main
 colour, and keeps three colours from each combination. Backlog, Now and
 Accomplished get one colour each. The palette gives no colour to Waiting for.
+
+The book holds 108 combinations of four colours. 94 of them are here, in ten
+families. The other 14 are not, because no three of their colours stay apart
+at the strength the columns use, so two columns would read as one.

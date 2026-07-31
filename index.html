@@ -890,6 +890,9 @@
 
   var STORE = 'personal.board.v1';
   var PAL_KEY = 'personal.palette.v1';
+  // how many places the colours of that palette are turned. Its own key, so a
+  // board written before turning existed still opens
+  var TURN_KEY = 'personal.palturn.v1';
   // earlier names for the same two things, newest first. readCarried() moves
   // the first one it finds
   var OLD_STORES = ['todo.board.v1', 'backlog.board.v1'];
@@ -2118,11 +2121,12 @@
   // of Seigensha's Color Scheme Dictionary. The numbers are the book's own. The
   // hex values come from the mattdesl/dictionary-of-colour-combinations
   // digitisation of the CMYK in the book.
-  // The board has three columns, so each entry keeps the first three of the four
-  // colours in the book. The dropped colour is the one that the removed Cut
-  // column used. The cut is safe for the panel. In all 38 combinations, the two
-  // colours in the name of the combination and the main colour of its family are
-  // within those first three.
+  // The board has three columns, so each entry keeps three of the four colours in
+  // the book. The dropped colour is the one that keeps the other three furthest
+  // apart on the page. 94 of the 108 four-colour combinations are here. The other
+  // 14 are not, because no three of their colours stay apart at this tint: two of
+  // the columns would read as one. The two colours in the name of an entry are
+  // the second and third of its three.
   // Each column takes its colour at 12% over ivory, the same as the default.
   // The colours go to the columns marked `palette` in COLUMNS, in the order they
   // appear there. Waiting for takes none of them.
@@ -2182,7 +2186,11 @@
       { id: 'w311', name: "Pompeian Red & Light Green Yellow", num: 311,
         colors: ['#FDBF68', '#AB2439', '#C7D14F'],
         lead: '#C7D14F',
-        names: 'Cream Yellow · Pompeian Red · Light Green Yellow' }
+        names: 'Cream Yellow · Pompeian Red · Light Green Yellow' },
+      { id: 'w317', name: "Lemon Yellow & Turquoise Green", num: 317,
+        colors: ['#FCC79B', '#F8ED43', '#B5DECC'],
+        lead: '#F8ED43',
+        names: 'Light Pinkish Cinnamon · Lemon Yellow · Turquoise Green' }
     ] },
     { id: 'ochre', name: 'Ochre', note: 'led by an orange or gold', palettes: [
       { id: 'w286', name: "Orange Yellow & Peacock Blue", num: 286,
@@ -2216,7 +2224,51 @@
       { id: 'w335', name: "Vandyke Red & Slate Color", num: 335,
         colors: ['#F99D1B', '#82241F', '#34454C'],
         lead: '#F99D1B',
-        names: 'Yellow Orange · Vandyke Red · Slate Color' }
+        names: 'Yellow Orange · Vandyke Red · Slate Color' },
+      { id: 'w243', name: "Raw Sienna & Ivory Buff", num: 243,
+        colors: ['#34454C', '#BB7125', '#EBD3A2'],
+        lead: '#BB7125',
+        names: 'Slate Color · Raw Sienna · Ivory Buff' },
+      { id: 'w255', name: "Raw Sienna & Calamine Blue", num: 255,
+        colors: ['#111314', '#BB7125', '#78CDD0'],
+        lead: '#BB7125',
+        names: 'Black · Raw Sienna · Calamine Blue' },
+      { id: 'w272', name: "Orange & Pale Lemon Yellow", num: 272,
+        colors: ['#97ACC8', '#F37420', '#FFEFAE'],
+        lead: '#F37420',
+        names: 'Salvia Blue · Orange · Pale Lemon Yellow' },
+      { id: 'w279', name: "Raw Sienna & Ecru", num: 279,
+        colors: ['#12354E', '#BB7125', '#C2AE93'],
+        lead: '#BB7125',
+        names: 'Dark Tyrian Blue · Raw Sienna · Ecru' },
+      { id: 'w288', name: "Yellow Orange & Taupe Brown", num: 288,
+        colors: ['#644B1E', '#F99D1B', '#7A4456'],
+        lead: '#F99D1B',
+        names: 'Sepia · Yellow Orange · Taupe Brown' },
+      { id: 'w293', name: "Raw Sienna & Turquoise Green", num: 293,
+        colors: ['#489B6E', '#BB7125', '#B5DECC'],
+        lead: '#BB7125',
+        names: 'Green · Raw Sienna · Turquoise Green' },
+      { id: 'w319', name: "Yellow Orange & Apricot Yellow", num: 319,
+        colors: ['#437742', '#F99D1B', '#FFDD00'],
+        lead: '#F99D1B',
+        names: 'Cossack Green · Yellow Orange · Apricot Yellow' },
+      { id: 'w328', name: "Apricot Orange & Light Porcelain Green", num: 328,
+        colors: ['#4B3317', '#F68C50', '#00908A'],
+        lead: '#F68C50',
+        names: 'Vandyke Brown · Apricot Orange · Light Porcelain Green' },
+      { id: 'w339', name: "English Red & Light Glaucous Blue", num: 339,
+        colors: ['#40456A', '#D96629', '#A5C8D1'],
+        lead: '#D96629',
+        names: 'Violet Blue · English Red · Light Glaucous Blue' },
+      { id: 'w342', name: "Cream Yellow & Corinthian Pink", num: 342,
+        colors: ['#253122', '#FDBF68', '#F8B6BA'],
+        lead: '#FDBF68',
+        names: 'Deep Slate Olive · Cream Yellow · Corinthian Pink' },
+      { id: 'w343', name: "Burnt Sienna & Ivory Buff", num: 343,
+        colors: ['#064F6E', '#AE5224', '#EBD3A2'],
+        lead: '#AE5224',
+        names: 'Vandar Poel’s Blue · Burnt Sienna · Ivory Buff' }
     ] },
     { id: 'ember', name: 'Ember', note: 'led by a red', palettes: [
       { id: 'w257', name: "Spectrum Red & Orange Yellow", num: 257,
@@ -2238,7 +2290,55 @@
       { id: 'w308', name: "Scarlet & Cobalt Green", num: 308,
         colors: ['#D96629', '#CB2F43', '#96D1AA'],
         lead: '#D96629',
-        names: 'English Red · Scarlet · Cobalt Green' }
+        names: 'English Red · Scarlet · Cobalt Green' },
+      { id: 'w241', name: "Red Orange & Pale Lemon Yellow", num: 241,
+        colors: ['#547076', '#DD4027', '#FFEFAE'],
+        lead: '#DD4027',
+        names: 'Dark Medici Blue · Red Orange · Pale Lemon Yellow' },
+      { id: 'w246', name: "Brick Red & Cinnamon Buff", num: 246,
+        colors: ['#F8B6BA', '#A84222', '#FDC57E'],
+        lead: '#A84222',
+        names: 'Corinthian Pink · Brick Red · Cinnamon Buff' },
+      { id: 'w264', name: "Red Orange & Corinthian Pink", num: 264,
+        colors: ['#0093A5', '#DD4027', '#F8B6BA'],
+        lead: '#DD4027',
+        names: 'Cerulian Blue · Red Orange · Corinthian Pink' },
+      { id: 'w266', name: "Spectrum Red & Rainette Green", num: 266,
+        colors: ['#00978D', '#E31F26', '#8FA071'],
+        lead: '#E31F26',
+        names: 'Benzol Green · Spectrum Red · Rainette Green' },
+      { id: 'w274', name: "Peach Red & Dark Citrine", num: 274,
+        colors: ['#9A72AA', '#F15A30', '#8B835B'],
+        lead: '#F15A30',
+        names: 'Light Mauve · Peach Red · Dark Citrine' },
+      { id: 'w280', name: "Eugenia Red B & Lincoln Green", num: 280,
+        colors: ['#7A4456', '#DA525D', '#555832'],
+        lead: '#DA525D',
+        names: 'Taupe Brown · Eugenia Red B · Lincoln Green' },
+      { id: 'w285', name: "Peach Red & Turquoise Green", num: 285,
+        colors: ['#B59392', '#F15A30', '#B5DECC'],
+        lead: '#F15A30',
+        names: 'Light Brown Drab · Peach Red · Turquoise Green' },
+      { id: 'w298', name: "Peach Red & Lemon Yellow", num: 298,
+        colors: ['#111314', '#F15A30', '#F8ED43'],
+        lead: '#F15A30',
+        names: 'Black · Peach Red · Lemon Yellow' },
+      { id: 'w301', name: "Spectrum Red & Aconite Violet", num: 301,
+        colors: ['#8FA071', '#E31F26', '#A36AA5'],
+        lead: '#E31F26',
+        names: 'Rainette Green · Spectrum Red · Aconite Violet' },
+      { id: 'w322', name: "Spectrum Red & Eupatorium Purple", num: 322,
+        colors: ['#A84222', '#E31F26', '#BF5892'],
+        lead: '#E31F26',
+        names: 'Brick Red · Spectrum Red · Eupatorium Purple' },
+      { id: 'w325', name: "Eugenia Red B & Yellow Ocher", num: 325,
+        colors: ['#112F2C', '#DA525D', '#E2B540'],
+        lead: '#DA525D',
+        names: 'Deep Slate Green · Eugenia Red B · Yellow Ocher' },
+      { id: 'w332', name: "Scarlet & Coral Red", num: 332,
+        colors: ['#253122', '#CB2F43', '#F58E84'],
+        lead: '#CB2F43',
+        names: 'Deep Slate Olive · Scarlet · Coral Red' }
     ] },
     { id: 'rose', name: 'Rose', note: 'led by a crimson or rose', palettes: [
       { id: 'w299', name: "Indian Lake & Oil Green", num: 299,
@@ -2252,7 +2352,117 @@
       { id: 'w262', name: "Eugenia Red B & Cossack Green", num: 262,
         colors: ['#B09F36', '#DA525D', '#437742'],
         lead: '#DA525D',
-        names: 'Citrine · Eugenia Red B · Cossack Green' }
+        names: 'Citrine · Eugenia Red B · Cossack Green' },
+      { id: 'w261', name: "Red & Pale Lemon Yellow", num: 261,
+        colors: ['#78CDD0', '#A72144', '#FFEFAE'],
+        lead: '#A72144',
+        names: 'Calamine Blue · Red · Pale Lemon Yellow' },
+      { id: 'w273', name: "Pansy Purple & Hermosa Pink", num: 273,
+        colors: ['#A36752', '#7D133A', '#F9C1CE'],
+        lead: '#7D133A',
+        names: 'Sudan Brown · Pansy Purple · Hermosa Pink' },
+      { id: 'w287', name: "Eosine Pink & Calamine Blue", num: 287,
+        colors: ['#CAB356', '#F37F94', '#78CDD0'],
+        lead: '#F37F94',
+        names: 'Pyrite Yellow · Eosine Pink · Calamine Blue' },
+      { id: 'w327', name: "Eosine Pink & Ecru", num: 327,
+        colors: ['#BB7125', '#F37F94', '#C2AE93'],
+        lead: '#F37F94',
+        names: 'Raw Sienna · Eosine Pink · Ecru' },
+      { id: 'w331', name: "Indian Lake & Light Mauve", num: 331,
+        colors: ['#1E0E3F', '#C53C69', '#9A72AA'],
+        lead: '#C53C69',
+        names: 'Dull Violet Black · Indian Lake · Light Mauve' },
+      { id: 'w336', name: "Eosine Pink & Pale Lemon Yellow", num: 336,
+        colors: ['#42533E', '#F37F94', '#FFEFAE'],
+        lead: '#F37F94',
+        names: 'Blackish Olive · Eosine Pink · Pale Lemon Yellow' },
+      { id: 'w346', name: "Rosolanc Purple & Light Green Yellow", num: 346,
+        colors: ['#6D7E77', '#B73F74', '#C7D14F'],
+        lead: '#B73F74',
+        names: 'Andover Green · Rosolanc Purple · Light Green Yellow' }
+    ] },
+    { id: 'iris', name: 'Iris', note: 'led by a violet', palettes: [
+      { id: 'w277', name: "Dull Violet Black & Spinel Red", num: 277,
+        colors: ['#837E31', '#1E0E3F', '#F27291'],
+        lead: '#1E0E3F',
+        names: 'Olive · Dull Violet Black · Spinel Red' },
+      { id: 'w307', name: "Cotinga Purple & Grayish Lavender A", num: 307,
+        colors: ['#CC1236', '#501345', '#B5B1D8'],
+        lead: '#501345',
+        names: 'Carmine · Cotinga Purple · Grayish Lavender A' },
+      { id: 'w316', name: "Violet & Dull Viridian Green", num: 316,
+        colors: ['#82241F', '#4F4086', '#009465'],
+        lead: '#4F4086',
+        names: 'Vandyke Red · Violet · Dull Viridian Green' },
+      { id: 'w345', name: "Blue Violet & Venice Green", num: 345,
+        colors: ['#793327', '#6450A1', '#62C6BF'],
+        lead: '#6450A1',
+        names: 'Hay’s Russet · Blue Violet · Venice Green' },
+      { id: 'w348', name: "Cotinga Purple & Olive Buff", num: 348,
+        colors: ['#253122', '#501345', '#C1C494'],
+        lead: '#501345',
+        names: 'Deep Slate Olive · Cotinga Purple · Olive Buff' }
+    ] },
+    { id: 'indigo', name: 'Indigo', note: 'led by a blue', palettes: [
+      { id: 'w244', name: "Antwarp Blue & Light Brown Drab", num: 244,
+        colors: ['#C56127', '#007190', '#B59392'],
+        lead: '#007190',
+        names: 'Vinaceous Tawny · Antwarp Blue · Light Brown Drab' },
+      { id: 'w252', name: "Green Blue & Sulphine Yellow", num: 252,
+        colors: ['#DA525D', '#099197', '#C19F2C'],
+        lead: '#099197',
+        names: 'Eugenia Red B · Green Blue · Sulphine Yellow' },
+      { id: 'w258', name: "Antwarp Blue & Olive", num: 258,
+        colors: ['#802626', '#007190', '#837E31'],
+        lead: '#007190',
+        names: 'Pale Burnt Lake · Antwarp Blue · Olive' },
+      { id: 'w259', name: "Helvetia Blue & Lemon Yellow", num: 259,
+        colors: ['#A1A39A', '#005B8D', '#F8ED43'],
+        lead: '#005B8D',
+        names: 'Warm Gray · Helvetia Blue · Lemon Yellow' },
+      { id: 'w267', name: "Blue & Yellow Orange", num: 267,
+        colors: ['#00978D', '#006EB8', '#F99D1B'],
+        lead: '#006EB8',
+        names: 'Benzol Green · Blue · Yellow Orange' },
+      { id: 'w302', name: "Antwarp Blue & Cream Yellow", num: 302,
+        colors: ['#C2AE93', '#007190', '#FDBF68'],
+        lead: '#007190',
+        names: 'Ecru · Antwarp Blue · Cream Yellow' },
+      { id: 'w314', name: "Deep Lyons Blue & Eosine Pink", num: 314,
+        colors: ['#793327', '#1C4286', '#F37F94'],
+        lead: '#1C4286',
+        names: 'Hay’s Russet · Deep Lyons Blue · Eosine Pink' },
+      { id: 'w330', name: "Green Blue & Olive Buff", num: 330,
+        colors: ['#97ACC8', '#099197', '#C1C494'],
+        lead: '#099197',
+        names: 'Salvia Blue · Green Blue · Olive Buff' },
+      { id: 'w334', name: "Antwarp Blue & Seashell Pink", num: 334,
+        colors: ['#837E31', '#007190', '#FDD4BD'],
+        lead: '#007190',
+        names: 'Olive · Antwarp Blue · Seashell Pink' }
+    ] },
+    { id: 'moss', name: 'Moss', note: 'led by a green', palettes: [
+      { id: 'w245', name: "Oil Green & Carmine Red", num: 245,
+        colors: ['#12354E', '#819238', '#A62C37'],
+        lead: '#819238',
+        names: 'Dark Tyrian Blue · Oil Green · Carmine Red' },
+      { id: 'w260', name: "Sea Green & Glaucous Green", num: 260,
+        colors: ['#D46D7A', '#00B49B', '#B4CDC2'],
+        lead: '#00B49B',
+        names: 'Old Rose · Sea Green · Glaucous Green' },
+      { id: 'w281', name: "Benzol Green & Pale Lemon Yellow", num: 281,
+        colors: ['#96D1AA', '#00978D', '#FFEFAE'],
+        lead: '#00978D',
+        names: 'Cobalt Green · Benzol Green · Pale Lemon Yellow' },
+      { id: 'w291', name: "Sea Green & Light Green Yellow", num: 291,
+        colors: ['#96D1AA', '#00B49B', '#C7D14F'],
+        lead: '#00B49B',
+        names: 'Cobalt Green · Sea Green · Light Green Yellow' },
+      { id: 'w306', name: "Benzol Green & Lemon Yellow", num: 306,
+        colors: ['#BCE4E5', '#00978D', '#F8ED43'],
+        lead: '#00978D',
+        names: 'Nile Blue · Benzol Green · Lemon Yellow' }
     ] },
     { id: 'drab', name: 'Drab', note: 'muted, warm earth', palettes: [
       { id: 'w340', name: "Peach Red & Sea Green", num: 340,
@@ -2282,7 +2492,15 @@
       { id: 'w320', name: "Coral Red & Light Glaucous Blue", num: 320,
         colors: ['#819238', '#F58E84', '#A5C8D1'],
         lead: '#819238',
-        names: 'Oil Green · Coral Red · Light Glaucous Blue' }
+        names: 'Oil Green · Coral Red · Light Glaucous Blue' },
+      { id: 'w310', name: "Pinkish Cinnamon & Olive", num: 310,
+        colors: ['#253122', '#EEB480', '#837E31'],
+        lead: '#EEB480',
+        names: 'Deep Slate Olive · Pinkish Cinnamon · Olive' },
+      { id: 'w323', name: "Madder Brown & Citron Yellow", num: 323,
+        colors: ['#111314', '#762C19', '#B2B73E'],
+        lead: '#762C19',
+        names: 'Black · Madder Brown · Citron Yellow' }
     ] },
     { id: 'ash', name: 'Ash', note: 'muted, cool grey', palettes: [
       { id: 'w271', name: "Pomegranite Purple & Deep Slate Green", num: 271,
@@ -2300,7 +2518,23 @@
       { id: 'w324', name: "Pompeian Red & Neutral Gray", num: 324,
         colors: ['#A36AA5', '#AB2439', '#B6BFC1'],
         lead: '#AB2439',
-        names: 'Aconite Violet · Pompeian Red · Neutral Gray' }
+        names: 'Aconite Violet · Pompeian Red · Neutral Gray' },
+      { id: 'w290', name: "Cobalt Green & Pale Lemon Yellow", num: 290,
+        colors: ['#6D4145', '#96D1AA', '#FFEFAE'],
+        lead: '#96D1AA',
+        names: 'Vistoris Lake · Cobalt Green · Pale Lemon Yellow' },
+      { id: 'w294', name: "Cossack Green & Cream Yellow", num: 294,
+        colors: ['#97ACC8', '#437742', '#FDBF68'],
+        lead: '#437742',
+        names: 'Salvia Blue · Cossack Green · Cream Yellow' },
+      { id: 'w300', name: "Calamine Blue & Cream Yellow", num: 300,
+        colors: ['#F48067', '#78CDD0', '#FDBF68'],
+        lead: '#78CDD0',
+        names: 'Grenadine Pink · Calamine Blue · Cream Yellow' },
+      { id: 'w341', name: "Cossack Green & Light Glaucous Blue", num: 341,
+        colors: ['#F48067', '#437742', '#A5C8D1'],
+        lead: '#437742',
+        names: 'Grenadine Pink · Cossack Green · Light Glaucous Blue' }
     ] }
   ];
 
@@ -2354,23 +2588,42 @@
     });
   }
 
-  function applyPalette(id) {
+  // a list turned by n places, so that turned(list, 1) puts the second item
+  // first. The three colours and the three names turn together
+  function turned(list, n) {
+    return list.map(function (_, i) { return list[(i + n) % list.length]; });
+  }
+
+  // The colours of a palette as the board has them now. Only the palette on the
+  // board is turned. The rest of the panel shows the order in the book
+  function colorsOf(p) {
+    return p.id === currentPal ? turned(p.colors, palTurn) : p.colors;
+  }
+  function namesOf(p) {
+    return turned(p.names.split(' · '), p.id === currentPal ? palTurn : 0).join(' · ');
+  }
+
+  function applyPalette(id, turn) {
     var p = pick(PALETTES, function (x) { return x.id === id; }) || PALETTES[0];
     currentPal = p.id;
+    palTurn = ((turn || 0) % p.colors.length + p.colors.length) % p.colors.length;
+    var colors = colorsOf(p);
     PAL_COLUMNS.forEach(function (c, i) {
-      tone[c.key] = { fill: tintOf(p.colors[i]), rule: p.colors[i] };
+      tone[c.key] = { fill: tintOf(colors[i]), rule: colors[i] };
     });
     KEYS.forEach(function (k) { paint(views[k].el, k); });
     // the notes window uses one of these colours too, if it is open
     redrawNotes();
-    setFavicon(p.colors);
+    setFavicon(colors);
     lsSet(PAL_KEY, p.id);
+    lsSet(TURN_KEY, String(palTurn));
   }
 
   var palPanel = document.getElementById('palettePanel');
   var palBtn = document.getElementById('paletteBtn');
   var palView = null;      // null = the family list, otherwise a family id
   var currentPal = 'studio';
+  var palTurn = 0;         // places the colours of currentPal are turned by
 
   // One button shape serves the two views of the panel: a name with a number to
   // its right, a strip of colour below it, and a line of small print below that.
@@ -2390,9 +2643,9 @@
   }
 
   // one bar for each column that the palette colours, in the tint of that column
-  function palBars(p) {
+  function palBars(colors) {
     var bars = el('span', 'pal-bars');
-    p.colors.forEach(function (c) {
+    colors.forEach(function (c) {
       var bar = el('span', 'pal-bar');
       bar.style.setProperty('--r', c);
       bar.style.setProperty('--t', tintOf(c));
@@ -2421,7 +2674,7 @@
   }
 
   function renderFamilies() {
-    palPanel.appendChild(el('div', 'cap', 'Sanzo Wada · 38 combinations, trimmed to three'));
+    palPanel.appendChild(el('div', 'cap', 'Sanzo Wada · 94 combinations, trimmed to three'));
     FAMILIES.forEach(function (f) {
       var b = palButton({
         name: f.name,
@@ -2446,26 +2699,38 @@
       renderPanel();
     });
     palPanel.appendChild(back);
+    palPanel.appendChild(el('div', 'cap', 'Click the one on the board again to turn its colours'));
 
     f.palettes.forEach(function (p) {
       var b = palButton({
         name: p.name,
         num: p.num ? 'no. ' + p.num : 'default',
-        strip: palBars(p),
-        note: p.names,
+        strip: palBars(colorsOf(p)),
+        note: namesOf(p),
         onClick: function () {
-          applyPalette(p.id);
-          // Stay open, so you can try several palettes in a row. The panel closes
-          // only on a click outside it or on Escape. Move the marker in place. A
-          // new render would lose the scroll position.
-          palPanel.querySelectorAll('.pal').forEach(function (other) {
-            other.classList.toggle('on', other.dataset.pal === p.id);
-          });
+          // A click on the palette that is already on the board turns its three
+          // colours by one place. Three clicks give the order in the book again
+          applyPalette(p.id, p.id === currentPal ? palTurn + 1 : 0);
+          markPalettes();
         }
       });
       b.dataset.pal = p.id;
       if (p.id === currentPal) b.classList.add('on');
       palPanel.appendChild(b);
+    });
+  }
+
+  // Stay open, so you can try several palettes in a row, and turn the one that
+  // is on. The panel closes only on a click outside it or on Escape. The marker
+  // and the bars move in place, because a new render would lose the scroll
+  // position.
+  function markPalettes() {
+    palPanel.querySelectorAll('.pal').forEach(function (b) {
+      var p = pick(PALETTES, function (x) { return x.id === b.dataset.pal; });
+      if (!p) return;
+      b.classList.toggle('on', p.id === currentPal);
+      b.replaceChild(palBars(colorsOf(p)), b.querySelector('.pal-bars'));
+      b.querySelector('.pal-cols').textContent = namesOf(p);
     });
   }
 
@@ -2500,7 +2765,8 @@
   });
 
   // applyPalette writes the choice back to the current key
-  applyPalette(readCarried(PAL_KEY, OLD_PAL_KEYS) || 'studio');
+  applyPalette(readCarried(PAL_KEY, OLD_PAL_KEYS) || 'studio',
+    Number(lsGet(TURN_KEY)) || 0);
 
   // keep two tabs of the same board in sync
   window.addEventListener('storage', function (e) {
