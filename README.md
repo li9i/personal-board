@@ -8,7 +8,9 @@ Open `index.html` in a browser.
 separates this column from the other three. No palette gives this column a
 colour. It uses the page background. Its cards are white and its text is grey.
 
-![The board with a few cards in each column](doc/board.png)
+![The board with a few cards in each column. The cards show a heading and a
+list, a code chip, a fenced block, a link, and a card with one
+note](doc/board.png)
 
 ## Use
 
