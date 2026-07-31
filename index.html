@@ -685,6 +685,10 @@
     top: -3px;
     border-top: 1px solid var(--col-rule);
   }
+  /* The menu of a note offers the one row. A line above it would separate it from
+     nothing, and the space above it would be space the panel does not need. */
+  .card-menu button.del:first-child { margin-top: 0; }
+  .card-menu button.del:first-child::before { content: none; }
   /* A drawn mark and not a character, so it keeps the height of the row and not
      the height of the font. It takes the colour of the row, which makes the mark
      on the delete row as red as the word next to it. Its size comes from that
@@ -898,7 +902,6 @@
   // never a character that the font of the reader can change. Each mark takes
   // the colour of the row it sits in, so nothing here sets a colour.
   var MARKS = {
-    pencil: 'M17 3a2.83 2.83 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z M15 5l4 4',
     page: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z '
         + 'M14 2v6h6 M9 13h6 M9 17h6',
     send: 'M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8 M16 6l-4-4-4 4 M12 2v13',
@@ -1507,14 +1510,10 @@
       bot.appendChild(mark);
     }
 
-    // The menu offers an edit, and so does a double-click on the card. One click
-    // is not enough: the words of a card hold links, and that click belongs to
-    // them. A box over the text on every read would be in the way as well.
+    // The menu holds the actions that open something else. An edit stays on the
+    // card, and a double-click is the way to it.
     var actions = el('div', 'card-actions');
-    actions.appendChild(makeMenuButton(card, [
-      { icon: 'pencil', title: 'Edit',
-        onClick: function () { editItem(card, text, item, spec.redraw); } }
-    ].concat(spec.buttons)));
+    actions.appendChild(makeMenuButton(card, spec.buttons));
     bot.appendChild(actions);
 
     card.appendChild(text);
@@ -1536,8 +1535,8 @@
   // does a move of the focus out of the box. Escape drops the change, and an
   // empty box counts as no change.
   function editItem(card, text, item, redraw) {
-    // the Edit action outlives the text it opens, so a second press has nothing
-    // left to replace
+    // the box has taken the place of the text already, so there is nothing left
+    // here to replace
     if (text.parentNode !== card) return;
     var ta = el('textarea');
     ta.value = item.text;
