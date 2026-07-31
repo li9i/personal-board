@@ -4,8 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Personal Board</title>
-<!-- drawn by setFavicon() from the palette in force, and redrawn when it changes,
-     so the colours are not written down twice -->
+<!-- setFavicon() draws this from the current palette, and draws it again when the
+     palette changes, so there is one copy of the colours -->
 <link id="favicon" rel="icon" type="image/svg+xml" />
 <style>
   :root {
@@ -13,22 +13,22 @@
     --slate: #141413;
     --clay: #D97757;
     --clay-d: #B85C3E;
-    /* the same clay a step darker again: --clay-d clears 4.5:1 as ink on white by
-       so little that any tint behind it costs it the ratio, and this one is for
-       red words that come to rest on a tint rather than on white */
+    /* A darker clay again. --clay-d reaches 4.5:1 as text on white with very
+       little margin, so any tint behind it costs it the ratio. This colour is
+       for red words that come to rest on a tint and not on white. */
     --clay-dd: #A85033;
     --oat: #E3DACC;
     --olive: #788C5D;
     --gray-50: #F0EEE6;
     --gray-200: #D1CFC5;
     --gray-500: #87867F;
-    --gray-600: #63625C;   /* text on a column tint, never under 4.5:1 on any of them */
+    --gray-600: #63625C;   /* text on a column tint, never less than 4.5:1 on any tint */
     --gray-800: #3D3D3A;
     --white: #ffffff;
 
-    /* Each column carries its own --fill and --rule, written onto it by the
-       palette picker from the COLUMNS list. Nothing here needs to know how many
-       columns there are or what they are called. */
+    /* Each column has its own --fill and --rule. The palette panel writes them
+       onto the column from the COLUMNS list. This file does not need the number
+       of the columns or their names. */
     --col-rule: rgba(20, 20, 19, 0.07);
     --serif: ui-serif, Georgia, "Times New Roman", serif;
     --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -49,9 +49,9 @@
     padding: 48px 32px 64px;
   }
 
-  /* ---------- shapes worn in more than one place ----------
-     Each of these sets what the shape has in common; the sections below add
-     what is particular to one use of it. */
+  /* ---------- shapes used in more than one place ----------
+     Each rule below sets what the shape has in common. The sections after this
+     one add what is different for one use of it. */
 
   /* a pill: the toolbar buttons, Add, the yes of a confirmation, Undo */
   button.ghost,
@@ -65,7 +65,7 @@
     cursor: pointer;
   }
 
-  /* a word on its own, grey until it is wanted */
+  /* a word on its own. It is grey until the pointer moves over it */
   .composer .cancel,
   .clear-ask .no,
   .clearbtn {
@@ -102,7 +102,7 @@
   .card-actions button:hover,
   .notes-close:hover { border-color: var(--gray-500); color: var(--slate); }
 
-  /* a box to type into: both composers, and a card opened for editing */
+  /* a box for text: the two composers, and a card that is open for an edit */
   .composer textarea,
   .card textarea {
     width: 100%;
@@ -283,9 +283,9 @@
     gap: 16px;
     align-items: start;
   }
-  /* Waiting for holds what is not yours to move, so it is set off from the three
-     doing-columns rather than sitting flush with them. A gap-width hairline,
-     faded at both ends, stretched to the tallest column in the row. */
+  /* Waiting for holds the cards that you cannot move yourself, so a hairline
+     separates it from the other three columns. The hairline is as wide as the
+     gap. It fades at each end and is as tall as the tallest column in the row. */
   .col-divider {
     align-self: stretch;
     width: 1px;
@@ -297,11 +297,11 @@
       transparent 100%
     );
   }
-  /* A column is filled with its own colour and capped with a heavier rule in it,
-     and it may also name the colour its cards, their text and its own heading
-     wear. All of it is written onto the element as custom properties, so the
-     notes window can dress itself as the column its card sits in by taking the
-     same set. */
+  /* A column has its own fill colour and a thicker rule at the top in the same
+     colour. It can also set the colour of its cards, of their text and of its
+     own heading. All of these go onto the element as custom properties. The
+     notes window reads the same properties, so it can show the colours of the
+     column that holds its card. */
   .col {
     background: var(--fill, var(--ivory));
     border: 1.5px solid var(--gray-200);
@@ -315,7 +315,7 @@
   .col.dragover {
     outline: 2px dashed var(--clay);
     outline-offset: -6px;
-    /* layered over the fill so the column keeps its own colour while dragging */
+    /* layered over the fill, so the column keeps its own colour during a drag */
     background-image: linear-gradient(rgba(217, 119, 87, 0.10), rgba(217, 119, 87, 0.10));
   }
   .col-head {
@@ -328,7 +328,7 @@
   /* the column's name, and the same name again at the head of the notes window */
   .col-head h2,
   .notes-col {
-    /* full-strength ink unless the column asks to be spoken more softly */
+    /* the full text colour, unless the column sets a lighter one */
     color: var(--head, var(--slate));
   }
   .col-head h2 {
@@ -362,7 +362,7 @@
   .empty {
     font-family: var(--mono);
     font-size: 11px;
-    /* purely decorative — an empty column already says it is empty */
+    /* decoration only. An empty column already shows that it is empty */
     color: var(--gray-500);
     text-align: center;
     padding: 18px 6px;
@@ -436,16 +436,16 @@
     font-size: 11px;
     color: var(--gray-800);
   }
-  /* outlined, not filled: --clay-d reaches 4.5:1 as ink on white, but only
-     4.3:1 as a background under ivory text */
+  /* This button has an outline and no fill. --clay-d reaches 4.5:1 as text on
+     white, but only 4.3:1 as a background below ivory text. */
   .clear-ask .yes {
     margin-left: auto;
     background: var(--white);
     color: var(--clay-d);
     border: 1.5px solid var(--clay-d);
   }
-  /* thickens the ring rather than tinting the fill — any tint behind --clay-d
-     drops it back under 4.5:1 */
+  /* The ring gets thicker and the fill stays clear. Any tint behind --clay-d
+     takes it back to less than 4.5:1. */
   .clear-ask .yes:hover { box-shadow: 0 0 0 1.5px var(--clay-d); }
 
   /* ---------- card ---------- */
@@ -456,8 +456,8 @@
     border-radius: 8px;
     padding: 10px 11px 8px;
     cursor: grab;
-    /* a card separates from the fill behind it by 1.3:1 at the very most, and by
-       1.04:1 on Waiting for, so it gets a lift as well as a border */
+    /* The contrast between a card and the fill behind it is 1.3:1 at the most,
+       and 1.04:1 on Waiting for. A shadow helps the border to show the edge. */
     box-shadow: 0 1px 2px rgba(20,20,19,0.05);
     transition: border-color 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
   }
@@ -481,13 +481,13 @@
     border: 1px solid var(--gray-200);
     border-radius: 4px;
     padding: 0 3px;
-    /* a chip is taller than the run of text it sits in, so hold its own line
-       tight to stop it prising the card's lines apart */
+    /* A chip is taller than the run of text around it. Its own line height
+       stays tight, so it does not push the lines of the card apart. */
     line-height: 1.15;
   }
-  /* An address is marked by its underline rather than by a colour of its own, so
-     it keeps whatever ink the column set for its text and reads at full strength
-     wherever card text goes — a white card, and the notes window's tinted line. */
+  /* An underline marks an address, and not a colour of its own. So the address
+     keeps the text colour that the column set. It stays readable everywhere card
+     text goes: a white card, and the tinted line in the notes window. */
   .ctext a {
     color: inherit;
     cursor: pointer;
@@ -497,29 +497,29 @@
     /* an address is one long word and a column is narrow */
     overflow-wrap: anywhere;
   }
-  /* the underline takes the clay and thickens, rather than the words taking it:
-     --clay-d is 4.5:1 as ink on a white card but only 3.4:1 on the darkest fill
-     a palette makes, and that fill is what the notes window's line sits on. As a
-     line rather than a letter it has 3:1 to clear, and clears it on all of them. */
+  /* The underline takes the clay colour and gets thicker, and the words keep
+     their own colour. --clay-d is 4.5:1 as text on a white card, but only 3.4:1
+     on the darkest fill that a palette makes. The line in the notes window sits
+     on that fill. A line needs only 3:1, and it reaches that on every fill. */
   .ctext a:hover {
     text-decoration-color: var(--clay-d);
     text-decoration-thickness: 2px;
   }
-  /* the darker clay, as the underline uses: this ring is the only one on the
-     board that can come to rest on a column's fill rather than on white, and
-     --clay itself is 2.3:1 on the darkest of those */
+  /* The darker clay, the same colour as the underline. This is the only ring on
+     the board that can come to rest on the fill of a column and not on white.
+     --clay is only 2.3:1 on the darkest of those fills. */
   .ctext a:focus-visible {
     outline: 2px solid var(--clay-d);
     outline-offset: 1px;
     border-radius: 2px;
   }
-  /* The blocks a card's lines fall into. Every block sits flush with the card and
-     a gap only ever falls between two of them, so the first and last lines of a
-     card keep the padding the card set and nothing else. */
+  /* The blocks that hold the lines of a card. Every block is flush with the
+     card, and a gap comes only between two blocks. So the first and last lines
+     of a card keep the padding that the card set, and nothing more. */
   .ctext > * { margin: 0; }
   .ctext > * + * { margin-top: 7px; }
-  /* a heading stays near the size of the line it heads: a card is 13px in a narrow
-     column, and the browser's own h1 would take a third of one */
+  /* A heading stays near the size of the line below it. A card is 13px in a
+     narrow column, and the h1 of the browser would fill a third of a card. */
   .ctext h1, .ctext h2, .ctext h3,
   .ctext h4, .ctext h5, .ctext h6 {
     font-weight: 600;
@@ -530,8 +530,8 @@
   .ctext h2 { font-size: 15px; }
   .ctext h3 { font-size: 14px; }
   .ctext strong { font-weight: 600; }
-  /* a quote is marked by the bar at its edge rather than by paler ink: ink pale
-     enough to read as quoted drops under 4.5:1 on the fills a palette makes */
+  /* The bar at the edge marks a quote, and not a lighter text colour. Text that
+     is light enough to read as a quote gives less than 4.5:1 on a palette fill */
   .ctext blockquote {
     border-left: 2px solid var(--gray-500);
     padding-left: 8px;
@@ -542,8 +542,9 @@
   }
   .ctext ul, .ctext ol { padding-left: 18px; }
   .ctext li::marker { color: var(--gray-600); }
-  /* A fenced block is the chip's box grown to hold whole lines, so it takes the
-     same ink, fill and border as a chip and only the shape changes. */
+  /* A fenced block is the box of a chip, made large enough for whole lines. It
+     takes the same text colour, fill and border as a chip. Only the shape
+     changes. */
   .ctext pre {
     font-family: var(--mono);
     font-size: 12px;
@@ -553,15 +554,15 @@
     border-radius: 4px;
     padding: 6px 7px;
     line-height: 1.35;
-    /* A code line is as long as it was typed, a column is narrow, and a browser
-       holds the lines of a <pre> unbroken. So a long line wraps, as the prose
-       around it does: a card is read at a glance, and a line hidden off the right
-       edge is a line lost. Scrolling would hold the shape of the code, but it puts
-       a sideways drag inside a card that is itself dragged. */
+    /* A code line is as long as you typed it, a column is narrow, and a browser
+       keeps the lines of a <pre> unbroken. So a long line wraps, the same as the
+       prose around it. You read a card at a glance, and a line that hides past
+       the right edge is a line you lose. A scroll bar would keep the shape of
+       the code, but it puts a sideways drag inside a card that also drags. */
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
-  /* the <code> inside a block wears the block's box, not a chip's */
+  /* the <code> inside a block takes the box of the block and not of a chip */
   .ctext pre code {
     font-size: inherit;
     line-height: inherit;
@@ -583,8 +584,8 @@
     gap: 4px;
   }
   .date { color: var(--gray-800); }
-  /* the one sign a card carries notes while the actions are still hidden, and a
-     second way in to them: the words themselves open the notes window */
+  /* The only sign that a card has notes while the actions stay hidden. It is
+     also a second way to reach them, because the words open the notes window. */
   .notemark {
     color: var(--gray-600);
     margin-left: 6px;
@@ -605,46 +606,46 @@
   }
   .card:hover .card-actions,
   .card:focus-within .card-actions,
-  /* the button has to stay while the list it opened is standing, or it fades out
-     from under a pointer that has left the card to reach the list */
+  /* The button must stay while its menu is open. If not, it fades away below a
+     pointer that left the card to reach the menu. */
   .card.menuopen .card-actions { opacity: 1; }
   @media (hover: none) { .card-actions { opacity: 1; } }
 
   /* ---------- a card's actions ---------- */
-  /* A card is mostly its words, and the line its date sits on is short, so
-     everything a card can be told to do is kept behind the one button and opened
-     as a list. The list hangs off the page rather than off the card: a column
-     hides what overflows it and the notes window scrolls, and either would cut
-     the list off. placeMenu() puts it under the button it belongs to. */
+  /* A card is mostly its words, and the row that holds its date is short. So one
+     button holds every action for the card, and opens them as a menu. The menu
+     attaches to the page and not to the card. A column hides what overflows it
+     and the notes window scrolls, and each of these would hide part of the menu.
+     placeMenu() puts the menu below the button that owns it. */
   .card-menu {
     position: fixed;
-    /* over the notes window, under the undo toast — deleting a note from the
-       list has to leave its Undo reachable */
+    /* above the notes window and below the undo toast. A note deleted from the
+       menu must leave its Undo within reach */
     z-index: 35;
-    /* One width for both lists, so a note's two words and a card's four stand as
-       the same object, and no wider than the longest of them needs: the words are
-       what the panel is for, and air to the right of them is air the panel does
-       not need. */
+    /* One width for the two menus, so the two words of a note and the four words
+       of a card show as the same object. The width is no more than the longest
+       of them needs. The words are the purpose of the panel, and space to the
+       right of them is space the panel does not need. */
     min-width: 140px;
     background: var(--white);
     border: 1px solid var(--gray-200);
     border-radius: 12px;
     padding: 6px;
-    /* a near line to sit the panel off the page and a far one to cast it, so the
-       edge reads on a column's fill as well as on the page */
+    /* a near shadow to lift the panel off the page, and a far one to cast it.
+       So the edge shows on the fill of a column and on the page */
     box-shadow: 0 1px 2px rgba(20,20,19,0.04), 0 8px 24px rgba(20,20,19,0.10);
     display: none;
     flex-direction: column;
     gap: 1px;
   }
   .card-menu.on { display: flex; }
-  /* The words in the list are read rather than scanned, so they take the reading
-     face — the mono the rest of a card's furniture wears is for dates and marks,
-     not for sentences. They are read a step under the card's own words: the list
-     stands over the board it belongs to, and nothing on top of a card may speak
-     as loudly as the card. A step and no more, or they fall to the size of the
-     date line and stop outranking it. Each row stands as tall as something meant
-     to be pressed, not as tall as its text. */
+  /* You read the words in the menu, so they take the reading face. The mono face
+     on the rest of a card is for dates and marks, and not for sentences. The
+     words are one step smaller than the words of the card. The menu stands over
+     the board, and nothing above a card may draw more attention than the card.
+     One step and no more, or they fall to the size of the date row and
+     lose their rank over it. Each row is as tall as a control that you press,
+     and not as tall as its text. */
   .card-menu button {
     display: flex;
     align-items: center;
@@ -663,17 +664,17 @@
   }
   .card-menu button:hover { background: var(--gray-50); }
   .card-menu button:focus-visible { outline: 2px solid var(--clay); outline-offset: -2px; }
-  /* The one row that takes something off the board stands apart from the rows
-     that only open it, and wears the warning colour at rest rather than waiting
-     for a pointer. The line is drawn as a mark above the row and not as a border
-     on it, so the hover ground stops short of the line instead of meeting it. */
+  /* The one row that removes something from the board stands apart from the rows
+     that only open it. It shows the warning colour at rest, and does not wait for
+     a pointer. The line above the row is a separate mark and not a border on the
+     row. So the hover background stops before the line and does not meet it. */
   .card-menu button.del {
     position: relative;
     margin-top: 6px;
-    /* the darker clay, and the same one at rest as under the pointer: this row
-       hovers to the --gray-50 ground the other rows do, and --clay-d holds 3.9:1
-       on it while this holds 4.9:1. One colour in both states, so the row reads
-       as the same warning whether it is pointed at or not. */
+    /* The darker clay, and the same colour at rest and below the pointer. This
+       row hovers to the same --gray-50 background as the other rows. --clay-d
+       holds 3.9:1 on it, and this colour holds 4.9:1. One colour in the two
+       states, so the row shows the same warning at all times. */
     color: var(--clay-dd);
   }
   .card-menu button.del::before {
@@ -684,11 +685,11 @@
     top: -3px;
     border-top: 1px solid var(--col-rule);
   }
-  /* A drawn mark rather than a character, so it keeps to the row's height and not
-     the font's, and takes the row's own colour — which makes the mark on the
-     delete row as red as the word beside it. Sized off the word it stands beside,
-     a shade larger, so it holds its share of the row at whatever size the row is
-     read at. */
+  /* A drawn mark and not a character, so it keeps the height of the row and not
+     the height of the font. It takes the colour of the row, which makes the mark
+     on the delete row as red as the word next to it. Its size comes from that
+     word and is a little larger. So it keeps its share of the row at every size
+     the row is read at. */
   .card-menu .glyph {
     display: flex;
     flex: none;
@@ -701,9 +702,9 @@
   }
 
   /* ---------- notes window ---------- */
-  /* A card's notes open in the middle of the page over a scrim. The panel is
-     painted with everything the card's column wears, and its body and foot reuse
-     the column's own classes, so a note reads as the same card one level in. */
+  /* The notes of a card open in the middle of the page, over a scrim. The panel
+     takes every colour of the column that holds the card. Its body and foot use
+     the classes of the column, so a note shows as the same card one level down. */
   .scrim {
     position: fixed;
     inset: 0;
@@ -718,8 +719,8 @@
   .notes {
     width: 620px;
     max-width: 100%;
-    /* a floor as well as a ceiling: a card with one note should still open a
-       panel worth looking at, and .col-body takes up the slack */
+    /* a minimum as well as a maximum. A card with one note must still open a
+       panel of a useful size, and .col-body fills the extra space */
     min-height: min(460px, 84vh);
     max-height: 84vh;
     background: var(--fill, var(--ivory));
@@ -741,7 +742,7 @@
   }
   .notes-of { flex: 1; min-width: 0; }
   .notes-col { margin-bottom: 4px; }
-  /* the card's own text, read-only here — it is still edited on the board */
+  /* the text of the card. It is read-only here, and you edit it on the board */
   .notes-what {
     font-size: 14px;
     margin-bottom: 0;
@@ -770,7 +771,7 @@
     opacity: 0;
     pointer-events: none;
     transition: opacity 140ms ease, transform 140ms ease;
-    /* above the scrim: deleting a note has to leave its Undo reachable */
+    /* above the scrim. A note deleted here must leave its Undo within reach */
     z-index: 40;
   }
   .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
@@ -781,8 +782,8 @@
   }
   .toast button:hover { border-color: var(--clay); }
 
-  /* below four-across the columns no longer sit in one row, so the hairline has
-     nothing to divide and goes away */
+  /* With fewer than four columns across, the columns do not sit in one row. The
+     hairline has nothing to separate, so it is hidden. */
   @media (max-width: 940px) {
     .board { grid-template-columns: repeat(2, 1fr); }
     .col-divider { display: none; }
@@ -835,7 +836,7 @@
       <button class="notes-close" id="notesClose" type="button" aria-label="Close notes">×</button>
     </div>
     <div class="col-body" id="notesBody"></div>
-    <!-- the add button and its box are built by makeComposer(), the same pair a
+    <!-- makeComposer() builds the add button and its box, the same pair that a
          column foot gets -->
     <div class="col-foot" id="notesFoot"></div>
   </section>
@@ -845,21 +846,21 @@
   // ---------- config ----------
   // Everything a column is. A new column is one more entry here and nothing else.
   //   add        what the add button says, where the label will not do
-  //   divider    draw the hairline that sets a column apart, after this one
+  //   divider    draw the hairline after this column
   //   clearable  offer "clear column" in the footer
-  //   palette    take a colour from the picker, in the order the columns are listed
-  //   fill/rule  the colour to wear when the palette does not dress it
-  //   card       the colour its cards wear
-  //   text       the colour its card text wears
-  //   head       the colour its name is written in
+  //   palette    take a colour from the panel, in the order the columns are listed
+  //   fill/rule  the colour to use when no palette sets one
+  //   card       the colour of its cards
+  //   text       the colour of the text on its cards
+  //   head       the colour of its name
   var COLUMNS = [
     { key: 'waiting', label: 'Waiting for', prompt: 'Who or what are you waiting on?',
       add: 'waiting', divider: true,
-      // Waiting for holds what is not yours to move, so it is set apart rather
-      // than coloured: the page's own background, with white cards standing on
-      // it. What it says is quietened instead of tinted. Grey card text reads at
-      // 6.1:1 on that white, and the column's name comes down one shade from
-      // full ink, both still well clear of the pale ground they sit on.
+      // Waiting for holds the cards that you cannot move yourself. It is set
+      // apart and not coloured: the background of the page, with white cards on
+      // it. Its text is lighter in place of a tint. Grey card text gives 6.1:1
+      // on that white, and the name of the column is one shade lighter than the
+      // full text colour. The two are still well above the pale background.
       fill: 'var(--ivory)', rule: 'var(--gray-200)', card: 'var(--white)',
       text: 'var(--gray-600)', head: 'var(--gray-800)' },
     { key: 'backlog', label: 'Backlog', prompt: 'What needs doing?', palette: true },
@@ -872,8 +873,8 @@
 
   var STORE = 'personal.board.v1';
   var PAL_KEY = 'personal.palette.v1';
-  // earlier names for the same two things, newest first; readCarried() moves the
-  // first hit over
+  // earlier names for the same two things, newest first. readCarried() moves
+  // the first one it finds
   var OLD_STORES = ['todo.board.v1', 'backlog.board.v1'];
   var OLD_PAL_KEYS = ['todo.palette.v1', 'backlog.palette.v1'];
   var GONE_KEY = 'cut';                 // the removed fourth column, see load()
@@ -892,10 +893,10 @@
     return b;
   }
 
-  // The marks the list wears beside its words. Drawn as lines on a 24 grid and
-  // shown at 16px, so a mark is a mark at any size and never a character the
-  // reader's font gets to reinterpret. Every one takes its colour from the row it
-  // sits in, so nothing here says what colour it is.
+  // The marks that the menu shows next to its words. Each one is a set of lines
+  // on a 24 grid, shown at 16px, so a mark is the same mark at every size and is
+  // never a character that the font of the reader can change. Each mark takes
+  // the colour of the row it sits in, so nothing here sets a colour.
   var MARKS = {
     pencil: 'M17 3a2.83 2.83 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z M15 5l4 4',
     page: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z '
@@ -952,9 +953,9 @@
   }
 
   // ---------- storage ----------
-  // Storage is not always there to be written to — private browsing, a full
-  // quota, a browser with it switched off. None of that is worth an error
-  // thrown at the page, so every read and write goes through these three.
+  // Storage is not always available: private browsing, a full quota, a browser
+  // with storage switched off. None of these must throw an error at the page,
+  // so every read and every write goes through these three functions.
   function lsGet(key) {
     try { return localStorage.getItem(key); } catch (e) { return null; }
   }
@@ -971,15 +972,15 @@
     try { localStorage.removeItem(key); } catch (e) {}
   }
 
-  // The board and the palette have each been stored under two earlier names, so
-  // both are read through here: what `key` holds, or what an earlier name does.
+  // Two earlier names hold the board, and two hold the palette, so the two of
+  // them come through here. This reads `key`, or an earlier name if `key` is empty.
   function readCarried(key, olds) {
     var current = lsGet(key);
     if (current != null) return current;
-    // Nothing under the name in use, so fall back through the earlier ones,
-    // newest first. Whatever turns up moves over, and every old name is dropped
-    // rather than only the one it came from — an older copy left behind would
-    // otherwise be waiting to come back the next time the board is emptied.
+    // The current name holds nothing, so try the earlier names, newest first.
+    // The first value found moves to the current name. Every earlier name is
+    // deleted, and not only the one that supplied the value. An older copy left
+    // in place would return the next time the board is empty.
     var carried = null;
     olds.forEach(function (old) {
       if (carried == null) carried = lsGet(old);
@@ -991,13 +992,13 @@
 
   // ---------- state ----------
   // state.cols = { waiting: [card], backlog: [...], now: [...], accomplished: [...] }
-  // card = { id, text, created, notes: [note] }; a note has the same shape
+  // card = { id, text, created, notes: [note] }. A note has the same shape.
   var state = load();
-  // the one card being dragged: { id, level }. The level says what may receive
-  // it — a 'card' lands in a column, a 'note' only in the notes window.
+  // the one card in a drag: { id, level }. The level says what can receive it.
+  // A 'card' lands in a column, a 'note' only in the notes window.
   var drag = null;
   // { col, index, cards } for one card or a whole cleared column, or
-  // { noteOf, index, cards } for notes taken off the card with that id
+  // { noteOf, index, cards } for notes removed from the card with that id
   var lastDeleted = null;
   var toastTimer = null;
 
@@ -1015,23 +1016,23 @@
       var parsed = JSON.parse(raw);
       if (!parsed || !parsed.cols) return fresh;
       var cols = parsed.cols;
-      // the Accomplished column used to be keyed "later" — carry those cards over
+      // the Accomplished column had the key "later". Move those cards to it.
       if (Array.isArray(cols.later) && !Array.isArray(cols.accomplished)) {
         cols.accomplished = cols.later;
       }
       KEYS.forEach(function (k) {
         fresh.cols[k] = normalize(cols[k]);
       });
-      // the board used to have a fourth "Cut" column. It is gone, but its cards
-      // are not thrown away — they land at the end of Backlog to be kept or deleted.
+      // The board used to have a fourth "Cut" column. The column is gone, but
+      // its cards stay. They go to the end of Backlog, to keep or to delete.
       fresh.cols.backlog = fresh.cols.backlog.concat(normalize(cols[GONE_KEY]));
-    } catch (e) { /* corrupt storage — start clean */ }
+    } catch (e) { /* corrupt storage. Start clean */ }
     return fresh;
   }
 
-  // A note has a card's shape, so the same pass cleans both, however deep a file
-  // happens to go. Nothing below the first level of notes is ever shown, but it
-  // is not thrown away either.
+  // A note has the shape of a card, so one pass cleans the two of them, at every
+  // depth in a file. The board never shows anything below the first level of
+  // notes, but it keeps it.
   function normalize(list) {
     if (!Array.isArray(list)) return [];
     return list.filter(function (c) {
@@ -1046,8 +1047,8 @@
     });
   }
 
-  // Cards and notes are made the same way, so neither can be born missing a
-  // field the other has.
+  // Cards and notes are made the same way, so neither one can start without a
+  // field that the other has.
   function newItem(text) {
     return { id: uid(), text: text, created: Date.now(), notes: [] };
   }
@@ -1073,8 +1074,8 @@
 
   // ---------- composer ----------
   // A "+ add" button and the box it opens: one in every column foot, one in the
-  // notes window. The box stays open after each entry so a run of cards can be
-  // typed one after another. spec.onAdd(text) puts the text where it belongs.
+  // notes window. The box stays open after each entry, so you can type several
+  // cards one after another. spec.onAdd(text) puts the text where it belongs.
   function makeComposer(host, spec) {
     var add = textBtn('addbtn', spec.add);
     var box = el('div', 'composer');
@@ -1142,8 +1143,8 @@
   }
 
   // ---------- clear a whole column ----------
-  // Emptying a column is the one action that can lose a lot at once, so it asks
-  // in the footer first — and is still undoable after that.
+  // A clear of a column is the one action that can lose many cards at once. So
+  // it asks in the footer first, and an Undo is still available after that.
   function makeClearRow(c) {
     var row = el('div', 'clear-row');
     var open = textBtn('clearbtn', 'clear column');
@@ -1244,8 +1245,8 @@
   // ---------- dragging ----------
   function wireDrag(card, id, level) {
     card.addEventListener('dragstart', function (e) {
-      // a list is placed where its button was standing, and a card on the move
-      // takes its button with it
+      // a menu sits where its button was, and a card in a drag takes its button
+      // with it
       closeMenu();
       drag = { id: id, level: level };
       card.classList.add('dragging');
@@ -1261,14 +1262,14 @@
     });
   }
 
-  // what is being dragged, if this level is allowed to receive it
+  // what the drag holds, if this level can receive it
   function dragged(level) {
     return drag && drag.level === level ? drag.id : null;
   }
 
-  // A zone takes cards of one level and lays them where they were dropped. It
-  // marks itself while one is over it; only a column has a look for that, so on
-  // the notes window the mark is carried and styled by nothing.
+  // A zone takes cards of one level and puts them where the drop happened. It
+  // marks itself while a card is over it. Only a column has a style for that
+  // mark, so on the notes window the mark carries no style.
   function wireDrop(zone, body, spec) {
     zone.addEventListener('dragover', function (e) {
       if (!dragged(spec.level)) return;
@@ -1287,7 +1288,7 @@
     });
   }
 
-  // where in the target list should the dragged card land?
+  // where the dragged card lands in the target list
   function insertIndex(body, y) {
     var cards = [].slice.call(body.querySelectorAll('.card:not(.dragging)'));
     for (var i = 0; i < cards.length; i++) {
@@ -1298,13 +1299,13 @@
   }
 
   // ---------- moving and removing ----------
-  // Cards and notes sit in plain arrays, so one move and one removal serve the
-  // board and the notes window alike.
+  // Cards and notes sit in plain arrays, so one move function and one remove
+  // function serve the board and the notes window.
   function moveItem(from, to, id, at) {
     var i = indexOfId(from, id);
     if (i < 0) return;
     // `at` already excludes the dragged card (insertIndex skips .dragging), so
-    // no index adjustment is needed when reordering within one list.
+    // the index needs no adjustment for a reorder within one list.
     var item = from.splice(i, 1)[0];
     if (at == null || at > to.length) at = to.length;
     to.splice(at, 0, item);
@@ -1321,8 +1322,8 @@
     if (list) moveItem(list, list, id, at);
   }
 
-  // Everything that takes cards out of a list ends here, so one Undo covers a
-  // card, a note, and a whole cleared column alike. `rec` says where they were.
+  // Everything that removes cards from a list ends here, so one Undo covers a
+  // card, a note and a whole cleared column. `rec` says where they were.
   function discard(rec, msg) {
     lastDeleted = rec;
     commit();
@@ -1369,9 +1370,9 @@
     toast.classList.remove('on');
   }
 
-  // where the undone cards go back to: a column, or the notes of one card. That
-  // card may itself have been deleted in the meantime, in which case there is
-  // nowhere to put them and the toast just goes away.
+  // where the undone cards return to: a column, or the notes of one card. A
+  // delete can remove that card first. Then there is no place for the notes,
+  // and the toast closes.
   function undoList(rec) {
     if (!rec.noteOf) return state.cols[rec.col];
     var found = find(rec.noteOf);
@@ -1391,15 +1392,15 @@
   });
 
   // ---------- a card's actions ----------
-  // What a card can be told to do is shown as a list of words, opened by the one
-  // button the card carries. There is a single list for the whole board, moved to
-  // whichever button asked for it: only one can be open at a time, so only one
-  // needs to exist, and hanging it off the page rather than off the card keeps it
-  // clear of everything that would otherwise clip or scroll it.
+  // The menu shows the actions for a card as a list of words. The one button on
+  // the card opens it. The board has a single menu, and it moves to the button
+  // that opens it, because only one menu can be open at a time. The menu attaches
+  // to the page and not to the card, which keeps it clear of every element that
+  // would clip it or scroll it.
   var menu = el('div', 'card-menu');
   menu.setAttribute('role', 'menu');
   document.body.appendChild(menu);
-  var menuOwner = null;      // the button the open list belongs to, if any
+  var menuOwner = null;      // the button that owns the open menu, if any
 
   function makeMenuButton(card, actions) {
     var button = iconBtn('≡', 'actions', 'menubtn');
@@ -1407,7 +1408,7 @@
     button.setAttribute('aria-expanded', 'false');
     button.addEventListener('click', function (e) {
       e.stopPropagation();
-      // a second press on the same button puts the list away again
+      // a second press on the same button closes the menu again
       var mine = menuOwner === button;
       closeMenu();
       if (!mine) openMenu(card, button, actions);
@@ -1420,8 +1421,8 @@
     actions.forEach(function (a) {
       var row = textBtn(a.cls);
       row.setAttribute('role', 'menuitem');
-      // the mark is for the eye to find the row by; the word beside it is the
-      // whole of what the row is called, so the mark is hidden from a reader
+      // the mark helps the eye to find the row. The word next to it is the full
+      // name of the row, so a screen reader does not get the mark
       row.appendChild(icon(a.icon));
       row.appendChild(document.createTextNode(a.title));
       row.addEventListener('click', function (e) {
@@ -1434,16 +1435,16 @@
     menuOwner = button;
     button.setAttribute('aria-expanded', 'true');
     card.classList.add('menuopen');
-    // shown before it is placed: a list with no size to it cannot be aimed
+    // shown before it is placed, because you cannot aim a menu with no size
     menu.classList.add('on');
     placeMenu(button);
     menu.firstChild.focus();
   }
 
-  // Says whether it had anything to put away, so Escape can be spent on the list
-  // and go no further. Never moves the focus itself — a click on one of the words
-  // closes the list on its way to doing what it says, and pulling the focus back
-  // to the card would take it off whatever the action opened.
+  // Returns whether there was a menu to close, so Escape can stop at the menu.
+  // This function never moves the focus. A click on one of the words closes the
+  // menu before it runs the action, and a move of the focus back to the card
+  // would take it away from whatever the action opened.
   function closeMenu() {
     if (!menuOwner) return false;
     menuOwner.setAttribute('aria-expanded', 'false');
@@ -1454,8 +1455,8 @@
     return true;
   }
 
-  // Hung under the button it belongs to and pulled back onto the page at either
-  // edge, or thrown above the button when there is no room left below it.
+  // The menu goes below the button that owns it. It moves back onto the page at
+  // either edge, and it goes above the button when there is no room below it.
   function placeMenu(button) {
     var at = button.getBoundingClientRect();
     var box = menu.getBoundingClientRect();
@@ -1474,21 +1475,21 @@
     rows[(at + (e.key === 'ArrowDown' ? 1 : rows.length - 1)) % rows.length].focus();
   });
 
-  // The list is placed where the button was when it opened, so anything that
-  // moves the button underneath it puts it away rather than leaving it stranded.
-  // Capture, since it is the notes window that scrolls and not the page.
+  // The menu sits where the button was at the moment it opened. So anything that
+  // moves the button below it closes the menu, and does not leave it stranded.
+  // Capture, because the notes window scrolls and the page does not.
   window.addEventListener('scroll', function () { closeMenu(); }, true);
   window.addEventListener('resize', function () { closeMenu(); });
 
   // ---------- card ----------
-  // A board card and a note are the same object wearing the same furniture: its
-  // text, a date, and the button that opens the rest. `spec` is the little that
-  // differs between the two.
+  // A board card and a note are the same object with the same parts: its text,
+  // a date, and the button that opens the rest. `spec` holds the small number of
+  // differences between the two.
   //   level    which drag this card belongs to
-  //   redraw   what to run after an edit — the board, or the notes list
+  //   redraw   what to run after an edit: the board, or the notes list
   //   mark     an optional word after the date
   //   onMark   what a click on that word does, if it does anything
-  //   buttons  what the list offers, in order: { icon, title, cls, onClick },
+  //   buttons  what the menu offers, in order: { icon, title, cls, onClick },
   //            where icon names a mark in MARKS
   function makeItem(item, spec) {
     var card = el('article', 'card');
@@ -1506,9 +1507,9 @@
       bot.appendChild(mark);
     }
 
-    // Editing is only ever reached from this list. A card's words hold links,
-    // code and headings, and a click that opened the card for editing would take
-    // the click a link wants and put a box over text meant to be read.
+    // The menu is the only way to reach an edit. The words of a card hold links,
+    // code and headings. A click that opened the card for an edit would take the
+    // click that a link needs, and put a box over text that you want to read.
     var actions = el('div', 'card-actions');
     actions.appendChild(makeMenuButton(card, [
       { icon: 'pencil', title: 'Edit',
@@ -1522,11 +1523,12 @@
     return card;
   }
 
-  // Swap the text for a box holding it. Enter and leaving the box keep the
-  // change, Escape drops it, and an empty box counts as no change at all.
+  // Replace the text with a box that holds it. Enter keeps the change, and so
+  // does a move of the focus out of the box. Escape drops the change, and an
+  // empty box counts as no change.
   function editItem(card, text, item, redraw) {
-    // the ✎ action outlives the text it opens, so a second press has nothing
-    // left to swap out
+    // the Edit action outlives the text it opens, so a second press has nothing
+    // left to replace
     if (text.parentNode !== card) return;
     var ta = el('textarea');
     ta.value = item.text;
@@ -1554,15 +1556,16 @@
     ta.addEventListener('blur', function () { finish(true); });
   }
 
-  // Split raw card text into the segments it displays as, in order. A run between
-  // two backticks is code; everything else is plain. So 'run `npm test` now' gives
+  // Split raw card text into the segments that it displays as, in order. A run
+  // between two backticks is code, and everything else is plain. So
+  // 'run `npm test` now' gives
   // [{text: 'run ', code: false}, {text: 'npm test', code: true},
-  //  {text: ' now', code: false}]. A code segment's text drops the backticks that
-  // marked it.
-  // A span has to hold at least one character and stay on one line, so '``' and a
-  // stray backtick are left as the characters they are, and a tick opened on one
-  // line cannot swallow the ones below it. split keeps the capture, which lands the
-  // code runs on the odd indices.
+  //  {text: ' now', code: false}]. The text of a code segment drops the backticks
+  // that marked it.
+  // A span must hold at least one character and stay on one line. So '``' and a
+  // stray backtick stay as the characters they are, and a backtick opened on one
+  // line cannot take in the lines below it. split keeps the capture, which puts
+  // the code runs on the odd indices.
   function codeSpans(s) {
     return s.split(/`([^`\n]+)`/).map(function (part, i) {
       return { text: part, code: i % 2 === 1 };
@@ -1571,27 +1574,27 @@
     });
   }
 
-  // The two shapes an address is written in: a bare one, and [what it is](where),
-  // for when the address is far too long to read on a card. Both stop at the first
-  // space, and neither may hold the brackets that delimit it. One capture group
-  // wrapping the pair, so split lands the addresses on the odd indices, the same
-  // way codeSpans does.
+  // The two shapes for an address: a bare one, and [what it is](where), for an
+  // address that is too long to read on a card. Each shape stops at the first
+  // space, and neither one can hold the brackets that delimit it. One capture
+  // group holds the pair, so split puts the addresses on the odd indices, the
+  // same as codeSpans does.
   var LINK_RE = /(\[[^\[\]\n]+\]\([^()\s]+\)|https?:\/\/[^\s<>]+|mailto:[^\s<>]+)/i;
   var LABELLED = /^\[([^\[\]\n]+)\]\(([^()\s]+)\)$/;
-  // What the board will open. Everything else — a javascript: or a data: among
-  // them — is not a link here and stays the characters it was typed as.
+  // What the board will open. Everything else is not a link here, among them a
+  // javascript: or a data: address, and it stays as the characters you typed.
   var OPENABLE = /^(https?:\/\/|mailto:)/i;
 
   function safeHref(url) {
     return OPENABLE.test(url) ? url : null;
   }
 
-  // An address runs to the first space, so the punctuation of the sentence it
-  // sits in gets swept up with it. Give back what hangs off the end and reads as
-  // prose rather than address — and a closing bracket only when nothing opened it.
-  // The brackets are tallied once and the tally walked back down, rather than
-  // counted afresh for every character given up: a card holding thousands of them
-  // is a paste gone wrong, and it should cost the board no more than a glance.
+  // An address runs to the first space, so it collects the punctuation of the
+  // sentence around it. Return the characters at the end that read as prose and
+  // not as address, and a closing bracket only when nothing opened it.
+  // The count of the brackets happens once, and the count then decreases. It is
+  // not made again for every character returned. A card with thousands of
+  // brackets is a paste that went wrong, and it must cost the board very little.
   function trimTail(url) {
     var opens = 0;
     var closes = 0;
@@ -1610,9 +1613,8 @@
     return url.slice(0, end);
   }
 
-  // Pick the addresses out of a run of plain text. A link segment carries the
-  // href to open and the text to show for it, which for a bare address are the
-  // same thing.
+  // Find the addresses in a run of plain text. A link segment holds the href to
+  // open and the text to show for it. For a bare address the two are the same.
   function linkSpans(s) {
     var out = [];
     s.split(LINK_RE).forEach(function (part, i) {
@@ -1621,11 +1623,11 @@
       var m = LABELLED.exec(part);
       var shown = m ? m[1] : trimTail(part);
       var href = safeHref(m ? m[2] : shown);
-      // an address this board will not open is not one, and neither is a label
-      // with nothing in it to click — both stay as they were written
+      // an address that this board will not open is not an address, and neither
+      // is an empty label. The two stay as you wrote them
       if (!href || !shown.trim()) { out.push({ text: part, code: false }); return; }
       out.push({ text: shown, href: href });
-      // whatever trimTail handed back follows the link as the prose it is
+      // what trimTail returned follows the link as the prose that it is
       if (!m && part.length > shown.length) {
         out.push({ text: part.slice(shown.length), code: false });
       }
@@ -1633,16 +1635,16 @@
     return out;
   }
 
-  // Pick the marked runs out of a run of plain text: **bold**, *italic* and
-  // ~~struck through~~. A marked run carries the tag it displays as — 'strong',
-  // 'em' or 'del' — and everything else carries none.
-  // The rule a code chip goes by holds here too: a run has to have text in it and
-  // stay on one line, so '**' and a mark left open are the characters they were
-  // typed as, and a mark opened on one line cannot swallow the lines below it.
-  // In the order they are read, which is what settles '**bold**' against
-  // '*italic*': the pair is taken first, so the single one never sees it. Italic
+  // Find the marked runs in a run of plain text: **bold**, *italic* and
+  // ~~struck through~~. A marked run holds the tag that it displays as, one of
+  // 'strong', 'em' or 'del'. Every other run holds none.
+  // The same condition as a code chip holds here. A run must have text in it and
+  // stay on one line, so '**' and a mark left open stay as the characters you
+  // typed, and a mark opened on one line cannot take in the lines below it.
+  // The order below is the order of the read, and it settles '**bold**' against
+  // '*italic*'. The pair goes first, so the single star never sees it. Italic
   // holds no star of its own, so it cannot reach across a bold mark to close.
-  // One capture each, so split lands the marked runs on the odd indices.
+  // One capture each, so split puts the marked runs on the odd indices.
   var EMPHASIS = [
     { tag: 'strong', re: /\*\*([^\n]+?)\*\*/ },
     { tag: 'em', re: /\*([^*\n]+)\*/ },
@@ -1653,9 +1655,9 @@
     return markSpans(s, 0);
   }
 
-  // Read the mark at `at` over the text, then hand what is left of it plain to
-  // the mark after that one. A run that carries a mark is finished with, so the
-  // marks do not nest: the text of a bold run is the characters it holds.
+  // Read the mark at `at` over the text, then give the plain remainder to the
+  // next mark. A run that holds a mark is complete, so the marks do not nest.
+  // The text of a bold run is the characters that it holds.
   function markSpans(s, at) {
     if (at === EMPHASIS.length) return s === '' ? [] : [{ text: s, code: false }];
     var mark = EMPHASIS[at];
@@ -1668,10 +1670,10 @@
     return out;
   }
 
-  // Everything a line of a card's text displays as, in order. Backticks are read
+  // Everything that a line of card text displays as, in order. Backticks come
   // first, so an address inside them is code and stays on the card as the address
-  // it is, and an address is read before the emphasis marks, so a '*' inside one
-  // stays part of the address.
+  // that it is. An address comes before the emphasis marks, so a '*' inside an
+  // address stays part of the address.
   function inlineSpans(s) {
     var out = [];
     codeSpans(s).forEach(function (seg) {
@@ -1685,29 +1687,30 @@
   }
 
   // A fence: three or more backticks alone on a line. It is the one mark that
-  // spans lines, so it holds a width to close against, and what follows it on the
-  // opening line — 'js' in '```js' — names a language the board does not read and
-  // drops. A closing fence carries no language, only backticks.
+  // spans lines, so it holds a width to close against. The text after it on the
+  // opening line, 'js' in '```js', names a language. The board does not read the
+  // language and deletes the word. A closing fence holds no language, only
+  // backticks.
   var FENCE = /^ {0,3}(`{3,})\s*([^`]*)$/;
 
-  // The marks that take a whole line. Each sits at the head of its line, under
-  // three spaces at the most, and what it opens runs to the end of that line.
+  // The marks that take a whole line. Each one sits at the head of its line,
+  // after three spaces at the most, and what it opens runs to the end of the line.
   var RULE = /^ {0,3}(?:-{3,}|\*{3,}|_{3,})\s*$/;
   var HEADING = /^ {0,3}(#{1,6})\s+(.*)$/;
   var QUOTE = /^ {0,3}>\s?(.*)$/;
   var BULLET = /^ {0,3}[-*+]\s+(.*)$/;
   var NUMBER = /^ {0,3}(\d+)[.)]\s+(.*)$/;
 
-  // Group the lines of a card into the blocks they display as, in order. A line
-  // wearing a line mark is the block that mark names; every other line is prose,
-  // and a run of prose lines is one paragraph. A blank line closes whatever is
-  // open, and a quote or a list takes as many lines in a row as it is given.
+  // Group the lines of a card into the blocks that they display as, in order. A
+  // line with a line mark is the block that the mark names. Every other line is
+  // prose, and a run of prose lines is one paragraph. A blank line closes any
+  // open block, and a quote or a list takes as many lines in a row as it gets.
   //   {kind: 'para', text}            {kind: 'quote', text}
   //   {kind: 'heading', level, text}  {kind: 'list', ordered, start, items}
   //   {kind: 'rule'}                  {kind: 'code', width, lines}
-  // A rule is read before a bullet, so '---' is the line it draws rather than an
-  // item with two dashes for its text. A fence is read before all of them, and
-  // once one is open it reads nothing at all until the fence that closes it.
+  // A rule comes before a bullet, so '---' is the divider that it draws and not
+  // an item with two dashes for its text. A fence comes before all of them, and
+  // an open fence reads nothing until the fence that closes it.
   function blocks(s) {
     var out = [];
     var open = null;    // the block the line above left open, if it left one
@@ -1715,8 +1718,8 @@
     function start(b) { out.push(b); open = b; }
     lines.forEach(function (line, i) {
       var m;
-      // inside a fence every line is the characters it was typed as, so the marks
-      // below are not read and a blank line closes nothing
+      // inside a fence every line is the characters you typed, so the board reads
+      // none of the marks below and a blank line closes nothing
       if (open && open.kind === 'code') {
         if (closesFence(line, open.width)) { open = null; return; }
         open.lines.push(line);
@@ -1740,8 +1743,8 @@
       var bullet = BULLET.exec(line);
       m = bullet || NUMBER.exec(line);
       if (m) {
-        // a numbered list under a bulleted one is a list of its own, and the
-        // other way about
+        // a numbered list below a bulleted one is a list of its own, and a
+        // bulleted list below a numbered one is too
         var ordered = !bullet;
         if (open && open.kind === 'list' && open.ordered === ordered) {
           open.items.push(ordered ? m[2] : m[1]);
@@ -1766,11 +1769,11 @@
     return !!m && m[1].length >= width && !m[2];
   }
 
-  // Whether the fence opening on line `at` is closed further down the card. The
-  // rule the other marks go by holds here too, over lines rather than characters:
-  // a mark the card never closes is not a mark. So an opening fence with nothing
-  // under it to close it is the backticks it was typed as, and the lines below it
-  // stay the prose, headings and lists they would have been.
+  // Whether the fence that opens on line `at` closes further down the card. The
+  // same condition as the other marks holds here, over lines and not characters:
+  // a mark that the card never closes is not a mark. So an opening fence with no
+  // closer below it is the backticks you typed, and the lines below it stay the
+  // prose, headings and lists that they are.
   function fenceCloses(lines, at, width) {
     var i;
     for (i = at + 1; i < lines.length; i++) {
@@ -1808,15 +1811,15 @@
   }
 
   // What a board card says about its notes, in the small line after its date.
-  // The actions row is hidden until the card is hovered, so this is the only
-  // standing sign that a card holds anything, and pressing it opens them.
+  // The actions row stays hidden until the pointer is over the card, so this is
+  // the only permanent sign that a card has notes. A press on it opens them.
   // Return '' to say nothing.
   function noteMark(card) {
     return card.notes.length ? '· ' + plural(card.notes.length, 'note') : '';
   }
 
-  // Draw a list of items into a body, or the one line that stands in for an
-  // empty one. Columns and the notes window are both filled this way.
+  // Draw a list of items into a body, or the one line that replaces an empty
+  // list. Columns and the notes window both fill this way.
   function fillBody(body, items, emptyText, make) {
     body.innerHTML = '';
     if (!items.length) {
@@ -1826,14 +1829,14 @@
     items.forEach(function (item) { body.appendChild(make(item)); });
   }
 
-  // The element a block displays as, holding the marked runs of its own text.
+  // The element that a block displays as, with the marked runs of its own text.
   function makeBlock(b) {
     if (b.kind === 'rule') return document.createElement('hr');
     if (b.kind === 'code') {
       var pre = document.createElement('pre');
       var block = document.createElement('code');
-      // the lines as they were typed: a fenced block reads no mark inside it, so
-      // there is nothing here to fill in
+      // the lines as you typed them. A fenced block reads no mark inside it, so
+      // there is nothing here to add
       block.textContent = b.lines.join('\n');
       pre.appendChild(block);
       return pre;
@@ -1855,18 +1858,17 @@
     return box;
   }
 
-  // Fill el with the card's text: the blocks its lines fall into, and inside each
-  // of them the chips, addresses and marked runs its characters ask for. The
-  // stored text keeps every mark it was typed with, so editing a card shows them
-  // again. Built from text nodes throughout, so card text never passes through
-  // innerHTML.
+  // Fill el with the text of the card: the blocks that hold its lines, and inside
+  // each block the chips, addresses and marked runs that its characters name. The
+  // stored text keeps every mark you typed, so an edit of the card shows them
+  // again. Text nodes throughout, so card text never passes through innerHTML.
   function renderText(el, s) {
     el.textContent = '';
     blocks(s).forEach(function (b) { el.appendChild(makeBlock(b)); });
   }
 
-  // One block's worth of text, each code segment as a <code> chip, each address
-  // as a link, and each marked run as the tag it named.
+  // The text of one block, each code segment as a <code> chip, each address as
+  // a link, and each marked run as the tag that it named.
   function fillInline(el, s) {
     inlineSpans(s).forEach(function (seg) {
       if (seg.href) {
@@ -1874,10 +1876,10 @@
         a.href = seg.href;
         a.target = '_blank';
         a.rel = 'noopener noreferrer';
-        // what drags is the card, not the address written on it
+        // the card drags, and the address written on it does not
         a.draggable = false;
         a.textContent = seg.text;
-        // a labelled link says nothing about where it goes, so it says it here
+        // a labelled link does not show its address, so the title shows it
         if (seg.text !== seg.href) a.title = seg.href;
         el.appendChild(a);
       } else if (seg.code) {
@@ -1895,14 +1897,14 @@
   }
 
   // ---------- notes window ----------
-  // A card's notes are cards themselves and live on the card, so a deleted card
-  // takes its notes with it and Undo brings back the lot. The window borrows the
-  // column's own body and foot, and wears the colour of the column its card is in.
+  // The notes of a card are cards themselves and sit on the card. So a deleted
+  // card removes its notes too, and Undo returns all of them. The window uses the
+  // body and foot of the column, and the colour of the column that holds the card.
   var scrim = document.getElementById('scrim');
   var notesPanel = document.getElementById('notes');
   var notesBody = document.getElementById('notesBody');
   var notesClose = document.getElementById('notesClose');
-  var openCardId = null;    // the card whose notes are showing, if any
+  var openCardId = null;    // the card whose notes are open, if any
 
   var notesComposer = makeComposer(document.getElementById('notesFoot'), {
     add: '+ add a note',
@@ -1932,10 +1934,10 @@
   function closeNotes() {
     if (!openCardId) return;
     notesComposer.close();
-    // the board is redrawn on every change, so hand focus back by id, not by
-    // holding on to the button that opened the window — and it goes back to the
-    // card's own button, since the one that was pressed was in a list that has
-    // since been put away
+    // The board is redrawn on every change, so give the focus back by id and not
+    // by a reference to the button that opened the window. The focus goes to the
+    // button on the card, because the button that was pressed was in a menu that
+    // is now closed.
     var back = document.querySelector('.card[data-id="' + openCardId + '"] .menubtn');
     openCardId = null;
     scrim.classList.remove('on');
@@ -1945,7 +1947,7 @@
   function redrawNotes() {
     if (!openCardId) return;
     var found = find(openCardId);
-    // the card went away under the window — another tab, or an import
+    // the card went away below the window: another tab, or an import
     if (!found) { closeNotes(); return; }
 
     paint(notesPanel, found.col);
@@ -1962,8 +1964,8 @@
 
   // ---------- render ----------
   function render() {
-    // every card is built anew below, and an open list belongs to a button that
-    // is about to stop existing
+    // every card is built again below, and an open menu belongs to a button that
+    // is about to go away
     closeMenu();
     COLUMNS.forEach(function (c) {
       var list = state.cols[c.key];
@@ -1971,8 +1973,8 @@
       fillBody(view.body, list, 'nothing here', makeCard);
       view.count.textContent = list.length;
       if (view.clear) {
-        // any state change drops a pending confirmation — it was asked about a
-        // count that may no longer hold
+        // any state change drops a pending confirmation. It asked about a count
+        // that can be wrong now
         view.clear.closeAsk();
         view.clear.classList.toggle('off', !list.length);
       }
@@ -1994,10 +1996,10 @@
   }
 
   // ---------- export / import ----------
-  // Two shapes leave the board and come back. A whole board is { cols: ... } and
-  // replaces what is here. One card is { card: ..., col: ... } and joins what is
-  // here, which is how a card is passed to someone else. Import is given a file
-  // and tells the two apart by which of the fields it carries.
+  // Export and Import use two shapes. A whole board is { cols: ... } and replaces
+  // the board that is here. One card is { card: ..., col: ... } and joins the
+  // board, which is how you pass a card to someone else. Import reads the fields
+  // in the file to find which of the two shapes it is.
   function download(name, data) {
     var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
@@ -2010,9 +2012,9 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
 
-  // A card's notes live on the card, so a card is already whole on its own and
-  // goes out as it stands. The column travels with it so it can land in the same
-  // one on the other side.
+  // The notes of a card sit on the card, so a card is whole on its own and goes
+  // out as it is. The column travels with the card, so it can land in the same
+  // column on the other board.
   function exportCard(id) {
     var found = find(id);
     if (!found) return;
@@ -2025,7 +2027,7 @@
 
   function importBoard(parsed) {
     var total = 0;
-    // an older export may still carry a Cut column; load() folds it into Backlog
+    // an older export can hold a Cut column. load() moves it into Backlog
     KEYS.concat(GONE_KEY).forEach(function (k) {
       if (Array.isArray(parsed.cols[k])) total += parsed.cols[k].length;
     });
@@ -2035,9 +2037,9 @@
     commit();
   }
 
-  // A card arrives with the ids it wore on the board it left, and the same file
-  // may be imported twice. find() answers by id, so the card and every note
-  // under it is given a fresh one on the way in.
+  // A card arrives with the ids it had on the board it came from, and you can
+  // import the same file twice. find() answers by id, so the card and every note
+  // below it gets a new id on arrival.
   function reid(item) {
     return {
       id: uid(),
@@ -2047,13 +2049,13 @@
     };
   }
 
-  // One shared card joins the board. Nothing already here is disturbed.
+  // One shared card joins the board. Nothing that is here already changes.
   function importCard(parsed) {
     var arriving = normalize([parsed.card]);
     if (!arriving.length) throw new Error('bad shape');
     var card = reid(arriving[0]);
-    // it was exported from a column, but a card made elsewhere may name one this
-    // board does not have, or none at all. Anything unplaced belongs in Backlog.
+    // the card came from a column, but a card made elsewhere can name a column
+    // this board does not have, or no column. Any such card belongs in Backlog.
     var col = colOf(parsed.col) || colOf('backlog');
     var brought = card.notes.length ? ' and ' + plural(card.notes.length, 'note') : '';
     var says = card.text.length > 60 ? card.text.slice(0, 60) + '...' : card.text;
@@ -2087,20 +2089,21 @@
   });
 
   // ---------- palettes ----------
-  // Four-colour combinations from Sanzo Wada's Haishoku Sokan (1933) — the source
-  // of Seigensha's Color Scheme Dictionary. Numbers are the book's own; hexes come
-  // from the mattdesl/dictionary-of-colour-combinations digitisation of its CMYK.
-  // The board has three columns, so each entry keeps the first three of the book's
-  // four colours — the dropped one is the colour the removed Cut column wore. That
-  // cut is safe for the picker: in all 38 combinations the two colours the book
-  // names the combination after, and the lead colour its family is grouped by, sit
+  // Four-colour combinations from Sanzo Wada's Haishoku Sokan (1933), the source
+  // of Seigensha's Color Scheme Dictionary. The numbers are the book's own. The
+  // hex values come from the mattdesl/dictionary-of-colour-combinations
+  // digitisation of the CMYK in the book.
+  // The board has three columns, so each entry keeps the first three of the four
+  // colours in the book. The dropped colour is the one that the removed Cut
+  // column used. The cut is safe for the panel. In all 38 combinations, the two
+  // colours in the name of the combination and the main colour of its family are
   // within those first three.
-  // Each column takes its colour at 12% over ivory, exactly like the default.
+  // Each column takes its colour at 12% over ivory, the same as the default.
   // The colours go to the columns marked `palette` in COLUMNS, in the order they
-  // are listed there. Waiting for takes none of them.
+  // appear there. Waiting for takes none of them.
   var TINT = 0.12;
-  // the page's own background, read off the stylesheet so the tint arithmetic
-  // and the icon do not each keep a copy of it
+  // the background of the page, read from the stylesheet so that the tint
+  // arithmetic and the icon do not each keep a copy of it
   var IVORY = getComputedStyle(document.documentElement).getPropertyValue('--ivory').trim();
 
   var FAMILIES = [
@@ -2286,7 +2289,7 @@
     return [0, 1, 2].map(function (i) { return parseInt(h.substr(i * 2, 2), 16); });
   }
 
-  // a colour laid over the page at TINT strength — what a column is filled with
+  // a colour over the page at TINT strength. This is the fill of a column
   function tintOf(hex) {
     var under = rgbOf(IVORY);
     return '#' + rgbOf(hex).map(function (v, i) {
@@ -2295,8 +2298,8 @@
     }).join('').toUpperCase();
   }
 
-  // the icon is the board itself: one bar per palette column, in the palette's
-  // colours. The tints are too pale to survive 16px, so the bars run solid.
+  // The icon is the board itself: one bar for each palette column, in the colours
+  // of the palette. The tints are too pale at 16px, so the bars are solid.
   // Waiting for takes no palette colour, so it gets no bar.
   function setFavicon(colors) {
     var link = document.getElementById('favicon');
@@ -2309,16 +2312,16 @@
     link.href = 'data:image/svg+xml,' + encodeURIComponent(svg + '</svg>');
   }
 
-  // What each column is wearing now: its own colour, or the one the palette
-  // handed it. Written onto the elements that show it.
+  // The colour of each column at this time: its own colour, or the one from the
+  // palette. It goes onto the elements that show it.
   var tone = {};
   COLUMNS.forEach(function (c) { tone[c.key] = { fill: c.fill, rule: c.rule }; });
 
   function paint(target, key) {
     target.style.setProperty('--fill', tone[key].fill);
     target.style.setProperty('--rule', tone[key].rule);
-    // cleared rather than left standing, since the notes window is repainted for
-    // whichever column its card came from
+    // cleared and not left in place, because the notes window is painted again
+    // for the column that holds its card
     ['card', 'text', 'head'].forEach(function (name) {
       var own = colOf(key)[name];
       if (own) target.style.setProperty('--' + name, own);
@@ -2333,7 +2336,7 @@
       tone[c.key] = { fill: tintOf(p.colors[i]), rule: p.colors[i] };
     });
     KEYS.forEach(function (k) { paint(views[k].el, k); });
-    // the notes window is wearing one of these colours too, if it is open
+    // the notes window uses one of these colours too, if it is open
     redrawNotes();
     setFavicon(p.colors);
     lsSet(PAL_KEY, p.id);
@@ -2344,8 +2347,8 @@
   var palView = null;      // null = the family list, otherwise a family id
   var currentPal = 'studio';
 
-  // One button shape serves both views of the panel: a name with a number to its
-  // right, a strip of colour beneath, and a line of small print under that.
+  // One button shape serves the two views of the panel: a name with a number to
+  // its right, a strip of colour below it, and a line of small print below that.
   function palButton(spec) {
     var b = textBtn('pal');
     var top = el('span', 'pal-top');
@@ -2361,7 +2364,7 @@
     return b;
   }
 
-  // one bar per column the palette dresses, tinted as that column will be
+  // one bar for each column that the palette colours, in the tint of that column
   function palBars(p) {
     var bars = el('span', 'pal-bars');
     p.colors.forEach(function (c) {
@@ -2373,8 +2376,9 @@
     return bars;
   }
 
-  // one dot per palette in the family, each showing that palette's lead colour —
-  // the one the family is named for. So the strip previews count and character.
+  // one dot for each palette in the family, in the main colour of that palette,
+  // which is the colour that names the family. So the strip shows the number of
+  // palettes and their character.
   function famDots(f) {
     var dots = el('span', 'fam-strip');
     f.palettes.forEach(function (p) {
@@ -2426,9 +2430,9 @@
         note: p.names,
         onClick: function () {
           applyPalette(p.id);
-          // stay open so several palettes can be tried in a row — the panel only
-          // closes on a click outside or Escape. Move the marker in place rather
-          // than re-rendering, which would throw away the scroll position.
+          // Stay open, so you can try several palettes in a row. The panel closes
+          // only on a click outside it or on Escape. Move the marker in place. A
+          // new render would lose the scroll position.
           palPanel.querySelectorAll('.pal').forEach(function (other) {
             other.classList.toggle('on', other.dataset.pal === p.id);
           });
@@ -2456,13 +2460,13 @@
   });
   document.addEventListener('click', function (e) {
     if (!palPanel.contains(e.target) && e.target !== palBtn) closePalette();
-    // a press on a card's own button never reaches here, and one on a word in the
-    // list puts it away itself on the way to doing what the word says
+    // a press on the button of a card never reaches here, and a press on a word
+    // in the menu closes the menu itself before it runs the action
     if (!menu.contains(e.target)) closeMenu();
   });
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
-    // a list standing over a card takes the key before the window under it does
+    // a menu over a card takes the key before the window below it does
     var owner = menuOwner;
     if (closeMenu()) { owner.focus(); return; }
     closePalette();
@@ -2470,7 +2474,7 @@
     closeNotes();
   });
 
-  // applyPalette writes the choice back under the current key
+  // applyPalette writes the choice back to the current key
   applyPalette(readCarried(PAL_KEY, OLD_PAL_KEYS) || 'studio');
 
   // keep two tabs of the same board in sync
