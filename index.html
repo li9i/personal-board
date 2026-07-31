@@ -542,6 +542,34 @@
   }
   .ctext ul, .ctext ol { padding-left: 18px; }
   .ctext li::marker { color: var(--gray-600); }
+  /* A fenced block is the chip's box grown to hold whole lines, so it takes the
+     same ink, fill and border as a chip and only the shape changes. */
+  .ctext pre {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--gray-800);
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 4px;
+    padding: 6px 7px;
+    line-height: 1.35;
+    /* A code line is as long as it was typed, a column is narrow, and a browser
+       holds the lines of a <pre> unbroken. So a long line wraps, as the prose
+       around it does: a card is read at a glance, and a line hidden off the right
+       edge is a line lost. Scrolling would hold the shape of the code, but it puts
+       a sideways drag inside a card that is itself dragged. */
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  /* the <code> inside a block wears the block's box, not a chip's */
+  .ctext pre code {
+    font-size: inherit;
+    line-height: inherit;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+  }
   .card textarea {
     min-height: 52px;
     border: 1.5px solid var(--clay);
@@ -555,10 +583,18 @@
     gap: 4px;
   }
   .date { color: var(--gray-800); }
-  /* the one sign a card carries notes while the actions are still hidden */
+  /* the one sign a card carries notes while the actions are still hidden, and a
+     second way in to them: the words themselves open the notes window */
   .notemark {
     color: var(--gray-600);
     margin-left: 6px;
+    cursor: pointer;
+  }
+  .notemark:hover {
+    color: var(--slate);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
   }
   .card-actions {
     margin-left: auto;
@@ -1445,12 +1481,13 @@
   window.addEventListener('resize', function () { closeMenu(); });
 
   // ---------- card ----------
-  // A board card and a note are the same object wearing the same furniture: text
-  // that opens for editing on a click, a date, and the button that opens the rest.
-  // `spec` is the little that differs between the two.
+  // A board card and a note are the same object wearing the same furniture: its
+  // text, a date, and the button that opens the rest. `spec` is the little that
+  // differs between the two.
   //   level    which drag this card belongs to
   //   redraw   what to run after an edit — the board, or the notes list
   //   mark     an optional word after the date
+  //   onMark   what a click on that word does, if it does anything
   //   buttons  what the list offers, in order: { icon, title, cls, onClick },
   //            where icon names a mark in MARKS
   function makeItem(item, spec) {
@@ -1460,19 +1497,18 @@
 
     var text = el('div', 'ctext');
     renderText(text, item.text);
-    text.addEventListener('click', function (e) {
-      // a click on an address follows it rather than opening the card around it
-      if (e.target.closest('a')) return;
-      editItem(card, text, item, spec.redraw);
-    });
 
     var bot = el('div', 'card-bot');
     bot.appendChild(el('span', 'date', fmtDate(item.created)));
-    if (spec.mark) bot.appendChild(el('span', 'notemark', spec.mark));
+    if (spec.mark) {
+      var mark = el('span', 'notemark', spec.mark);
+      if (spec.onMark) mark.addEventListener('click', spec.onMark);
+      bot.appendChild(mark);
+    }
 
-    // Editing heads the list for every card, not only the ones that need it: a
-    // click on the text is the usual way in, but a link takes that click for
-    // itself, and a card that is nothing but a link would have nowhere to press.
+    // Editing is only ever reached from this list. A card's words hold links,
+    // code and headings, and a click that opened the card for editing would take
+    // the click a link wants and put a box over text meant to be read.
     var actions = el('div', 'card-actions');
     actions.appendChild(makeMenuButton(card, [
       { icon: 'pencil', title: 'Edit',
@@ -1648,6 +1684,12 @@
     return out;
   }
 
+  // A fence: three or more backticks alone on a line. It is the one mark that
+  // spans lines, so it holds a width to close against, and what follows it on the
+  // opening line — 'js' in '```js' — names a language the board does not read and
+  // drops. A closing fence carries no language, only backticks.
+  var FENCE = /^ {0,3}(`{3,})\s*([^`]*)$/;
+
   // The marks that take a whole line. Each sits at the head of its line, under
   // three spaces at the most, and what it opens runs to the end of that line.
   var RULE = /^ {0,3}(?:-{3,}|\*{3,}|_{3,})\s*$/;
@@ -1662,15 +1704,28 @@
   // open, and a quote or a list takes as many lines in a row as it is given.
   //   {kind: 'para', text}            {kind: 'quote', text}
   //   {kind: 'heading', level, text}  {kind: 'list', ordered, start, items}
-  //   {kind: 'rule'}
+  //   {kind: 'rule'}                  {kind: 'code', width, lines}
   // A rule is read before a bullet, so '---' is the line it draws rather than an
-  // item with two dashes for its text.
+  // item with two dashes for its text. A fence is read before all of them, and
+  // once one is open it reads nothing at all until the fence that closes it.
   function blocks(s) {
     var out = [];
     var open = null;    // the block the line above left open, if it left one
+    var lines = s.split('\n');
     function start(b) { out.push(b); open = b; }
-    s.split('\n').forEach(function (line) {
+    lines.forEach(function (line, i) {
       var m;
+      // inside a fence every line is the characters it was typed as, so the marks
+      // below are not read and a blank line closes nothing
+      if (open && open.kind === 'code') {
+        if (closesFence(line, open.width)) { open = null; return; }
+        open.lines.push(line);
+        return;
+      }
+      if ((m = FENCE.exec(line)) && fenceCloses(lines, i, m[1].length)) {
+        start({ kind: 'code', width: m[1].length, lines: [] });
+        return;
+      }
       if (RULE.test(line)) { out.push({ kind: 'rule' }); open = null; return; }
       if ((m = HEADING.exec(line))) {
         out.push({ kind: 'heading', level: m[1].length, text: m[2] });
@@ -1703,11 +1758,33 @@
     return out;
   }
 
+  // Whether this line closes a fence that opened `width` backticks wide. A closer
+  // needs at least as many backticks as the opener and nothing else on its line,
+  // so a wider fence can hold a narrower one among its lines.
+  function closesFence(line, width) {
+    var m = FENCE.exec(line);
+    return !!m && m[1].length >= width && !m[2];
+  }
+
+  // Whether the fence opening on line `at` is closed further down the card. The
+  // rule the other marks go by holds here too, over lines rather than characters:
+  // a mark the card never closes is not a mark. So an opening fence with nothing
+  // under it to close it is the backticks it was typed as, and the lines below it
+  // stay the prose, headings and lists they would have been.
+  function fenceCloses(lines, at, width) {
+    var i;
+    for (i = at + 1; i < lines.length; i++) {
+      if (closesFence(lines[i], width)) return true;
+    }
+    return false;
+  }
+
   function makeCard(card) {
     return makeItem(card, {
       level: 'card',
       redraw: render,
       mark: noteMark(card),
+      onMark: function () { openNotes(card.id); },
       buttons: [
         { icon: 'page', title: 'Notes',
           onClick: function () { openNotes(card.id); } },
@@ -1732,7 +1809,8 @@
 
   // What a board card says about its notes, in the small line after its date.
   // The actions row is hidden until the card is hovered, so this is the only
-  // standing sign that a card holds anything. Return '' to say nothing.
+  // standing sign that a card holds anything, and pressing it opens them.
+  // Return '' to say nothing.
   function noteMark(card) {
     return card.notes.length ? '· ' + plural(card.notes.length, 'note') : '';
   }
@@ -1751,6 +1829,15 @@
   // The element a block displays as, holding the marked runs of its own text.
   function makeBlock(b) {
     if (b.kind === 'rule') return document.createElement('hr');
+    if (b.kind === 'code') {
+      var pre = document.createElement('pre');
+      var block = document.createElement('code');
+      // the lines as they were typed: a fenced block reads no mark inside it, so
+      // there is nothing here to fill in
+      block.textContent = b.lines.join('\n');
+      pre.appendChild(block);
+      return pre;
+    }
     if (b.kind === 'list') {
       var list = document.createElement(b.ordered ? 'ol' : 'ul');
       // a list that starts at 3 counts from 3

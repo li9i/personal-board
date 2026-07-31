@@ -16,10 +16,11 @@ Open `index.html` directly. A `file://` address works.
 
 - **+ add** at the bottom of a column writes a new card. Enter saves the card.
   Shift+Enter makes a new line. Escape cancels.
-- **Click a card** to edit the text of the card. The same keys apply.
 - **≡** on a card opens the list. The list holds **Edit**, **Notes**, **Export
   this card** and **Delete**. A note carries the same button, with **Edit** and
   **Delete note**. Escape or a click outside closes the list.
+- **Edit** is the one way to change the text of a card. The same keys apply. A
+  click on the text of the card does nothing.
 - **Backticks** mark inline code. `` `npm test` `` shows as a monospace chip. The
   card keeps the backticks, so you see them again when you edit the card. A chip
   must hold text and stay on one line. A single backtick therefore stays a
@@ -30,9 +31,7 @@ Open `index.html` directly. A `file://` address works.
   behind them. A `mailto:` address is also a link. Nothing else is a link. A
   `javascript:` address is not a link. An address inside backticks is code, not a
   link. The card keeps the text you typed, so you see it again when you edit the
-  card. A link opens in a new tab. A click on a link follows the link and does
-  not open the card for editing. When a link is all that a card says, use **Edit**
-  in the list to open the card.
+  card. A link opens in a new tab.
 - **Markdown**: the board reads some of the Markdown marks. Inside a line,
   `**bold**`, `*italic*` and `~~struck through~~` mark the words between them.
   Use asterisks for bold and italic. An underscore is a character, not a mark, so
@@ -41,15 +40,23 @@ Open `index.html` directly. A `file://` address works.
   `1.` or `1)` makes a numbered list, which counts from the first number you
   write. Three or more of `-`, `*` or `_` alone on a line draw a rule across the
   card. A blank line closes a paragraph, a quote or a list. A mark must hold text
-  and stay on one line. The board reads no other Markdown. There are no tables, no
-  images and no fenced code blocks. The card keeps the marks you typed, so you see
-  them again when you edit the card.
+  and stay on one line. The board reads no other Markdown. There are no tables and
+  no images. The card keeps the marks you typed, so you see them again when you
+  edit the card.
+- **Fences** mark a block of code. Three or more backticks alone on a line open
+  the block, and a line of at least as many backticks closes it. The lines between
+  them show as you typed them, in one monospace box. The board reads no mark inside
+  a block, so a `#` or an address there is the characters it is, and a blank line
+  closes nothing. A word after the opening fence names a language. The board reads
+  no language and drops the word. A fence that the card never closes is not a
+  fence. Its backticks stay backticks and the lines under it read as they would
+  have.
 - **Notes** opens the notes of the card, in a small window in the middle of the
   page. Notes are cards themselves. They take the same editing, backticks, links,
   dates and dragging to reorder. They have a list of their own, with a delete and
   an Undo. The window takes the colour of the column that holds the card. A card
-  with notes says so next to its date. Escape or a click outside closes the
-  window.
+  with notes says so next to its date, and a click on those words opens the
+  window too. Escape or a click outside closes the window.
 - **Drag a card** to move it within a column or to another column.
 - **Delete** takes a card off the board. **Delete note** takes a note off a card.
   Neither asks first. **clear column** empties Accomplished and does ask first.
