@@ -584,19 +584,31 @@
     gap: 4px;
   }
   .date { color: var(--gray-800); }
-  /* The only sign that a card has notes while the actions stay hidden. It is
-     also a second way to reach them, because the words open the notes window. */
+  /* The sign that a card has notes, and the way to open them. */
   .notemark {
     color: var(--gray-600);
     margin-left: 6px;
     cursor: pointer;
   }
-  .notemark:hover {
-    color: var(--slate);
+  /* The dot only holds the words apart from the date. It is not one of them, so
+     the underline starts after it. */
+  .notemark:hover { color: var(--slate); }
+  .notemark:hover .words {
     text-decoration: underline;
     text-decoration-thickness: 1px;
     text-underline-offset: 2px;
   }
+  /* A card with no notes has no count to show, so it offers to add the first
+     note in the same place. It comes with the actions, while the pointer is on
+     the card. A board of empty cards must not show the same line on each of
+     them. */
+  .notemark.add {
+    opacity: 0;
+    transition: opacity 120ms ease;
+  }
+  .card:hover .notemark.add,
+  .card:focus-within .notemark.add { opacity: 1; }
+  @media (hover: none) { .notemark.add { opacity: 1; } }
   .card-actions {
     margin-left: auto;
     display: flex;
@@ -622,10 +634,11 @@
     /* above the notes window and below the undo toast. A note deleted from the
        menu must leave its Undo within reach */
     z-index: 35;
-    /* One width for the two menus, so the two words of a note and the four words
-       of a card show as the same object. The width is no more than the longest
-       of them needs. The words are the purpose of the panel, and space to the
-       right of them is space the panel does not need. */
+    /* One width for the two menus, so the rows of a note and the rows of a card
+       show as the same object. The width is no more than the longest of them
+       needs, which is the three words of Export this card. The words are the
+       purpose of the panel, and space to the right of them is space the panel
+       does not need. */
     min-width: 140px;
     background: var(--white);
     border: 1px solid var(--gray-200);
@@ -902,8 +915,6 @@
   // never a character that the font of the reader can change. Each mark takes
   // the colour of the row it sits in, so nothing here sets a colour.
   var MARKS = {
-    page: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z '
-        + 'M14 2v6h6 M9 13h6 M9 17h6',
     send: 'M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8 M16 6l-4-4-4 4 M12 2v13',
     bin: 'M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6 '
        + 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'
@@ -1490,8 +1501,9 @@
   // differences between the two.
   //   level    which drag this card belongs to
   //   redraw   what to run after an edit: the board, or the notes list
-  //   mark     an optional word after the date
-  //   onMark   what a click on that word does, if it does anything
+  //   mark     optional words after the date, which arrive after a dot
+  //   markCls  an extra class for those words, if they need one
+  //   onMark   what a click on those words does, if it does anything
   //   buttons  what the menu offers, in order: { icon, title, cls, onClick },
   //            where icon names a mark in MARKS
   function makeItem(item, spec) {
@@ -1505,7 +1517,10 @@
     var bot = el('div', 'card-bot');
     bot.appendChild(el('span', 'date', fmtDate(item.created)));
     if (spec.mark) {
-      var mark = el('span', 'notemark', spec.mark);
+      var cls = spec.markCls ? 'notemark ' + spec.markCls : 'notemark';
+      var mark = el('span', cls);
+      mark.appendChild(el('span', 'dot', '· '));
+      mark.appendChild(el('span', 'words', spec.mark));
       if (spec.onMark) mark.addEventListener('click', spec.onMark);
       bot.appendChild(mark);
     }
@@ -1795,10 +1810,9 @@
       level: 'card',
       redraw: render,
       mark: noteMark(card),
-      onMark: function () { openNotes(card.id); },
+      markCls: card.notes.length ? '' : 'add',
+      onMark: function () { openNotes(card.id, !card.notes.length); },
       buttons: [
-        { icon: 'page', title: 'Notes',
-          onClick: function () { openNotes(card.id); } },
         { icon: 'send', title: 'Export this card',
           onClick: function () { exportCard(card.id); } },
         { icon: 'bin', title: 'Delete', cls: 'del',
@@ -1819,11 +1833,11 @@
   }
 
   // What a board card says about its notes, in the small line after its date.
-  // The actions row stays hidden until the pointer is over the card, so this is
-  // the only permanent sign that a card has notes. A press on it opens them.
-  // Return '' to say nothing.
+  // A press on it opens the notes window, and it is the only way there. A card
+  // with notes gives their count, and keeps it while the actions stay hidden. A
+  // card with none offers the first one.
   function noteMark(card) {
-    return card.notes.length ? '· ' + plural(card.notes.length, 'note') : '';
+    return card.notes.length ? plural(card.notes.length, 'note') : 'add note';
   }
 
   // Draw a list of items into a body, or the one line that replaces an empty
@@ -1931,12 +1945,15 @@
     return found ? found.card.notes : null;
   }
 
-  function openNotes(cardId) {
+  // `compose` opens the box for a new note with the window. The words that a
+  // card with no notes shows are an offer to write the first one.
+  function openNotes(cardId, compose) {
     closeComposers();
     openCardId = cardId;
     scrim.classList.add('on');
     redrawNotes();
-    notesClose.focus();
+    if (compose) notesComposer.open();
+    else notesClose.focus();
   }
 
   function closeNotes() {

@@ -18,11 +18,13 @@ Open `index.html` directly. A `file://` address works.
 
 - **+ add** at the bottom of a column writes a new card. Enter saves the card.
   Shift+Enter makes a new line. Escape cancels.
-- **≡** on a card opens the menu. The menu holds **Edit**, **Notes**, **Export
-  this card** and **Delete**. A note has the same button, with **Edit** and
-  **Delete note**. Escape or a click outside closes the menu.
-- **Edit** is the one way to change the text of a card. The same keys apply. A
-  click on the text of the card does nothing.
+- **≡** on a card opens the menu. The menu holds **Export this card** and
+  **Delete**. A note has the same button, with **Delete note**. Escape or a click
+  outside closes the menu.
+- **A double click** on a card opens its text in a box. This is the one way to
+  change the text. The same keys apply. A single click does nothing, and a double
+  click on a link or a button does what that link or button does. A note behaves
+  in the same way.
 - **Backticks** mark inline code. `` `npm test` `` shows as a monospace chip. The
   card keeps the backticks, so you see them again when you edit the card. A chip
   must hold text and stay on one line. A single backtick therefore stays a
@@ -55,13 +57,14 @@ Open `index.html` directly. A `file://` address works.
     names a language. The board reads no language and deletes the word. A fence
     that the card never closes is not a fence. Its backticks stay backticks, and
     the board reads the lines below it in the usual way.
-- **Notes** opens the notes of the card, in a small window in the middle of the
-  page. Notes are cards themselves. The same editing, backticks, links and dates
-  apply to them, and a drag reorders them. They have a menu of their own, with a
-  delete and an Undo.
-  - The window uses the colour of the column that holds the card. A card with
-    notes says so next to its date, and a click on those words opens the window
-    too. Escape or a click outside closes the window.
+- **Notes** open in a small window in the middle of the page. The words next to
+  the date of a card open that window. A card with notes gives their count there.
+  A card with no notes shows **add note** while the pointer is on the card. A
+  click there opens the window, with the box for the first note. Notes are cards
+  themselves. The same editing, backticks, links and dates apply to them, and a
+  drag reorders them. They have a menu of their own, with a delete and an Undo.
+  - The window uses the colour of the column that holds the card. Escape or a
+    click outside closes the window.
 - **Drag** moves a card within a column or to another column.
 - **Delete** removes a card from the board. **Delete note** removes a note from a
   card. Neither asks first. **clear column** empties Accomplished and asks first.
