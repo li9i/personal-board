@@ -316,7 +316,7 @@
     min-height: 200px;
   }
   .col.dragover {
-    outline: 2px dashed var(--clay);
+    outline: 2px dashed var(--drop, var(--gray-500));
     outline-offset: -6px;
     /* layered over the fill, so the column keeps its own colour during a drag */
     background-image: linear-gradient(rgba(217, 119, 87, 0.10), rgba(217, 119, 87, 0.10));
@@ -361,6 +361,21 @@
     gap: 2px;
     flex: 1;
     min-height: 60px;
+    /* the line that shows where a dragged card will land is placed against this */
+    position: relative;
+  }
+  /* The line sits on the edge the card would take: above the card it pushes
+     down, or under the last card when the drop lands at the end. It is out of
+     the flow, so showing it moves nothing in the column. */
+  .dropline {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    height: 2px;
+    margin-top: -1px;
+    background: var(--drop, var(--gray-500));
+    border-radius: 1px;
+    pointer-events: none;
   }
   .empty {
     font-family: var(--mono);
@@ -927,6 +942,7 @@
   //   clearable  offer "clear column" in the footer
   //   palette    take a colour from the panel, in the order the columns are listed
   //   fill/rule  the colour to use when no palette sets one
+  //   drop       the colour of its drop marks, when no palette sets one
   //   card       the colour of its cards
   //   text       the colour of the text on its cards
   //   head       the colour of its name
@@ -939,8 +955,10 @@
       // gives 6.0:1 on that card, and the name of the column is one shade
       // lighter than the full text colour. The two are still well above the
       // pale background.
-      fill: 'var(--ivory)', rule: 'var(--gray-200)', card: 'var(--ivory-50)',
-      text: 'var(--gray-600)', head: 'var(--gray-800)' },
+      // This column carries no colour of its own, so it marks a drop in the grey
+      // that its rule would be if it were darker.
+      fill: 'var(--ivory)', rule: 'var(--gray-200)', drop: 'var(--gray-500)',
+      card: 'var(--ivory-50)', text: 'var(--gray-600)', head: 'var(--gray-800)' },
     { key: 'backlog', label: 'Backlog', prompt: 'What needs doing?', palette: true },
     { key: 'now', label: 'Now', prompt: "What's underway?", palette: true },
     { key: 'accomplished', label: 'Accomplished', prompt: 'What got done?',
@@ -1335,6 +1353,7 @@
     card.addEventListener('dragend', function () {
       drag = null;
       card.classList.remove('dragging');
+      hideDropline();
       document.querySelectorAll('.dragover').forEach(function (zone) {
         zone.classList.remove('dragover');
       });
@@ -1347,21 +1366,26 @@
   }
 
   // A zone takes cards of one level and puts them where the drop happened. It
-  // marks itself while a card is over it. Only a column has a style for that
-  // mark, so on the notes window the mark carries no style.
+  // marks itself while a card is over it, and draws a line at the place the card
+  // would take. Only a column has a style for the mark, so on the notes window
+  // the mark carries no style.
   function wireDrop(zone, body, spec) {
     zone.addEventListener('dragover', function (e) {
       if (!dragged(spec.level)) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
       zone.classList.add('dragover');
+      showDropline(body, e.clientY);
     });
     zone.addEventListener('dragleave', function (e) {
-      if (!zone.contains(e.relatedTarget)) zone.classList.remove('dragover');
+      if (zone.contains(e.relatedTarget)) return;
+      zone.classList.remove('dragover');
+      hideDropline();
     });
     zone.addEventListener('drop', function (e) {
       e.preventDefault();
       zone.classList.remove('dragover');
+      hideDropline();
       var id = dragged(spec.level);
       if (id) spec.onDrop(id, insertIndex(body, e.clientY));
     });
@@ -1375,6 +1399,29 @@
       if (y < box.top + box.height / 2) return i;
     }
     return cards.length;
+  }
+
+  // The line that shows where the dragged card will land. Only one zone can be
+  // under the pointer, so one line serves the board and the notes window.
+  var dropline = null;
+
+  function hideDropline() {
+    if (dropline && dropline.parentNode) dropline.parentNode.removeChild(dropline);
+  }
+
+  // The line reads off the same index as the drop, so it never says one thing
+  // and the drop another. An empty list gets no line, since there is no card
+  // there to land above or below.
+  function showDropline(body, y) {
+    var cards = [].slice.call(body.querySelectorAll('.card:not(.dragging)'));
+    if (!cards.length) return hideDropline();
+    var at = insertIndex(body, y);
+    var edge = at < cards.length
+      ? cards[at].getBoundingClientRect().top
+      : cards[cards.length - 1].getBoundingClientRect().bottom;
+    if (!dropline) dropline = el('div', 'dropline');
+    if (dropline.parentNode !== body) body.appendChild(dropline);
+    dropline.style.top = (edge - body.getBoundingClientRect().top + body.scrollTop) + 'px';
   }
 
   // ---------- moving and removing ----------
@@ -2254,6 +2301,8 @@
   // The colours go to the columns marked `palette` in COLUMNS, in the order they
   // appear there. Waiting for takes none of them.
   var TINT = 0.12;
+  // how far towards black a column takes its own colour to mark a drop
+  var SHADE = 0.22;
   // the background of the page, read from the stylesheet so that the tint
   // arithmetic and the icon do not each keep a copy of it
   var IVORY = getComputedStyle(document.documentElement).getPropertyValue('--ivory').trim();
@@ -2387,6 +2436,15 @@
     return [0, 1, 2].map(function (i) { return parseInt(h.substr(i * 2, 2), 16); });
   }
 
+  // a colour SHADE of the way to black. This is the colour a column marks a drop
+  // with: its own colour, dark enough to read against its fill
+  function shadeOf(hex) {
+    return '#' + rgbOf(hex).map(function (v) {
+      var m = Math.round(v * (1 - SHADE));
+      return ('0' + m.toString(16)).slice(-2);
+    }).join('').toUpperCase();
+  }
+
   // a colour over the page at TINT strength. This is the fill of a column
   function tintOf(hex) {
     var under = rgbOf(IVORY);
@@ -2413,11 +2471,14 @@
   // The colour of each column at this time: its own colour, or the one from the
   // palette. It goes onto the elements that show it.
   var tone = {};
-  COLUMNS.forEach(function (c) { tone[c.key] = { fill: c.fill, rule: c.rule }; });
+  COLUMNS.forEach(function (c) {
+    tone[c.key] = { fill: c.fill, rule: c.rule, drop: c.drop };
+  });
 
   function paint(target, key) {
     target.style.setProperty('--fill', tone[key].fill);
     target.style.setProperty('--rule', tone[key].rule);
+    target.style.setProperty('--drop', tone[key].drop);
     // cleared and not left in place, because the notes window is painted again
     // for the column that holds its card
     ['card', 'text', 'head'].forEach(function (name) {
@@ -2450,7 +2511,9 @@
     palTurn = ((turn || 0) % 2 + 2) % 2;
     var colors = colorsOf(p);
     PAL_COLUMNS.forEach(function (c, i) {
-      tone[c.key] = { fill: tintOf(colors[i]), rule: colors[i] };
+      tone[c.key] = {
+        fill: tintOf(colors[i]), rule: colors[i], drop: shadeOf(colors[i])
+      };
     });
     KEYS.forEach(function (k) { paint(views[k].el, k); });
     // the notes window uses one of these colours too, if it is open
