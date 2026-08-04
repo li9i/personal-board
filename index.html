@@ -318,6 +318,10 @@
   .col.dragover {
     outline: 2px dashed var(--drop, var(--gray-500));
     outline-offset: -6px;
+    /* The column keeps its corners by clipping what is inside it, and the drop
+       line has to reach past its edge to be seen. Nothing else in the column
+       comes near the edge, so the clip is lifted while a card is over it. */
+    overflow: visible;
     /* layered over the fill, so the column keeps its own colour during a drag */
     background-image: linear-gradient(rgba(217, 119, 87, 0.10), rgba(217, 119, 87, 0.10));
   }
@@ -364,15 +368,19 @@
     /* the line that shows where a dragged card will land is placed against this */
     position: relative;
   }
-  /* The line sits on the edge the card would take: above the card it pushes
-     down, or under the last card when the drop lands at the end. It is out of
-     the flow, so showing it moves nothing in the column. */
+  /* The line fills the space the card would open: between two cards, above the
+     first, or below the last. It is out of the flow, so showing it moves nothing
+     in the column. */
   .dropline {
     position: absolute;
-    left: 10px;
-    right: 10px;
-    height: 2px;
-    margin-top: -1px;
+    /* The card that the pointer carries covers the middle of the line, so the
+       ends are what shows during a drag. They reach out of the column and stop
+       halfway across the gap to the next one, well clear of it. */
+    left: -18px;
+    right: -18px;
+    height: 1px;
+    /* the top that showDropline sets is the middle of the line, not its edge */
+    transform: translateY(-50%);
     background: var(--drop, var(--gray-500));
     border-radius: 1px;
     pointer-events: none;
@@ -825,6 +833,9 @@
     overflow: hidden;
   }
   .notes .col-body { overflow-y: auto; }
+  /* The list of notes scrolls, so it clips what reaches past its edge and would
+     scroll sideways to follow it. The line stops at the edge here. */
+  .notes .dropline { left: 0; right: 0; }
   .notes-head {
     display: flex;
     align-items: flex-start;
@@ -1412,16 +1423,28 @@
   // The line reads off the same index as the drop, so it never says one thing
   // and the drop another. An empty list gets no line, since there is no card
   // there to land above or below.
+  //
+  // It goes in the middle of the space the card would open: halfway between the
+  // two cards it comes between, and half a gap clear of the first or the last
+  // card at the ends. The gap comes off the column, so this and the stylesheet
+  // do not each keep a copy of it.
   function showDropline(body, y) {
     var cards = [].slice.call(body.querySelectorAll('.card:not(.dragging)'));
     if (!cards.length) return hideDropline();
     var at = insertIndex(body, y);
-    var edge = at < cards.length
-      ? cards[at].getBoundingClientRect().top
-      : cards[cards.length - 1].getBoundingClientRect().bottom;
+    var half = (parseFloat(getComputedStyle(body).rowGap) || 0) / 2;
+    var mid;
+    if (at === 0) {
+      mid = cards[0].getBoundingClientRect().top - half;
+    } else if (at < cards.length) {
+      mid = (cards[at - 1].getBoundingClientRect().bottom +
+             cards[at].getBoundingClientRect().top) / 2;
+    } else {
+      mid = cards[cards.length - 1].getBoundingClientRect().bottom + half;
+    }
     if (!dropline) dropline = el('div', 'dropline');
     if (dropline.parentNode !== body) body.appendChild(dropline);
-    dropline.style.top = (edge - body.getBoundingClientRect().top + body.scrollTop) + 'px';
+    dropline.style.top = (mid - body.getBoundingClientRect().top + body.scrollTop) + 'px';
   }
 
   // ---------- moving and removing ----------
