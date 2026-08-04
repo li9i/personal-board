@@ -545,6 +545,63 @@
   }
   .ctext ul, .ctext ol { padding-left: 18px; }
   .ctext li::marker { color: var(--gray-600); }
+  /* An item that opens with a box drops the marker that the list gives it. The
+     box keeps its size while the words beside it wrap, and it rests on the first
+     of those lines. */
+  .ctext li.task {
+    list-style: none;
+    display: flex;
+    align-items: flex-start;
+  }
+  /* The box stands where the marker of the item would be, so a box and a bullet
+     in one list are in the same place and the words after them line up. The list
+     indents by 18px and the box is 14px wide, which leaves 4px to the words. */
+  .ctext li.task .tickbox {
+    margin-left: -18px;
+    margin-right: 4px;
+  }
+  /* the words of the item are one box beside the box of the task, so a long
+     address in them shortens the words and does not widen the card */
+  .task-what { min-width: 0; }
+  /* The box of one task: the small square of the card actions, made as tall as a
+     line of card text. It takes the colour behind it while it is open, so it
+     reads on a white card and on the tint of the notes window. A box that is
+     done fills with the clay and holds the tick. */
+  .tickbox {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    /* the line is 13px at 1.35, so this rests the box on the middle of it */
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: var(--white);
+    background: none;
+    border: 1.5px solid var(--gray-500);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .tickbox:hover { border-color: var(--slate); }
+  .tickbox[aria-checked="true"] {
+    background: var(--clay-d);
+    border-color: var(--clay-d);
+  }
+  /* the same ring as an address on a card, and for the same reason: the box can
+     come to rest on the fill of a column and not on white */
+  .tickbox:focus-visible {
+    outline: 2px solid var(--clay-d);
+    outline-offset: 1px;
+  }
+  .tickbox .glyph { display: flex; }
+  /* The mark is small, so it needs a thicker line than the menu gives it. A
+     stroke set here wins over the one on the element. */
+  .tickbox svg {
+    width: 11px;
+    height: 11px;
+    stroke-width: 3.5;
+  }
   /* A fenced block is the box of a chip, made large enough for whole lines. It
      takes the same text colour, fill and border as a chip. Only the shape
      changes. */
@@ -924,7 +981,8 @@
   var MARKS = {
     send: 'M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8 M16 6l-4-4-4 4 M12 2v13',
     bin: 'M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6 '
-       + 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'
+       + 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2',
+    tick: 'M20 6L9 17l-5-5'
   };
 
   function icon(name) {
@@ -1519,7 +1577,7 @@
     card.dataset.id = item.id;
 
     var text = el('div', 'ctext');
-    renderText(text, item.text);
+    renderText(text, item.text, function (at) { toggleTask(item, at); });
 
     var bot = el('div', 'card-bot');
     bot.appendChild(el('span', 'date', fmtDate(item.created)));
@@ -1730,14 +1788,25 @@
   var QUOTE = /^ {0,3}>\s?(.*)$/;
   var BULLET = /^ {0,3}[-*+]\s+(.*)$/;
   var NUMBER = /^ {0,3}(\d+)[.)]\s+(.*)$/;
+  // A task: a bulleted item that opens with a box. The brackets hold one
+  // character, a space for a box that is open and a lower case x for one that is
+  // done, and a space follows them. Nothing else is a box, so '- [X] read' and
+  // '- [-] read' are the items with the characters that you typed.
+  var TASK = /^ {0,3}[-*+]\s+\[([ x])\]\s+(.*)$/;
+  // The box in a line that TASK matched. A task opens with its bullet and its
+  // box, so the first pair of brackets in the line is always the box.
+  var BOX = /\[[ x]\]/;
 
   // Group the lines of a card into the blocks that they display as, in order. A
   // line with a line mark is the block that the mark names. Every other line is
   // prose, and a run of prose lines is one paragraph. A blank line closes any
   // open block, and a quote or a list takes as many lines in a row as it gets.
   //   {kind: 'para', text}            {kind: 'quote', text}
-  //   {kind: 'heading', level, text}  {kind: 'list', ordered, start, items}
-  //   {kind: 'rule'}                  {kind: 'code', width, lines}
+  //   {kind: 'heading', level, text}  {kind: 'rule'}
+  //   {kind: 'code', width, lines}
+  //   {kind: 'list', ordered, start, items: [{text, done, line}]}
+  // An item of a list holds the line that it came from. Its `done` is true or
+  // false for an item that opens with a box, and null for one that has none.
   // A rule comes before a bullet, so '---' is the divider that it draws and not
   // an item with two dashes for its text. A fence comes before all of them, and
   // an open fence reads nothing until the fence that closes it.
@@ -1776,11 +1845,17 @@
         // a numbered list below a bulleted one is a list of its own, and a
         // bulleted list below a numbered one is too
         var ordered = !bullet;
+        // a bulleted item can open with a box, and a box and a bullet belong to
+        // the one list. The item keeps the line that it came from, which is where
+        // a press on its box writes.
+        var task = bullet && TASK.exec(line);
+        var item = { text: task ? task[2] : (ordered ? m[2] : m[1]),
+          done: task ? task[1] === 'x' : null, line: i };
         if (open && open.kind === 'list' && open.ordered === ordered) {
-          open.items.push(ordered ? m[2] : m[1]);
+          open.items.push(item);
         } else {
           start({ kind: 'list', ordered: ordered, start: ordered ? Number(m[1]) : 1,
-            items: [ordered ? m[2] : m[1]] });
+            items: [item] });
         }
         return;
       }
@@ -1859,7 +1934,8 @@
   }
 
   // The element that a block displays as, with the marked runs of its own text.
-  function makeBlock(b) {
+  // onToggle(line) is what a press on the box of a task does.
+  function makeBlock(b, onToggle) {
     if (b.kind === 'rule') return document.createElement('hr');
     if (b.kind === 'code') {
       var pre = document.createElement('pre');
@@ -1874,9 +1950,19 @@
       var list = document.createElement(b.ordered ? 'ol' : 'ul');
       // a list that starts at 3 counts from 3
       if (b.ordered && b.start !== 1) list.start = b.start;
-      b.items.forEach(function (text) {
+      b.items.forEach(function (item) {
         var li = document.createElement('li');
-        fillInline(li, text);
+        if (item.done === null) {
+          fillInline(li, item.text);
+        } else {
+          // the box takes the place of the marker, and the words of the item are
+          // one box of their own beside it
+          li.className = 'task';
+          li.appendChild(taskBox(item, onToggle));
+          var what = el('span', 'task-what');
+          fillInline(what, item.text);
+          li.appendChild(what);
+        }
         list.appendChild(li);
       });
       return list;
@@ -1887,13 +1973,41 @@
     return box;
   }
 
+  // The box of one task. It is a button, so it answers the pointer and the
+  // keyboard, and the role says that a press ticks it and goes nowhere. The words
+  // of the item name the box for a reader who cannot see it. A box that is done
+  // holds the tick, and an open one holds nothing.
+  function taskBox(task, onToggle) {
+    var box = textBtn('tickbox');
+    box.setAttribute('role', 'checkbox');
+    box.setAttribute('aria-checked', task.done ? 'true' : 'false');
+    box.setAttribute('aria-label', task.text);
+    if (task.done) box.appendChild(icon('tick'));
+    box.addEventListener('click', function () { onToggle(task.line); });
+    return box;
+  }
+
+  // Turn the box on line `at` of an item over. The line keeps everything else it
+  // holds, so the words of the task and the marks in them stay as they are. This
+  // is the one change to the text of a card that does not go through the box that
+  // a double click opens.
+  function toggleTask(item, at) {
+    var lines = item.text.split('\n');
+    var m = TASK.exec(lines[at]);
+    // the text moved below the card that shows it: another tab, or an import
+    if (!m) return;
+    lines[at] = lines[at].replace(BOX, m[1] === 'x' ? '[ ]' : '[x]');
+    item.text = lines.join('\n');
+    commit();
+  }
+
   // Fill el with the text of the card: the blocks that hold its lines, and inside
   // each block the chips, addresses and marked runs that its characters name. The
   // stored text keeps every mark you typed, so an edit of the card shows them
   // again. Text nodes throughout, so card text never passes through innerHTML.
-  function renderText(el, s) {
+  function renderText(el, s, onToggle) {
     el.textContent = '';
-    blocks(s).forEach(function (b) { el.appendChild(makeBlock(b)); });
+    blocks(s).forEach(function (b) { el.appendChild(makeBlock(b, onToggle)); });
   }
 
   // The text of one block, each code segment as a <code> chip, each address as
@@ -1984,7 +2098,10 @@
 
     paint(notesPanel, found.col);
     document.getElementById('notesCol').textContent = colOf(found.col).label;
-    renderText(document.getElementById('notesWhat'), found.card.text);
+    // the head of the window is the text of the card, so a box there is the same
+    // box as the one on the card behind
+    renderText(document.getElementById('notesWhat'), found.card.text,
+      function (at) { toggleTask(found.card, at); });
     document.getElementById('notesCount').textContent = found.card.notes.length;
     fillBody(notesBody, found.card.notes, 'no notes yet', makeNote);
   }

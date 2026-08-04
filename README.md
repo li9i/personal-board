@@ -22,9 +22,9 @@ Open `index.html` directly. A `file://` address works.
   **Delete**. A note has the same button, with **Delete note**. Escape or a click
   outside closes the menu.
 - **A double click** on a card opens its text in a box. This is the one way to
-  change the text. The same keys apply. A single click does nothing, and a double
-  click on a link or a button does what that link or button does. A note behaves
-  in the same way.
+  write the text, and a checkbox is the one thing that a single click changes. The
+  same keys apply. A single click does nothing else, and a double click on a link
+  or a button does what that link or button does. A note behaves in the same way.
 - **Backticks** mark inline code. `` `npm test` `` shows as a monospace chip. The
   card keeps the backticks, so you see them again when you edit the card. A chip
   must hold text and stay on one line. A single backtick therefore stays a
@@ -49,6 +49,17 @@ Open `index.html` directly. A `file://` address works.
     line make a divider across the card.
   - A blank line closes a paragraph, a quote or a list. The board reads no other
     Markdown. There are no tables and no images.
+- **Checkboxes**: at the head of a bulleted item, `- [ ]` makes an open box and
+  `- [x]` a box that is done. A click on a box turns it over and writes the
+  change into the text of the card. So the state of a box is text, and it travels
+  with Export and Import as the rest of the card does.
+  - Only a space or a lower case `x` goes between the brackets, and a space
+    follows them. So `- [X] read` and `- [-] read` are items with the characters
+    that you typed. A numbered item takes no box.
+  - An item with a box carries no bullet. The box stands where the bullet would
+    be, so one list holds both kinds of item and the words after them line up.
+  - A note takes boxes too. The head of the notes window shows the text of its
+    card, and a box there is the same box as the one on the card.
 - **Fences** mark a block of code. Three or more backticks alone on a line open
   the block, and a line of at least as many backticks closes it. The lines
   between them show as you typed them, in one monospace box. The board reads no
