@@ -17,8 +17,8 @@ card at the head of Remember](doc/board.png)
 
 Open `index.html` directly. A `file://` address works.
 
-- **+ add** at the bottom of a column writes a new card. Enter saves the card.
-  Shift+Enter makes a new line. Escape cancels.
+- **+ add** at the top of a column writes a new card, above the rest of the
+  stack. Enter saves the card. Shift+Enter makes a new line. Escape cancels.
 - **≡** on a card opens the menu. The menu holds **Pin to top**, **Export this
   card** and **Delete**. A note has the same button, with **Delete note**.
   Escape or a click outside closes the menu.

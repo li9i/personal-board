@@ -359,8 +359,11 @@
     min-width: 26px;
     text-align: center;
   }
+  .col-add {
+    padding: 10px 10px 0;
+  }
   .col-body {
-    padding: 10px 10px 6px;
+    padding: 6px 10px 6px;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -958,7 +961,7 @@
     </div>
     <div class="col-body" id="notesBody"></div>
     <!-- makeComposer() builds the add button and its box, the same pair that a
-         column foot gets -->
+         column's col-add gets -->
     <div class="col-foot" id="notesFoot"></div>
   </section>
 </div>
@@ -1357,24 +1360,29 @@
     var count = el('span', 'count');
     head.appendChild(count);
 
+    var addWrap = el('div', 'col-add');
     var body = el('div', 'col-body');
-    var foot = el('div', 'col-foot');
 
-    makeComposer(foot, {
+    makeComposer(addWrap, {
       add: '+ add to ' + c.label.toLowerCase(),
       placeholder: c.prompt,
       onAdd: function (text) {
-        state.cols[c.key].push(newItem(text));
+        state.cols[c.key].unshift(newItem(text));
         commit();
       }
     });
 
     var clear = c.clearable ? makeClearRow(c) : null;
-    if (clear) foot.appendChild(clear);
+    var foot = null;
+    if (clear) {
+      foot = el('div', 'col-foot');
+      foot.appendChild(clear);
+    }
 
     column.appendChild(head);
+    column.appendChild(addWrap);
     column.appendChild(body);
-    column.appendChild(foot);
+    if (foot) column.appendChild(foot);
     board.appendChild(column);
 
     if (c.divider) {
