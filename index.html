@@ -490,6 +490,9 @@
   }
   .card:hover { border-color: var(--gray-500); box-shadow: 0 2px 5px rgba(20,20,19,0.09); }
   .card:active { cursor: grabbing; }
+  /* A pinned card takes the accent of its column, the same --rule a column
+     already puts along its own top edge. */
+  .card.pinned { border-color: var(--rule, var(--gray-200)); }
   .card.dragging { opacity: .4; }
   .ctext {
     font-size: 13px;
