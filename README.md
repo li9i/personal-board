@@ -1,16 +1,17 @@
 # Personal board
 
-A personal board with four columns: Waiting for, Backlog, Now, Accomplished. The
+A personal board with four columns: Remember, Backlog, Now, Accomplished. The
 board is one HTML file. There is no build step, no dependency and no server.
 Open `index.html` in a browser.
 
-**Waiting for** holds the cards that need action from someone else. A hairline
-separates this column from the other three. No palette gives this column a
-colour. It uses the page background. Its cards are white and its text is grey.
+**Remember** holds what you must keep in mind: a card that someone else has to
+move, and a note to yourself that is not work at all. A hairline separates this
+column from the other three. No palette gives this column a colour. It uses the
+page background. Its cards are white and its text is grey.
 
 ![The board with a few cards in each column. The cards show a heading and a
-list, a code chip, a fenced block, a link, and a card with one
-note](doc/board.png)
+list, a code chip, a fenced block, a link, a card with one note, and a pinned
+card at the head of Remember](doc/board.png)
 
 ## Use
 
@@ -18,9 +19,9 @@ Open `index.html` directly. A `file://` address works.
 
 - **+ add** at the bottom of a column writes a new card. Enter saves the card.
   Shift+Enter makes a new line. Escape cancels.
-- **≡** on a card opens the menu. The menu holds **Export this card** and
-  **Delete**. A note has the same button, with **Delete note**. Escape or a click
-  outside closes the menu.
+- **≡** on a card opens the menu. The menu holds **Pin to top**, **Export this
+  card** and **Delete**. A note has the same button, with **Delete note**.
+  Escape or a click outside closes the menu.
 - **A double click** on a card opens its text in a box. This is the one way to
   write the text, and a checkbox is the one thing that a single click changes. The
   same keys apply. A single click does nothing else, and a double click on a link
@@ -77,6 +78,12 @@ Open `index.html` directly. A `file://` address works.
   - The window uses the colour of the column that holds the card. Escape or a
     click outside closes the window.
 - **Drag** moves a card within a column or to another column.
+- **Pin to top** holds a card at the head of its column. A pinned card shows a
+  pin next to its date, and its menu offers **Unpin**. A card that is not pinned
+  cannot pass a pinned one, so a drag stops at that line and so does the line
+  that shows where the card lands. A new pin goes to the foot of the pinned
+  cards. Taking a pin off puts the card at the head of the rest. Every column
+  takes pins. A note takes none.
 - **Delete** removes a card from the board. **Delete note** removes a note from a
   card. Neither asks first. **clear column** empties Accomplished and asks first.
   All three show a toast with an **Undo**.
@@ -102,6 +109,9 @@ Notes travel with Export and Import. A delete removes the notes of the card too.
 Undo returns the card and the notes. A board saved before notes existed opens
 with no notes.
 
+A pin is on the card too, so it travels with Export and Import as the notes do.
+A board saved before pins existed opens with none.
+
 Export and Import use two shapes. A whole board is `{"cols": ...}` and replaces
 the board that is here. One card is `{"card": ..., "col": ...}` and joins the
 board. Import reads the fields in the file to find which of the two shapes it is.
@@ -114,12 +124,15 @@ The page also reads two older keys, `todo.board.v1` and `backlog.board.v1`. At
 the first load, the page moves a board from an older key to the new key, and then
 deletes the older key. Import also reads older JSON exports.
 
+The Remember column was called Waiting for and was stored under `waiting`. A
+board saved under that name opens with those cards in Remember.
+
 ## Palettes
 
 The colour combinations come from Sanzo Wada's *A Dictionary of Color
 Combinations*. The board groups the combinations into families by their main
 colour, and keeps three colours from each combination. Backlog, Now and
-Accomplished get one colour each. The palette gives no colour to Waiting for.
+Accomplished get one colour each. The palette gives no colour to Remember.
 
 Green is the colour of Accomplished, so a combination is here only if one of its
 colours is a green. That green goes to Accomplished and stays there. Where a
