@@ -569,6 +569,45 @@
     border-left: 2px solid var(--gray-500);
     padding-left: 8px;
   }
+  /* A callout is a quote that opens with a noun. The bar at its edge and its
+     head take the colour of the noun, and everything below the head is card
+     text and keeps the colour of the card. */
+  .ctext .callout {
+    border-left: 3px solid var(--c);
+    padding-left: 9px;
+  }
+  .ctext .callout-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--c);
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .ctext .callout-head .glyph { display: flex; flex: none; }
+  .ctext .callout-head svg { width: 14px; height: 14px; }
+  /* The blocks of the body carry the gaps of a card, one step tighter. The rule
+     that spaces a card reaches only the blocks directly inside it, so the body
+     sets its own. */
+  .ctext .callout-body { margin-top: 4px; }
+  .ctext .callout-body > * { margin: 0; }
+  .ctext .callout-body > * + * { margin-top: 5px; }
+  /* The colour of each noun. Every one of them is at least 4.5:1 on a white card
+     and on the darkest fill that a palette makes, which is where card text comes
+     to rest in the head of the notes window. */
+  .ctext .callout.note,
+  .ctext .callout.info,
+  .ctext .callout.todo { --c: #466683; }
+  .ctext .callout.abstract { --c: #2C6D68; }
+  .ctext .callout.success,
+  .ctext .callout.tip { --c: #4C6B3A; }
+  .ctext .callout.question,
+  .ctext .callout.warning { --c: #7F5D14; }
+  .ctext .callout.failure,
+  .ctext .callout.danger,
+  .ctext .callout.bug { --c: #A6433B; }
+  .ctext .callout.example { --c: #6B5487; }
+  .ctext .callout.quote { --c: var(--gray-600); }
   .ctext hr {
     border: 0;
     border-top: 1px solid var(--gray-200);
@@ -1023,8 +1062,9 @@
     return b;
   }
 
-  // The marks that the menu shows next to its words. Each one is a set of lines
-  // on a 24 grid, shown at 16px, so a mark is the same mark at every size and is
+  // The marks that the menu shows next to its words, and the one that each
+  // callout draws. Each one is a set of lines on a 24 grid, shown at 16px in the
+  // menu and at 14px in a card, so a mark is the same mark at every size and is
   // never a character that the font of the reader can change. Each mark takes
   // the colour of the row it sits in, so nothing here sets a colour.
   var MARKS = {
@@ -1033,7 +1073,25 @@
        + 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2',
     pin: 'M12 17v5 M9 4.5V10a3 3 0 0 1-1.66 2.68l-1.68.84A2 2 0 0 0 4.5 15.3V17h15v-1.7'
        + 'a2 2 0 0 0-1.16-1.82l-1.68-.84A3 3 0 0 1 15 10V4.5 M8 2h8',
-    tick: 'M20 6L9 17l-5-5'
+    tick: 'M20 6L9 17l-5-5',
+    note: 'M12 20h9 M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z',
+    abstract: 'M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2 '
+       + 'M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1Z M8 12h8 M8 16h5',
+    info: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20 M12 16v-5 M12 8h.01',
+    todo: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20 M8 12l3 3 5-6',
+    tip: 'M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4 2-6 .5 2.5 2 4.9 4 6.5 '
+       + '2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3a2.5 2.5 0 0 0 2.5 2.5Z',
+    success: 'M20 6 9 17l-5-5',
+    question: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20 M9.1 9.5a3 3 0 0 1 5.8 1c0 2-3 3-3 3 '
+       + 'M12 17h.01',
+    warning: 'M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0Z '
+       + 'M12 9v4 M12 17h.01',
+    failure: 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20 M15 9l-6 6 M9 9l6 6',
+    danger: 'M13 2 3 14h9l-1 8 10-12h-9l1-8Z',
+    bug: 'M12 20a6 6 0 0 0 6-6v-3a6 6 0 0 0-12 0v3a6 6 0 0 0 6 6Z M8.5 3 10 4.6 '
+       + 'M15.5 3 14 4.6 M3 9h3 M18 9h3 M3 15.5h3 M18 15.5h3 M12 8v12',
+    example: 'M8 6h13 M8 12h13 M8 18h13 M3.5 6h.01 M3.5 12h.01 M3.5 18h.01',
+    quote: 'M6 17h3l2-4V7H5v6h3Z M14 17h3l2-4V7h-6v6h3Z'
   };
 
   function icon(name) {
@@ -1940,23 +1998,70 @@
   // box, so the first pair of brackets in the line is always the box.
   var BOX = /\[[ x]\]/;
 
+  // The nouns that open a callout, and the one that each of them draws. A noun
+  // on the left is another way to write the one on the right, the way Obsidian
+  // has them, with one departure: Obsidian reads 'caution' as a warning and this
+  // board reads it as a danger, in red. A word this table does not hold is not a
+  // callout, so a quote that opens with one stays the quote that it is.
+  var CALLOUTS = {
+    note: 'note',
+    abstract: 'abstract', summary: 'abstract', tldr: 'abstract',
+    info: 'info',
+    todo: 'todo',
+    tip: 'tip', hint: 'tip', important: 'tip',
+    success: 'success', check: 'success', done: 'success',
+    question: 'question', help: 'question', faq: 'question',
+    warning: 'warning', attention: 'warning',
+    failure: 'failure', fail: 'failure', missing: 'failure',
+    danger: 'danger', caution: 'danger', error: 'danger',
+    bug: 'bug',
+    example: 'example',
+    quote: 'quote', cite: 'quote'
+  };
+
+  // The first line of a quote that opens a callout: a noun in brackets, in any
+  // case. The words after it are the title, and a line that holds none takes the
+  // noun for its title. Obsidian writes a '+' or a '-' after the brackets for a
+  // callout that opens folded. The board does not fold, so it reads that mark
+  // and drops it.
+  var CALLOUT = /^\[!([a-z]+)\][+-]?\s*(.*)$/i;
+
+  // What the head and the body of a callout hold, for the text of a quote. It is
+  // null for a quote that opens with no noun that the board knows, which is
+  // every quote written before callouts and every one that names something else.
+  function calloutOf(s) {
+    var at = s.indexOf('\n');
+    var m = CALLOUT.exec(at === -1 ? s : s.slice(0, at));
+    var type = m && CALLOUTS[m[1].toLowerCase()];
+    if (!type) return null;
+    return {
+      type: type,
+      title: m[2] || m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase(),
+      body: at === -1 ? '' : s.slice(at + 1)
+    };
+  }
+
   // Group the lines of a card into the blocks that they display as, in order. A
   // line with a line mark is the block that the mark names. Every other line is
   // prose, and a run of prose lines is one paragraph. A blank line closes any
   // open block, and a quote or a list takes as many lines in a row as it gets.
-  //   {kind: 'para', text}            {kind: 'quote', text}
+  //   {kind: 'para', text}            {kind: 'quote', text, at}
   //   {kind: 'heading', level, text}  {kind: 'rule'}
   //   {kind: 'code', width, lines}
   //   {kind: 'list', ordered, start, items: [{text, done, line}]}
-  // An item of a list holds the line that it came from. Its `done` is true or
-  // false for an item that opens with a box, and null for one that has none.
+  // An item of a list holds the line that it came from, and a quote holds the
+  // line it opened on. Its `done` is true or false for an item that opens with a
+  // box, and null for one that has none.
   // A rule comes before a bullet, so '---' is the divider that it draws and not
   // an item with two dashes for its text. A fence comes before all of them, and
   // an open fence reads nothing until the fence that closes it.
-  function blocks(s) {
+  // `from` is the line of the card that `s` starts on. Only the body of a
+  // callout passes it, because the body is part of a card that begins above it.
+  function blocks(s, from) {
     var out = [];
     var open = null;    // the block the line above left open, if it left one
     var lines = s.split('\n');
+    var off = from || 0;
     function start(b) { out.push(b); open = b; }
     lines.forEach(function (line, i) {
       var m;
@@ -1979,7 +2084,7 @@
       }
       if ((m = QUOTE.exec(line))) {
         if (open && open.kind === 'quote') open.text += '\n' + m[1];
-        else start({ kind: 'quote', text: m[1] });
+        else start({ kind: 'quote', text: m[1], at: off + i });
         return;
       }
       var bullet = BULLET.exec(line);
@@ -1993,7 +2098,7 @@
         // a press on its box writes.
         var task = bullet && TASK.exec(line);
         var item = { text: task ? task[2] : (ordered ? m[2] : m[1]),
-          done: task ? task[1] === 'x' : null, line: i };
+          done: task ? task[1] === 'x' : null, line: off + i };
         if (open && open.kind === 'list' && open.ordered === ordered) {
           open.items.push(item);
         } else {
@@ -2113,9 +2218,34 @@
       });
       return list;
     }
+    if (b.kind === 'quote') {
+      var call = calloutOf(b.text);
+      // the body of a callout starts on the line below the one that names it
+      if (call) return makeCallout(call, b.at + 1, onToggle);
+    }
     var box = document.createElement(b.kind === 'heading' ? 'h' + b.level
       : b.kind === 'quote' ? 'blockquote' : 'p');
     fillInline(box, b.text);
+    return box;
+  }
+
+  // A callout: the head that names it, and the rest of the quote below. The body
+  // is read as card text, so it holds the lists, boxes and fences that a card
+  // holds. `from` is the line of the card that the body starts on, which is
+  // where a press on a box inside it writes.
+  function makeCallout(call, from, onToggle) {
+    var box = el('div', 'callout ' + call.type);
+    var head = el('div', 'callout-head');
+    head.appendChild(icon(call.type));
+    head.appendChild(el('span', '', call.title));
+    box.appendChild(head);
+    if (call.body.trim()) {
+      var body = el('div', 'callout-body');
+      blocks(call.body, from).forEach(function (b) {
+        body.appendChild(makeBlock(b, onToggle));
+      });
+      box.appendChild(body);
+    }
     return box;
   }
 
@@ -2133,13 +2263,22 @@
     return box;
   }
 
+  // A line with the quote marks that hold it taken off. A task inside a callout
+  // is a line of the card that opens with the '>' of its quote, and the marks in
+  // it are read below that.
+  function unquoted(line) {
+    var m;
+    while ((m = QUOTE.exec(line))) line = m[1];
+    return line;
+  }
+
   // Turn the box on line `at` of an item over. The line keeps everything else it
-  // holds, so the words of the task and the marks in them stay as they are. This
-  // is the one change to the text of a card that does not go through the box that
-  // a double click opens.
+  // holds, so the words of the task, the marks in them and the quote that holds
+  // them stay as they are. This is the one change to the text of a card that does
+  // not go through the box that a double click opens.
   function toggleTask(item, at) {
     var lines = item.text.split('\n');
-    var m = TASK.exec(lines[at]);
+    var m = TASK.exec(unquoted(lines[at]));
     // the text moved below the card that shows it: another tab, or an import
     if (!m) return;
     lines[at] = lines[at].replace(BOX, m[1] === 'x' ? '[ ]' : '[x]');

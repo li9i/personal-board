@@ -50,6 +50,19 @@ Open `index.html` directly. A `file://` address works.
     line make a divider across the card.
   - A blank line closes a paragraph, a quote or a list. The board reads no other
     Markdown. There are no tables and no images.
+- **Callouts**: a quote whose first line is a noun in brackets is a callout. `> [!warning]`
+  opens one, and the lines below it are its text. The head takes the mark and the colour of
+  the noun. Words after the noun on that line become the head instead, so
+  `> [!question] Do we keep the fourth column?` names itself. A word the board does not know
+  is not a callout, and those lines stay the quote that they were.
+  - The nouns are the ones Obsidian has: `note`, `abstract` (`summary`, `tldr`), `info`,
+    `todo`, `tip` (`hint`, `important`), `success` (`check`, `done`), `question` (`help`,
+    `faq`), `warning` (`attention`), `failure` (`fail`, `missing`), `danger` (`caution`,
+    `error`), `bug`, `example` and `quote` (`cite`). A noun in brackets reads in any case.
+    Obsidian reads `caution` as a warning. Here it is a danger, in red.
+  - The text of a callout is card text, so it takes lists, boxes, fences and a heading. Only
+    the first line of a quote can name a callout. The board does not fold a callout, so a
+    `+` or a `-` after the brackets is read and dropped.
 - **Checkboxes**: at the head of a bulleted item, `- [ ]` makes an open box and
   `- [x]` a box that is done. A click on a box turns it over and writes the
   change into the text of the card. So the state of a box is text, and it travels
