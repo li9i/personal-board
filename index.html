@@ -415,6 +415,15 @@
     text-align: left;
   }
   .addbtn:hover { border-color: var(--clay); color: var(--clay-d); }
+  /* This button takes the focus back when its box closes, and the ring that the
+     browser draws around a focused button is a hard blue box that belongs to no
+     other part of the page. So the button shows the focus the way it shows the
+     pointer, in its own colours. */
+  .addbtn:focus-visible {
+    outline: none;
+    border-color: var(--clay);
+    color: var(--clay-d);
+  }
 
   /* ---------- composer ---------- */
   .composer { display: none; }
@@ -445,6 +454,26 @@
     font-family: var(--mono);
     font-size: 10px;
     color: var(--gray-600);
+  }
+  /* The burst switch reads as the last word of the key hint. Off, a dashed ring
+     holds it, the same dash as the add button, so it is a button and not a word.
+     On, the ring closes and turns clay, so its state is plain for as long as the
+     box is open. */
+  .composer .burst {
+    background: transparent;
+    border: 1.5px dashed rgba(20, 20, 19, 0.16);
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--gray-600);
+    padding: 3px 8px;
+    cursor: pointer;
+  }
+  .composer .burst:hover { border-color: var(--gray-500); color: var(--slate); }
+  .composer .burst.on {
+    border-style: solid;
+    border-color: var(--clay);
+    color: var(--clay-d);
   }
 
   /* ---------- clear column ---------- */
@@ -1042,6 +1071,8 @@
   // whether Backlog and Now hold each other's colour. Its own key, so a board
   // written before turning existed still opens
   var TURN_KEY = 'personal.palturn.v1';
+  // whether an add box stays open after each entry, see makeComposer()
+  var BURST_KEY = 'personal.burst.v1';
   // earlier names for the same two things, newest first. readCarried() moves
   // the first one it finds
   var OLD_STORES = ['todo.board.v1', 'backlog.board.v1'];
@@ -1284,8 +1315,15 @@
 
   // ---------- composer ----------
   // A "+ add" button and the box it opens: one in every column foot, one in the
-  // notes window. The box stays open after each entry, so you can type several
-  // cards one after another. spec.onAdd(text) puts the text where it belongs.
+  // notes window. spec.onAdd(text) puts the text where it belongs.
+  //
+  // Burst mode decides what an entry leaves behind. Off, the box closes on each
+  // card, which is one card at a time. On, it stays open and empty, so you can
+  // type several cards one after another. One setting serves every box on the
+  // page, it holds between visits, and it starts off on a board that has never
+  // set it. Its switch is in the box, so it is there only while you are adding.
+  var burst = lsGet(BURST_KEY) === '1';
+
   function makeComposer(host, spec) {
     var add = textBtn('addbtn', spec.add);
     var box = el('div', 'composer');
@@ -1294,10 +1332,14 @@
     ta.placeholder = spec.placeholder;
     var saveBtn = textBtn('save', 'Add');
     var cancelBtn = textBtn('cancel', 'cancel');
+    var burstBtn = textBtn('burst', 'burst');
     var row = el('div', 'composer-row');
     row.appendChild(saveBtn);
     row.appendChild(cancelBtn);
-    row.appendChild(el('span', 'keyhint', '⏎ add · esc close'));
+    // the burst switch is the last word of the hint, so the hint carries the
+    // separator that leads to it
+    row.appendChild(el('span', 'keyhint', '⏎ add · esc close ·'));
+    row.appendChild(burstBtn);
     box.appendChild(ta);
     box.appendChild(row);
     host.appendChild(add);
@@ -1305,6 +1347,7 @@
 
     function open() {
       closeComposers();
+      showBurst();
       box.classList.add('on');
       add.style.display = 'none';
       ta.focus();
@@ -1316,12 +1359,25 @@
       ta.value = '';
     }
 
+    // Every box shares the one setting, so each one shows it again as it opens
+    // and any box can turn it round.
+    function showBurst() {
+      burstBtn.classList.toggle('on', burst);
+      burstBtn.setAttribute('aria-pressed', burst ? 'true' : 'false');
+      burstBtn.title = burst
+        ? 'Burst mode on: the box stays open for the next card'
+        : 'Burst mode off: the box closes once the card is in';
+    }
+
     function submit() {
       var text = ta.value.trim();
       if (!text) { close(); return; }
       ta.value = '';
       spec.onAdd(text);
-      ta.focus();
+      if (burst) { ta.focus(); return; }
+      // the box is about to go, so the button that opens it takes the focus back
+      close();
+      add.focus();
     }
 
     // how closeComposers() reaches an open box through the DOM
@@ -1330,6 +1386,13 @@
     add.addEventListener('click', open);
     saveBtn.addEventListener('click', submit);
     cancelBtn.addEventListener('click', close);
+    burstBtn.addEventListener('click', function () {
+      burst = !burst;
+      lsSet(BURST_KEY, burst ? '1' : '0');
+      showBurst();
+      // the switch is pressed in the middle of typing, so the box keeps the focus
+      ta.focus();
+    });
     ta.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
