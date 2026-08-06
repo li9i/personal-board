@@ -441,6 +441,14 @@
     gap: 8px;
     margin-top: 7px;
   }
+  /* Add and cancel are one pair, so both take the width of the wider word. The
+     button that keeps the card is then never the smaller of the two to hit. */
+  .composer-acts {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 8px;
+  }
   .composer .save {
     background: var(--slate);
     color: var(--ivory);
@@ -448,18 +456,26 @@
     padding: 5px 12px;
   }
   .composer .save:hover { background: var(--gray-800); }
-  .composer .cancel { padding: 5px 2px; }
-  .composer .keyhint {
-    margin-left: auto;
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--gray-600);
+  /* Cancel stands next to Add, so a faint ring gives it the same shape and the
+     same height. The ring is light enough that Add is still the one that leads. */
+  .composer .cancel {
+    border: 1.5px solid rgba(20, 20, 19, 0.12);
+    border-radius: 999px;
+    padding: 5px 12px;
   }
-  /* The burst switch reads as the last word of the key hint. Off, a dashed ring
-     holds it, the same dash as the add button, so it is a button and not a word.
-     On, the ring closes and turns clay, so its state is plain for as long as the
-     box is open. */
+  .composer .cancel:hover { border-color: var(--gray-500); }
+  /* Each button carries its own key, so the hint sits on the thing it works. The
+     key is a shade back from the word, so the word is read first. */
+  .composer .key {
+    margin-left: 6px;
+    opacity: 0.6;
+  }
+  /* The burst switch stands apart at the far end, away from the two buttons that
+     act on what is typed. Off, a dashed ring holds it, the same dash as the add
+     button, so it is a button and not a word. On, the ring closes and turns clay,
+     so its state is plain for as long as the box is open. */
   .composer .burst {
+    margin-left: auto;
     background: transparent;
     border: 1.5px dashed rgba(20, 20, 19, 0.16);
     border-radius: 999px;
@@ -1330,15 +1346,19 @@
     var ta = el('textarea');
     ta.rows = 2;
     ta.placeholder = spec.placeholder;
+    // each of the two buttons names the key that does the same thing, so the key
+    // is read on the button it belongs to
     var saveBtn = textBtn('save', 'Add');
+    saveBtn.appendChild(el('span', 'key', '⏎'));
     var cancelBtn = textBtn('cancel', 'cancel');
+    cancelBtn.appendChild(el('span', 'key', 'esc'));
     var burstBtn = textBtn('burst', 'burst');
     var row = el('div', 'composer-row');
-    row.appendChild(saveBtn);
-    row.appendChild(cancelBtn);
-    // the burst switch is the last word of the hint, so the hint carries the
-    // separator that leads to it
-    row.appendChild(el('span', 'keyhint', '⏎ add · esc close ·'));
+    // the two act on what is typed, so they are held together and sized together
+    var acts = el('div', 'composer-acts');
+    acts.appendChild(saveBtn);
+    acts.appendChild(cancelBtn);
+    row.appendChild(acts);
     row.appendChild(burstBtn);
     box.appendChild(ta);
     box.appendChild(row);
