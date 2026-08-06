@@ -56,9 +56,10 @@
      Each rule below sets what the shape has in common. The sections after this
      one add what is different for one use of it. */
 
-  /* a pill: the toolbar buttons, Add, the yes of a confirmation, Undo */
+  /* a pill: the toolbar buttons, Add and cancel, the yes of a confirmation, Undo */
   button.ghost,
   .composer .save,
+  .composer .cancel,
   .clear-ask .yes,
   .toast button {
     border-radius: 999px;
@@ -69,7 +70,6 @@
   }
 
   /* a word on its own. It is grey until the pointer moves over it */
-  .composer .cancel,
   .clear-ask .no,
   .clearbtn {
     background: transparent;
@@ -80,7 +80,6 @@
     padding: 4px 2px;
     cursor: pointer;
   }
-  .composer .cancel:hover,
   .clear-ask .no:hover { color: var(--slate); }
 
   /* a small square holding one character */
@@ -445,25 +444,25 @@
      button that keeps the card is then never the smaller of the two to hit. */
   .composer-acts {
     display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
+  .composer .save,
+  .composer .cancel { padding: 5px 12px; }
   .composer .save {
     background: var(--slate);
     color: var(--ivory);
     border: 1.5px solid var(--slate);
-    padding: 5px 12px;
   }
   .composer .save:hover { background: var(--gray-800); }
-  /* Cancel stands next to Add, so a faint ring gives it the same shape and the
-     same height. The ring is light enough that Add is still the one that leads. */
+  /* Cancel takes the shape of Add in a ring, so the two read as one pair. The
+     ring is light enough that Add is still the one that leads. */
   .composer .cancel {
-    border: 1.5px solid rgba(20, 20, 19, 0.12);
-    border-radius: 999px;
-    padding: 5px 12px;
+    background: transparent;
+    color: var(--gray-600);
+    border: 1.5px solid var(--gray-200);
   }
-  .composer .cancel:hover { border-color: var(--gray-500); }
+  .composer .cancel:hover { border-color: var(--gray-500); color: var(--slate); }
   /* Each button carries its own key, so the hint sits on the thing it works. The
      key is a shade back from the word, so the word is read first. */
   .composer .key {
@@ -1346,15 +1345,12 @@
     var ta = el('textarea');
     ta.rows = 2;
     ta.placeholder = spec.placeholder;
-    // each of the two buttons names the key that does the same thing, so the key
-    // is read on the button it belongs to
     var saveBtn = textBtn('save', 'Add');
     saveBtn.appendChild(el('span', 'key', '⏎'));
     var cancelBtn = textBtn('cancel', 'cancel');
     cancelBtn.appendChild(el('span', 'key', 'esc'));
     var burstBtn = textBtn('burst', 'burst');
     var row = el('div', 'composer-row');
-    // the two act on what is typed, so they are held together and sized together
     var acts = el('div', 'composer-acts');
     acts.appendChild(saveBtn);
     acts.appendChild(cancelBtn);
