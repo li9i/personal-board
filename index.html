@@ -1823,6 +1823,16 @@
     ta.value = item.text;
     card.draggable = false;
     card.replaceChild(ta, text);
+
+    // The box shows the whole text with no scroll, on open and after every
+    // keystroke. scrollHeight leaves out the border, so the border goes back on.
+    function fit() {
+      ta.style.height = 'auto';
+      ta.style.height = (ta.scrollHeight + ta.offsetHeight - ta.clientHeight) + 'px';
+    }
+    ta.addEventListener('input', fit);
+    fit();
+
     ta.focus();
     ta.setSelectionRange(ta.value.length, ta.value.length);
 
