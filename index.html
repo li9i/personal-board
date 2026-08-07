@@ -175,11 +175,14 @@
     letter-spacing: -0.01em;
     margin: 6px 0 4px;
   }
+  /* The room below the hint line is what holds it off the counts. The stack on
+     the right stands on the foot of the header, so the room moves the stack down
+     with it and the gap between the pair and the row above it does not change. */
   .hintline {
     font-family: var(--mono);
     font-size: 11px;
     color: var(--gray-500);
-    margin-top: 10px;
+    margin: 10px 0 20px;
   }
   .hintline::before {
     content: "›";
@@ -194,12 +197,14 @@
     z-index: 5;
     background: var(--ivory);
     /* The counts and the pair that hands a file over share the row, one at each
-       end of it, and the middle of the pills sits on the middle of the counts. */
+       end of it, and the middle of the pills sits on the middle of the counts.
+       The foot of the row is close, so the pair stands on the rule below it and
+       the stack it ends is held to the rule with it. */
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding: 7px 0 11px;
+    padding: 7px 0 4px;
     margin-bottom: 14px;
     border-bottom: 1.5px solid var(--gray-200);
   }
@@ -1252,7 +1257,7 @@
        the line below every time a commit is made, so the file on disk names the
        commit that holds its content and the copy in the repository names the
        one before it. The hook replaces the whole line, so keep it on one line. -->
-  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/bc014cac3c846dc4caefca48c4b2ef390014d4d1" target="_blank" rel="noreferrer">bc014ca</a></footer>
+  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/8ae9453743b9862219cc3f76aa27a3768c4abda2" target="_blank" rel="noreferrer">8ae9453</a></footer>
 
 </div>
 
