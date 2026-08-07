@@ -148,11 +148,13 @@
   }
 
   /* ---------- header ---------- */
-  header { margin-bottom: 20px; }
-  /* The right of the header was empty, and tips and palette are the two things
-     in the page that open a window of their own. They stand there, against the
-     bottom of the header, so the foot of the pair and the hint line make one
-     line across the page. */
+  /* The stack of buttons on the right ends at the bottom of the header and the
+     pair below it begins at the top of the toolbar, so the header gives away its
+     margin and the two rows sit as close as the rows inside the stack. */
+  header { margin-bottom: 0; }
+  /* The right of the header holds every button the board has. They stand there,
+     against the bottom of the header, so the foot of the stack and the hint line
+     make one line across the page. */
   .head-of {
     display: flex;
     align-items: flex-end;
@@ -191,12 +193,13 @@
     top: 0;
     z-index: 5;
     background: var(--ivory);
-    /* The counts and the two words that hand a file over share the row, and one
-       baseline runs through both. */
+    /* The counts and the pair that hands a file over share the row, one at each
+       end of it, and the middle of the pills sits on the middle of the counts. */
     display: flex;
-    align-items: baseline;
+    align-items: center;
+    justify-content: space-between;
     gap: 8px;
-    padding: 14px 0 12px;
+    padding: 7px 0 11px;
     margin-bottom: 14px;
     border-bottom: 1.5px solid var(--gray-200);
   }
@@ -208,39 +211,27 @@
   }
   .summary b { color: var(--slate); font-weight: 600; }
   .summary .dot { color: var(--gray-200); margin: 0 4px; }
-  /* These are the few things the board does that the board itself cannot show,
-     and they are each worth one word. None of them is underlined, because an
-     underline says a word leads somewhere else and none of these leaves the
-     page. They are grey at rest and take the clay of the page under the pointer,
-     which is all they need: the word already says what it does. */
-  .toolbtn {
-    background: transparent;
-    border: none;
-    padding: 0;
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--gray-600);
-    cursor: pointer;
-  }
-  .toolbtn:hover,
-  /* the word of an open panel holds the colour for as long as the panel is open */
-  .toolbtn[aria-expanded="true"] { color: var(--clay-dd); }
-  .toolbtn:focus-visible {
-    outline: 2px solid var(--clay-dd);
-    outline-offset: 3px;
-    border-radius: 2px;
-  }
-  /* A dot holds the words of the hint line apart, and a bar holds import and
-     export apart in the stack below it. */
+  /* A dot holds the words of the hint line apart. */
   .toolsep {
     font-family: var(--mono);
     font-size: 11px;
     color: var(--gray-200);
   }
-  /* Each of the two opens something, so each is a shape you press and not a word
-     in a line. They share a width, taken from the longer of the two words, so
-     the pair has one straight edge down each side. */
+  /* These are the few things the board does that the board itself cannot show.
+     Each is a shape you press and not a word in a line. Three rows stand at the
+     right of the page, the last of them below the rule with the counts, and they
+     hold one width between them so the stack has one straight edge down each
+     side. The width is the one the pair at the foot needs: two words of six
+     letters, and the padding and border of a pill around each. The two rules
+     name the font the ch is measured in, and nothing else uses them. */
+  .tools,
+  .toolpair {
+    font-family: var(--mono);
+    font-size: 11px;
+    width: calc(12ch + 36px);
+  }
   .tools {
+    flex: none;
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -268,14 +259,19 @@
     border-color: var(--clay);
     color: var(--clay-d);
   }
-  /* import and export hand a file over and are done, so they stay words. A bar
-     joins them, because a file going out and a file coming in are one thing. */
+  /* A file going out and a file coming in are one thing, so the two of them
+     share the last row of the stack and half its width each. They are held in
+     close at the sides, because two words in the room of one leaves no more. */
   .toolpair {
+    flex: none;
     display: flex;
-    align-items: baseline;
-    gap: 7px;
+    gap: 6px;
   }
-  .spacer { flex: 1; }
+  .toolpair .pill {
+    flex: 1;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
 
   /* ---------- palette picker ---------- */
   .palette-wrap { position: relative; }
@@ -1218,7 +1214,6 @@
   }
   @media (max-width: 560px) {
     .board { grid-template-columns: 1fr; }
-    .toolbar { flex-wrap: wrap; }
   }
 </style>
 </head>
@@ -1244,11 +1239,9 @@
 
   <div class="toolbar">
     <div class="summary" id="summary"></div>
-    <div class="spacer"></div>
     <div class="toolpair">
-      <button class="toolbtn" id="importBtn">import</button>
-      <span class="toolsep">|</span>
-      <button class="toolbtn" id="exportBtn">export</button>
+      <button class="pill" id="importBtn" type="button">import</button>
+      <button class="pill" id="exportBtn" type="button">export</button>
     </div>
     <input type="file" id="fileInput" accept="application/json,.json" hidden />
   </div>
@@ -1259,7 +1252,7 @@
        the line below every time a commit is made, so the file on disk names the
        commit that holds its content and the copy in the repository names the
        one before it. The hook replaces the whole line, so keep it on one line. -->
-  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/ad35b7a897b44adcb649d83c5ac48377bcfbfddd" target="_blank" rel="noreferrer">ad35b7a</a></footer>
+  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/bc014cac3c846dc4caefca48c4b2ef390014d4d1" target="_blank" rel="noreferrer">bc014ca</a></footer>
 
 </div>
 
