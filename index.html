@@ -66,8 +66,7 @@
      what the face gives back at that size, measured: half a pixel at 10px and
      11px, a whole one at 12px. */
 
-  /* a pill: the toolbar buttons, Add and cancel, the yes of a confirmation, Undo */
-  button.ghost,
+  /* a pill: Add and cancel, the yes of a confirmation, Undo */
   .composer .save,
   .composer .cancel,
   .clear-ask .yes,
@@ -164,49 +163,41 @@
     background: var(--ivory);
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     padding: 14px 0 12px;
     margin-bottom: 14px;
     border-bottom: 1.5px solid var(--gray-200);
   }
-  .summary {
-    font-family: var(--mono);
-    font-size: 12px;
-    color: var(--gray-800);
-    letter-spacing: 0.01em;
-  }
-  .summary b { color: var(--slate); font-weight: 600; }
-  .summary .dot { color: var(--gray-200); margin: 0 4px; }
-  /* The last word of the count line opens the tips window. It is a word in the
-     line and not a button of its own, so it keeps the type of the line and takes
-     the darker of the two clays, because the line sits on the page background
-     and not on white. */
-  .hintbtn {
+  /* These are the few things the board does that the board itself cannot show,
+     and they are each worth one word. None of them is underlined, because an
+     underline says a word leads somewhere else and none of these leaves the
+     page. They are grey at rest and take the clay of the page under the pointer,
+     which is all they need: the word already says what it does. */
+  .toolbtn {
     background: transparent;
     border: none;
     padding: 0;
-    font: inherit;
-    color: var(--clay-dd);
-    text-decoration: underline;
-    text-underline-offset: 2px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--gray-600);
     cursor: pointer;
   }
-  .hintbtn:hover { text-decoration-thickness: 2px; }
-  .hintbtn:focus-visible {
+  .toolbtn:hover,
+  /* the word of an open panel holds the colour for as long as the panel is open */
+  .toolbtn[aria-expanded="true"] { color: var(--clay-dd); }
+  .toolbtn:focus-visible {
     outline: 2px solid var(--clay-dd);
-    outline-offset: 2px;
+    outline-offset: 3px;
     border-radius: 2px;
   }
-  .spacer { flex: 1; }
-  button.ghost {
-    background: transparent;
-    color: var(--gray-800);
-    border: 1.5px solid var(--gray-200);
-    font-size: 12px;
-    padding: 10px 16px 8px;
+  /* A dot holds the words apart. Import and export share the last of the three
+     places, because a file going out and a file coming in are one thing. */
+  .toolsep {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--gray-200);
   }
-  button.ghost:hover { border-color: var(--gray-500); }
-  button.ghost[aria-expanded="true"] { border-color: var(--gray-500); }
+  .spacer { flex: 1; }
 
   /* ---------- palette picker ---------- */
   .palette-wrap { position: relative; }
@@ -427,7 +418,7 @@
     font-size: 11px;
     padding: 8.5px 10px 7.5px;
     cursor: pointer;
-    text-align: left;
+    text-align: center;
   }
   .addbtn:hover { border-color: var(--clay); color: var(--clay-d); }
   /* This button takes the focus back when its box closes, and the ring that the
@@ -1157,16 +1148,16 @@
 <div class="wrap">
 
   <div class="toolbar">
-    <!-- renderSummary() fills the counts. The tips button sits outside them, so
-         a redraw of the counts leaves it alone. -->
-    <div class="summary"><span id="summary"></span><span class="dot">·</span><button class="hintbtn" id="tipsBtn" type="button" aria-haspopup="dialog">tips</button></div>
     <div class="spacer"></div>
+    <button class="toolbtn" id="tipsBtn" type="button" aria-haspopup="dialog">tips</button>
+    <span class="toolsep">·</span>
     <span class="palette-wrap">
-      <button class="ghost" id="paletteBtn" aria-expanded="false" aria-haspopup="true">Palette</button>
+      <button class="toolbtn" id="paletteBtn" aria-expanded="false" aria-haspopup="true">palette</button>
       <div class="palette-panel" id="palettePanel"></div>
     </span>
-    <button class="ghost" id="importBtn">Import</button>
-    <button class="ghost" id="exportBtn">Export</button>
+    <span class="toolsep">·</span>
+    <button class="toolbtn" id="importBtn">import</button>
+    <button class="toolbtn" id="exportBtn">export</button>
     <input type="file" id="fileInput" accept="application/json,.json" hidden />
   </div>
 
@@ -1176,7 +1167,7 @@
        the line below every time a commit is made, so the file on disk names the
        commit that holds its content and the copy in the repository names the
        one before it. The hook replaces the whole line, so keep it on one line. -->
-  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/997fcad6869c0cd9f1226517b126f20d650c24dd" target="_blank" rel="noreferrer">997fcad</a></footer>
+  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/86aafed88ce562db0f21b9edaf67ed2374f658ae" target="_blank" rel="noreferrer">86aafed</a></footer>
 
 </div>
 
@@ -1666,7 +1657,7 @@
     var body = el('div', 'col-body');
 
     makeComposer(addWrap, {
-      add: '+ add to ' + c.label.toLowerCase(),
+      add: '+',
       placeholder: c.prompt,
       onAdd: function (text) {
         state.cols[c.key].unshift(newItem(text));
@@ -2589,7 +2580,7 @@
   var openCardId = null;    // the card whose notes are open, if any
 
   var notesComposer = makeComposer(document.getElementById('notesFoot'), {
-    add: '+ add a note',
+    add: '+',
     placeholder: 'What is worth remembering?',
     inner: true,
     onAdd: function (text) {
@@ -2780,20 +2771,8 @@
         view.clear.classList.toggle('off', !list.length);
       }
     });
-    renderSummary();
     // an open notes window is another view of the same state, so it redraws too
     redrawNotes();
-  }
-
-  function renderSummary() {
-    var out = document.getElementById('summary');
-    out.textContent = '';
-    COLUMNS.forEach(function (c, i) {
-      if (i) out.appendChild(el('span', 'dot', '·'));
-      out.appendChild(el('b', null, String(state.cols[c.key].length)));
-      // a hard space, so a count never wraps away from the word it counts
-      out.appendChild(document.createTextNode('\u00a0' + c.key));
-    });
   }
 
   // ---------- export / import ----------
