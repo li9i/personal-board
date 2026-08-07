@@ -56,6 +56,16 @@
      Each rule below sets what the shape has in common. The sections after this
      one add what is different for one use of it. */
 
+  /* Equal padding above and below a word does not put the word in the middle.
+     A font keeps room under the baseline for the tails of p and y, and a word
+     with no tail leaves that room empty, so the letters land above the centre
+     of the shape. Every button that holds a word therefore takes a little off
+     the bottom padding and gives it to the top, which brings the band from the
+     top of the letters down to the baseline into the middle. The two numbers
+     still add up to what they did, so no button changes height. The amount is
+     what the face gives back at that size, measured: half a pixel at 10px and
+     11px, a whole one at 12px. */
+
   /* a pill: the toolbar buttons, Add and cancel, the yes of a confirmation, Undo */
   button.ghost,
   .composer .save,
@@ -65,7 +75,7 @@
     border-radius: 999px;
     font-family: var(--mono);
     font-size: 11px;
-    padding: 4px 12px;
+    padding: 4.5px 12px 3.5px;
     cursor: pointer;
   }
 
@@ -77,7 +87,7 @@
     color: var(--gray-600);
     font-family: var(--mono);
     font-size: 11px;
-    padding: 4px 2px;
+    padding: 4.5px 2px 3.5px;
     cursor: pointer;
   }
   .clear-ask .no:hover { color: var(--slate); }
@@ -213,7 +223,7 @@
     color: var(--gray-800);
     border: 1.5px solid var(--gray-200);
     font-size: 12px;
-    padding: 9px 16px;
+    padding: 10px 16px 8px;
   }
   button.ghost:hover { border-color: var(--gray-500); }
   button.ghost[aria-expanded="true"] { border-color: var(--gray-500); }
@@ -367,16 +377,20 @@
     margin: 0;
     letter-spacing: -0.01em;
   }
+  /* The count is a word in a heading, so it would take the line height of the
+     heading and land on a half pixel. It sets its own, the same as the burst
+     ring, and the pill comes out whole. */
   .col-head .count,
   .notes-head .count {
     margin-left: auto;
     font-family: var(--mono);
     font-size: 11px;
+    line-height: 1;
     color: var(--gray-800);
     background: var(--white);
     border: 1.5px solid var(--gray-200);
     border-radius: 999px;
-    padding: 1px 8px;
+    padding: 4px 8px 3px;
     min-width: 26px;
     text-align: center;
   }
@@ -431,7 +445,7 @@
     color: var(--gray-600);
     font-family: var(--mono);
     font-size: 11px;
-    padding: 8px 10px;
+    padding: 8.5px 10px 7.5px;
     cursor: pointer;
     text-align: left;
   }
@@ -470,7 +484,7 @@
     gap: 8px;
   }
   .composer .save,
-  .composer .cancel { padding: 5px 12px; }
+  .composer .cancel { padding: 5.5px 12px 4.5px; }
   .composer .save {
     background: var(--slate);
     color: var(--ivory);
@@ -494,15 +508,19 @@
   /* Off, a dashed ring holds the burst switch, the same dash as the add button,
      so it is a button and not a word. On, the ring closes and turns clay, so its
      state is plain for as long as the box is open. The tips window shows the
-     switch too, so the look is here and the box adds only where it stands. */
+     switch too, so the look is here and the box adds only where it stands.
+     In the box it is a button and in the window it is a word in a sentence, and
+     the two would take a different line height and come out different heights.
+     So the ring sets its own, and the shape is the same in both places. */
   .burst {
     background: transparent;
     border: 1.5px dashed rgba(20, 20, 19, 0.16);
     border-radius: 999px;
     font-family: var(--mono);
     font-size: 10px;
+    line-height: 1;
     color: var(--gray-600);
-    padding: 3px 8px;
+    padding: 4px 8px 3px;
   }
   .burst.on {
     border-style: solid;
@@ -786,12 +804,16 @@
   }
   /* The sign that a card is pinned. A pinned card holds the top of its column
      and nothing below it can pass, so the mark stays while the pointer is away.
-     It is drawn and not a character, the same as the marks in the menu. */
+     It is drawn and not a character, the same as the marks in the menu.
+     The row puts the mark in the middle of its own height, and the letters of
+     the date do not fill that height, so the mark takes a little room under it
+     and rises to the middle of the word instead. */
   .card-bot > .glyph {
     display: flex;
     flex: none;
     width: 11px;
     height: 11px;
+    margin-bottom: 1px;
     color: var(--gray-600);
   }
   .card-bot > .glyph svg {
@@ -879,7 +901,7 @@
     align-items: center;
     gap: 8px;
     width: 100%;
-    padding: 5px 10px;
+    padding: 5.5px 10px 4.5px;
     background: transparent;
     border: none;
     border-radius: 8px;
@@ -927,6 +949,8 @@
     flex: none;
     width: 14px;
     height: 14px;
+    /* the same lift as the mark on a card, and for the same reason */
+    margin-bottom: 1px;
   }
   .card-menu .glyph svg {
     width: 14px;
@@ -1176,7 +1200,7 @@
        the line below every time a commit is made, so the file on disk names the
        commit that holds its content and the copy in the repository names the
        one before it. The hook replaces the whole line, so keep it on one line. -->
-  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/712e3035b042c18983b070ffd6d2f5d5069f0b2a" target="_blank" rel="noreferrer">712e303</a></footer>
+  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/997fcad6869c0cd9f1226517b126f20d650c24dd" target="_blank" rel="noreferrer">997fcad</a></footer>
 
 </div>
 
