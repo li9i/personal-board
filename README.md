@@ -119,7 +119,7 @@ Open `index.html` directly. A `file://` address works.
     in the book again. The bars in the panel show the order that the board has.
 - **Export** downloads the whole board as JSON. **Import** reads a board or a
   single card.
-- **all tips**, the last hint in the header, opens a window with what the board
+- **tips**, the last hint in the header, opens a window with what the board
   does and what it reads. It holds two sections so far. The callouts come first:
   every noun, the mark it draws and the colour it takes, with the nouns that share
   a colour on one bar. Burst comes below a short rule: the switch as the add box
