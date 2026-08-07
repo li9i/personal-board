@@ -491,12 +491,11 @@
     margin-left: 6px;
     opacity: 0.6;
   }
-  /* The burst switch stands apart at the far end, away from the two buttons that
-     act on what is typed. Off, a dashed ring holds it, the same dash as the add
-     button, so it is a button and not a word. On, the ring closes and turns clay,
-     so its state is plain for as long as the box is open. */
-  .composer .burst {
-    margin-left: auto;
+  /* Off, a dashed ring holds the burst switch, the same dash as the add button,
+     so it is a button and not a word. On, the ring closes and turns clay, so its
+     state is plain for as long as the box is open. The tips window shows the
+     switch too, so the look is here and the box adds only where it stands. */
+  .burst {
     background: transparent;
     border: 1.5px dashed rgba(20, 20, 19, 0.16);
     border-radius: 999px;
@@ -504,14 +503,21 @@
     font-size: 10px;
     color: var(--gray-600);
     padding: 3px 8px;
-    cursor: pointer;
   }
-  .composer .burst:hover { border-color: var(--gray-500); color: var(--slate); }
-  .composer .burst.on {
+  .burst.on {
     border-style: solid;
     border-color: var(--clay);
     color: var(--clay-d);
   }
+  /* The switch stands apart at the far end of the row, away from the two buttons
+     that act on what is typed. */
+  .composer .burst {
+    margin-left: auto;
+    cursor: pointer;
+  }
+  /* the pointer lifts the ring only while the switch is off, because an open ring
+     in clay is the switch saying that it is on */
+  .composer .burst:not(.on):hover { border-color: var(--gray-500); color: var(--slate); }
 
   /* ---------- clear column ---------- */
   .clear-row { margin-top: 7px; }
@@ -1031,6 +1037,23 @@
     white-space: pre;
   }
   .tips-syntax b { color: var(--clay-dd); font-weight: 600; }
+  /* The break between two sections is the rule that a card draws for '---', held
+     short and in the middle, in the oat of the top edge of the window. So it
+     parts the sections without cutting the window in two, and a heading reads as
+     the start of something and not as one more line. */
+  .tips-body .tips-rule {
+    width: 56px;
+    margin: 16px auto;
+    border-top-color: var(--oat);
+  }
+  /* The switch as the add box shows it, next to what that state leaves behind. It
+     is the same ring here, so a reader knows what to look for in the box. */
+  .tips-burst {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+  }
+  .tips-burst .burst { flex: none; }
   /* A group of nouns is a callout with no text of its own, so it takes the bar
      and the colour that a card gives those nouns. The nouns that share a colour
      stand on the one bar, so the bars are the number of colours and not the
@@ -2601,13 +2624,21 @@
   wireDrop(notesBody, notesBody, { level: 'note', onDrop: moveNote });
 
   // ---------- tips ----------
-  // What the board reads, for someone who has not read the file. It opens from
-  // the last hint in the header and closes the way the notes window does. The
-  // window belongs to the board and not to a card, so no palette reaches it.
+  // What the board does and what it reads, for someone who has not read the file.
+  // It opens from the last hint in the header and closes the way the notes window
+  // does. The window belongs to the board and not to a card, so no palette
+  // reaches it.
   var tipsScrim = document.getElementById('tipsScrim');
   var tipsBody = document.getElementById('tipsBody');
   var tipsBtn = document.getElementById('tipsBtn');
   var tipsClose = document.getElementById('tipsClose');
+
+  // The two states of the burst switch, in the order it turns through them, with
+  // what each one leaves behind once a card is in.
+  var TIP_BURST = [
+    { on: false, what: 'the box closes once the card is in' },
+    { on: true, what: 'the box stays open and empty, ready for the next card' }
+  ];
 
   // The nouns of a callout, gathered by the colour that they draw in. Every
   // colour is in the stylesheet and is read back from there, so this list holds
@@ -2647,6 +2678,18 @@
       // once the group is on the page
       group.querySelector('.tips-row')
         .appendChild(el('span', 'tips-hex', colourOf(group)));
+    });
+
+    tipsBody.appendChild(el('hr', 'tips-rule'));
+
+    tipsBody.appendChild(el('h3', '', 'Burst'));
+    tipsBody.appendChild(el('p', '', 'The switch at the end of the row inside the'
+      + ' add box decides what a saved card leaves behind:'));
+    TIP_BURST.forEach(function (state) {
+      var row = el('div', 'tips-burst');
+      row.appendChild(el('span', state.on ? 'burst on' : 'burst', 'burst'));
+      row.appendChild(el('span', '', state.what));
+      tipsBody.appendChild(row);
     });
   }
 
