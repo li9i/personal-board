@@ -149,6 +149,16 @@
 
   /* ---------- header ---------- */
   header { margin-bottom: 20px; }
+  /* The right of the header was empty, and tips and palette are the two things
+     in the page that open a window of their own. They stand there, against the
+     bottom of the header, so the foot of the pair and the hint line make one
+     line across the page. */
+  .head-of {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+  }
   .eyebrow {
     font-family: var(--mono);
     font-size: 11px;
@@ -181,8 +191,10 @@
     top: 0;
     z-index: 5;
     background: var(--ivory);
+    /* The counts and the two words that hand a file over share the row, and one
+       baseline runs through both. */
     display: flex;
-    align-items: center;
+    align-items: baseline;
     gap: 8px;
     padding: 14px 0 12px;
     margin-bottom: 14px;
@@ -218,13 +230,50 @@
     outline-offset: 3px;
     border-radius: 2px;
   }
-  /* A dot holds words apart, in the toolbar and in the hint line above it. In
-     the toolbar, import and export share the last of the three places, because a
-     file going out and a file coming in are one thing. */
+  /* A dot holds the words of the hint line apart, and a bar holds import and
+     export apart in the stack below it. */
   .toolsep {
     font-family: var(--mono);
     font-size: 11px;
     color: var(--gray-200);
+  }
+  /* Each of the two opens something, so each is a shape you press and not a word
+     in a line. They share a width, taken from the longer of the two words, so
+     the pair has one straight edge down each side. */
+  .tools {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .pill {
+    width: 100%;
+    background: transparent;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--gray-800);
+    padding: 6px 16px 5px;
+    text-align: center;
+    cursor: pointer;
+  }
+  .pill:hover,
+  .pill[aria-expanded="true"] { border-color: var(--gray-500); }
+  /* the ring the browser draws around a focused button is a hard blue box that
+     belongs to no other part of the page, so the button shows the focus the way
+     it shows the pointer, in its own colours */
+  .pill:focus-visible {
+    outline: none;
+    border-color: var(--clay);
+    color: var(--clay-d);
+  }
+  /* import and export hand a file over and are done, so they stay words. A bar
+     joins them, because a file going out and a file coming in are one thing. */
+  .toolpair {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
   }
   .spacer { flex: 1; }
 
@@ -1177,23 +1226,30 @@
 <div class="wrap">
 
   <header>
-    <div class="eyebrow">personal / board</div>
-    <h1>Personal Board</h1>
-    <div class="hintline">drag cards between columns <span class="toolsep">·</span> double-click a card to edit <span class="toolsep">·</span> hover for more options</div>
+    <div class="head-of">
+      <div>
+        <div class="eyebrow">personal / board</div>
+        <h1>Personal Board</h1>
+        <div class="hintline">drag cards between columns <span class="toolsep">·</span> double-click a card to edit <span class="toolsep">·</span> hover for more options</div>
+      </div>
+      <div class="tools">
+        <button class="pill" id="tipsBtn" type="button" aria-haspopup="dialog">tips</button>
+        <span class="palette-wrap">
+          <button class="pill" id="paletteBtn" aria-expanded="false" aria-haspopup="true">palette</button>
+          <div class="palette-panel" id="palettePanel"></div>
+        </span>
+      </div>
+    </div>
   </header>
 
   <div class="toolbar">
     <div class="summary" id="summary"></div>
     <div class="spacer"></div>
-    <button class="toolbtn" id="tipsBtn" type="button" aria-haspopup="dialog">tips</button>
-    <span class="toolsep">·</span>
-    <span class="palette-wrap">
-      <button class="toolbtn" id="paletteBtn" aria-expanded="false" aria-haspopup="true">palette</button>
-      <div class="palette-panel" id="palettePanel"></div>
-    </span>
-    <span class="toolsep">·</span>
-    <button class="toolbtn" id="importBtn">import</button>
-    <button class="toolbtn" id="exportBtn">export</button>
+    <div class="toolpair">
+      <button class="toolbtn" id="importBtn">import</button>
+      <span class="toolsep">|</span>
+      <button class="toolbtn" id="exportBtn">export</button>
+    </div>
     <input type="file" id="fileInput" accept="application/json,.json" hidden />
   </div>
 
@@ -1203,7 +1259,7 @@
        the line below every time a commit is made, so the file on disk names the
        commit that holds its content and the copy in the repository names the
        one before it. The hook replaces the whole line, so keep it on one line. -->
-  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/86755248ffa289c92075bebd25432c063c14c233" target="_blank" rel="noreferrer">8675524</a></footer>
+  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/ad35b7a897b44adcb649d83c5ac48377bcfbfddd" target="_blank" rel="noreferrer">ad35b7a</a></footer>
 
 </div>
 
