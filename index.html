@@ -147,12 +147,32 @@
     letter-spacing: 0.02em;
   }
 
+  /* ---------- header ---------- */
+  header { margin-bottom: 20px; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gray-500);
+  }
   h1 {
     font-family: var(--serif);
     font-weight: 500;
     font-size: 30px;
     letter-spacing: -0.01em;
     margin: 6px 0 4px;
+  }
+  .hintline {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--gray-500);
+    margin-top: 10px;
+  }
+  .hintline::before {
+    content: "›";
+    color: var(--clay);
+    margin-right: 6px;
   }
 
   /* ---------- toolbar ---------- */
@@ -168,6 +188,14 @@
     margin-bottom: 14px;
     border-bottom: 1.5px solid var(--gray-200);
   }
+  .summary {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--gray-800);
+    letter-spacing: 0.01em;
+  }
+  .summary b { color: var(--slate); font-weight: 600; }
+  .summary .dot { color: var(--gray-200); margin: 0 4px; }
   /* These are the few things the board does that the board itself cannot show,
      and they are each worth one word. None of them is underlined, because an
      underline says a word leads somewhere else and none of these leaves the
@@ -190,8 +218,9 @@
     outline-offset: 3px;
     border-radius: 2px;
   }
-  /* A dot holds the words apart. Import and export share the last of the three
-     places, because a file going out and a file coming in are one thing. */
+  /* A dot holds words apart, in the toolbar and in the hint line above it. In
+     the toolbar, import and export share the last of the three places, because a
+     file going out and a file coming in are one thing. */
   .toolsep {
     font-family: var(--mono);
     font-size: 11px;
@@ -1147,7 +1176,14 @@
 <body>
 <div class="wrap">
 
+  <header>
+    <div class="eyebrow">personal / board</div>
+    <h1>Personal Board</h1>
+    <div class="hintline">drag cards between columns <span class="toolsep">·</span> double-click a card to edit <span class="toolsep">·</span> hover for more options</div>
+  </header>
+
   <div class="toolbar">
+    <div class="summary" id="summary"></div>
     <div class="spacer"></div>
     <button class="toolbtn" id="tipsBtn" type="button" aria-haspopup="dialog">tips</button>
     <span class="toolsep">·</span>
@@ -1167,7 +1203,7 @@
        the line below every time a commit is made, so the file on disk names the
        commit that holds its content and the copy in the repository names the
        one before it. The hook replaces the whole line, so keep it on one line. -->
-  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/86aafed88ce562db0f21b9edaf67ed2374f658ae" target="_blank" rel="noreferrer">86aafed</a></footer>
+  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/86755248ffa289c92075bebd25432c063c14c233" target="_blank" rel="noreferrer">8675524</a></footer>
 
 </div>
 
@@ -2771,8 +2807,20 @@
         view.clear.classList.toggle('off', !list.length);
       }
     });
+    renderSummary();
     // an open notes window is another view of the same state, so it redraws too
     redrawNotes();
+  }
+
+  function renderSummary() {
+    var out = document.getElementById('summary');
+    out.textContent = '';
+    COLUMNS.forEach(function (c, i) {
+      if (i) out.appendChild(el('span', 'dot', '·'));
+      out.appendChild(el('b', null, String(state.cols[c.key].length)));
+      // a hard space, so a count never wraps away from the word it counts
+      out.appendChild(document.createTextNode(' ' + c.key));
+    });
   }
 
   // ---------- export / import ----------
