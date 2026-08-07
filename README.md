@@ -127,6 +127,18 @@ Open `index.html` directly. A `file://` address works.
   colour from the palette, because tips belong to the board and not to a column.
   Escape or a click outside closes it.
 
+## Build mark
+
+Under the board, on the right, is the short hash of the commit this copy of the page came from. It links to that commit on GitHub. `hooks/post-commit` writes it after every commit, because a commit cannot hold its own hash. The page on disk therefore names the commit that holds its content, while the copy in the repository names the one before it.
+
+A fresh clone has to be told where the hook lives:
+
+```
+git config core.hooksPath hooks
+```
+
+Without that the mark stays at whatever hash was last committed.
+
 ## Storage
 
 The board keeps the notes of a card on the card, so a card is whole on its own.

@@ -1115,6 +1115,27 @@
   }
   .toast button:hover { border-color: var(--clay); }
 
+  /* ---------- build mark ----------
+     The commit this copy of the page came from. It sits under the board, quiet
+     enough to pass over and dark enough to read when looked for. */
+  .build {
+    margin-top: 32px;
+    text-align: right;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.04em;
+  }
+  .build a {
+    color: var(--gray-500);
+    text-decoration: none;
+  }
+  .build a:hover { text-decoration: underline; }
+  .build a:focus-visible {
+    outline: 2px solid var(--gray-500);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
   /* With fewer than four columns across, the columns do not sit in one row. The
      hairline has nothing to separate, so it is hidden. */
   @media (max-width: 940px) {
@@ -1150,6 +1171,12 @@
   </div>
 
   <div class="board" id="board"></div>
+
+  <!-- The commit this copy of the page came from. The post-commit hook rewrites
+       the line below every time a commit is made, so the file on disk names the
+       commit that holds its content and the copy in the repository names the
+       one before it. The hook replaces the whole line, so keep it on one line. -->
+  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/95d9856b1be47e5cabe5ee5cd458947655d3d035" target="_blank" rel="noreferrer">95d9856</a></footer>
 
 </div>
 
