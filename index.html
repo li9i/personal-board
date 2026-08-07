@@ -84,7 +84,8 @@
 
   /* a small square holding one character */
   .card-actions button,
-  .notes-close {
+  .notes-close,
+  .tips-close {
     --side: 20px;
     width: var(--side);
     height: var(--side);
@@ -102,7 +103,8 @@
     cursor: pointer;
   }
   .card-actions button:hover,
-  .notes-close:hover { border-color: var(--gray-500); color: var(--slate); }
+  .notes-close:hover,
+  .tips-close:hover { border-color: var(--gray-500); color: var(--slate); }
 
   /* a box for text: the two composers, and a card that is open for an edit */
   .composer textarea,
@@ -162,6 +164,26 @@
     content: "›";
     color: var(--clay);
     margin-right: 6px;
+  }
+  /* The last hint opens the tips window. It is a word in the line and not a
+     button of its own, so it keeps the type of the line and takes the clay that
+     the line already opens with. The darker clay of the two, because the header
+     sits on the page background and not on white. */
+  .hintbtn {
+    background: transparent;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: var(--clay-dd);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+  .hintbtn:hover { text-decoration-thickness: 2px; }
+  .hintbtn:focus-visible {
+    outline: 2px solid var(--clay-dd);
+    outline-offset: 2px;
+    border-radius: 2px;
   }
 
   /* ---------- toolbar ---------- */
@@ -940,7 +962,9 @@
   /* The list of notes scrolls, so it clips what reaches past its edge and would
      scroll sideways to follow it. The line stops at the edge here. */
   .notes .dropline { left: 0; right: 0; }
-  .notes-head {
+  /* the head of the notes window, and the head of the tips window with it */
+  .notes-head,
+  .tips-head {
     display: flex;
     align-items: flex-start;
     gap: 10px;
@@ -954,10 +978,89 @@
     font-size: 14px;
     margin-bottom: 0;
   }
-  .notes-close {
+  .notes-close,
+  .tips-close {
     flex: none;
     --side: 22px;
     font-size: 13px;
+  }
+
+  /* ---------- tips window ---------- */
+  /* Tips belong to the board and not to one column, so no palette reaches this
+     window. It rests on the page background, with the oat along its top edge
+     where a column would show its own rule. */
+  .tips {
+    width: 560px;
+    max-width: 100%;
+    max-height: 84vh;
+    background: var(--ivory);
+    border: 1.5px solid var(--gray-200);
+    border-top: 3px solid var(--oat);
+    border-radius: 12px;
+    box-shadow: 0 16px 44px rgba(20, 20, 19, 0.22);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .tips-title {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 17px;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  .tips-body {
+    padding: 12px 14px 14px;
+    overflow-y: auto;
+  }
+  /* What opens a section is how to write the thing it describes, so it is the
+     characters you would type, over the lines you would type them on, in the
+     shape of a code chip. */
+  .tips-syntax {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--gray-800);
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 4px;
+    padding: 6px 8px;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .tips-syntax b { color: var(--clay-dd); font-weight: 600; }
+  /* A group of nouns is a callout with no text of its own, so it takes the bar
+     and the colour that a card gives those nouns. The nouns that share a colour
+     stand on the one bar, so the bars are the number of colours and not the
+     number of nouns. */
+  .tips-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 14px;
+    color: var(--c);
+    font-weight: 600;
+  }
+  /* a group stands further from the group below it than its own two lines stand
+     from each other, so the pairs read as pairs */
+  .tips-body .callout + .callout { margin-top: 11px; }
+  .tips-noun { display: flex; align-items: center; gap: 5px; }
+  .tips-noun svg { width: 14px; height: 14px; }
+  .tips-hex {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--gray-500);
+  }
+  /* the other ways to write the nouns above, in the order the nouns stand in */
+  .tips-alias {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--gray-600);
+    margin-top: 3px;
   }
 
   /* ---------- undo toast ---------- */
@@ -1008,7 +1111,7 @@
   <header>
     <div class="eyebrow">personal / board</div>
     <h1>Personal Board</h1>
-    <div class="hintline">drag cards between columns &nbsp;·&nbsp; double-click a card to edit &nbsp;·&nbsp; hover for more options</div>
+    <div class="hintline">drag cards between columns &nbsp;·&nbsp; double-click a card to edit &nbsp;·&nbsp; hover for more options &nbsp;·&nbsp; <button class="hintbtn" id="tipsBtn" type="button" aria-haspopup="dialog">all tips</button></div>
   </header>
 
   <div class="toolbar">
@@ -1046,6 +1149,18 @@
     <!-- makeComposer() builds the add button and its box, the same pair that a
          column's col-add gets -->
     <div class="col-foot" id="notesFoot"></div>
+  </section>
+</div>
+
+<div class="scrim" id="tipsScrim">
+  <section class="tips" id="tips" role="dialog" aria-modal="true" aria-labelledby="tipsTitle">
+    <div class="tips-head">
+      <h2 class="tips-title" id="tipsTitle">Tips</h2>
+      <button class="tips-close" id="tipsClose" type="button" aria-label="Close tips">×</button>
+    </div>
+    <!-- buildTips() fills this. It is card text, so the callouts in it take the
+         colours that a card gives them -->
+    <div class="tips-body ctext" id="tipsBody"></div>
   </section>
 </div>
 
@@ -2485,6 +2600,99 @@
   scrim.addEventListener('click', function (e) { if (e.target === scrim) closeNotes(); });
   wireDrop(notesBody, notesBody, { level: 'note', onDrop: moveNote });
 
+  // ---------- tips ----------
+  // What the board reads, for someone who has not read the file. It opens from
+  // the last hint in the header and closes the way the notes window does. The
+  // window belongs to the board and not to a card, so no palette reaches it.
+  var tipsScrim = document.getElementById('tipsScrim');
+  var tipsBody = document.getElementById('tipsBody');
+  var tipsBtn = document.getElementById('tipsBtn');
+  var tipsClose = document.getElementById('tipsClose');
+
+  // The nouns of a callout, gathered by the colour that they draw in. Every
+  // colour is in the stylesheet and is read back from there, so this list holds
+  // no copy of them and cannot fall out of step with the board.
+  var TIP_GROUPS = [
+    ['note', 'info', 'todo'],
+    ['abstract'],
+    ['tip', 'success'],
+    ['question', 'warning'],
+    ['failure', 'danger', 'bug'],
+    ['example'],
+    ['quote']
+  ];
+
+  // the other ways to write a noun, in the order the CALLOUTS table lists them
+  function aliasesOf(type) {
+    return Object.keys(CALLOUTS).filter(function (word) {
+      return CALLOUTS[word] === type && word !== type;
+    });
+  }
+
+  function buildTips() {
+    tipsBody.appendChild(el('h3', '', 'Callouts'));
+    tipsBody.appendChild(el('p', '', 'A quote whose first line is a noun in'
+      + ' brackets. The words after the noun are the head, and the lines below'
+      + ' it are the text.'));
+    var line = el('div', 'tips-syntax');
+    line.appendChild(document.createTextNode('> '));
+    line.appendChild(el('b', '', '[!warning]'));
+    line.appendChild(document.createTextNode(' [alternative title]\n> Check the cable first'));
+    tipsBody.appendChild(line);
+
+    TIP_GROUPS.forEach(function (names) {
+      var group = tipGroup(names);
+      tipsBody.appendChild(group);
+      // the colour of the group is in the stylesheet, and it is there to read
+      // once the group is on the page
+      group.querySelector('.tips-row')
+        .appendChild(el('span', 'tips-hex', colourOf(group)));
+    });
+  }
+
+  function closeTips() {
+    if (!tipsScrim.classList.contains('on')) return;
+    tipsScrim.classList.remove('on');
+    tipsBtn.focus();
+  }
+
+  function colourOf(node) {
+    return getComputedStyle(node).getPropertyValue('--c').trim();
+  }
+
+  function openTips() {
+    tipsScrim.classList.add('on');
+    tipsClose.focus();
+  }
+
+  // One group: a callout with no text of its own, so it takes the bar and the
+  // colour that a card gives those nouns. The nouns stand in a row on that bar,
+  // and their other names run below them.
+  function tipGroup(names) {
+    var box = el('div', 'callout ' + names[0]);
+    var row = el('div', 'tips-row');
+    var aliases = [];
+    names.forEach(function (name) {
+      var noun = el('span', 'tips-noun');
+      noun.appendChild(icon(name));
+      noun.appendChild(el('span', '', name));
+      row.appendChild(noun);
+      var other = aliasesOf(name);
+      if (other.length) aliases.push(name + ': ' + other.join(', '));
+    });
+    box.appendChild(row);
+    if (aliases.length) box.appendChild(el('div', 'tips-alias', aliases.join('  ·  ')));
+    return box;
+  }
+
+  tipsBtn.addEventListener('click', openTips);
+  tipsClose.addEventListener('click', closeTips);
+  // a click on the window itself is not a click outside it
+  tipsScrim.addEventListener('click', function (e) {
+    if (e.target === tipsScrim) closeTips();
+  });
+  buildTips();
+
   // ---------- render ----------
   function render() {
     // every card is built again below, and an open menu belongs to a button that
@@ -2997,6 +3205,7 @@
     closePalette();
     closeClearAsks();
     closeNotes();
+    closeTips();
   });
 
   // applyPalette writes the choice back to the current key

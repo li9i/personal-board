@@ -119,6 +119,11 @@ Open `index.html` directly. A `file://` address works.
     in the book again. The bars in the panel show the order that the board has.
 - **Export** downloads the whole board as JSON. **Import** reads a board or a
   single card.
+- **all tips**, the last hint in the header, opens a window with what the board
+  reads. It holds one section so far, the callouts: every noun, the mark it
+  draws and the colour it takes, with the nouns that share a colour on one bar.
+  The window takes no colour from the palette, because tips belong to the board
+  and not to a column. Escape or a click outside closes it.
 
 ## Storage
 
