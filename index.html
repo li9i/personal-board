@@ -497,7 +497,7 @@
     font-size: 11px;
     padding: 8.5px 10px 7.5px;
     cursor: pointer;
-    text-align: center;
+    text-align: left;
   }
   .addbtn:hover { border-color: var(--clay); color: var(--clay-d); }
   /* This button takes the focus back when its box closes, and the ring that the
@@ -1257,7 +1257,7 @@
        the line below every time a commit is made, so the file on disk names the
        commit that holds its content and the copy in the repository names the
        one before it. The hook replaces the whole line, so keep it on one line. -->
-  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/8ae9453743b9862219cc3f76aa27a3768c4abda2" target="_blank" rel="noreferrer">8ae9453</a></footer>
+  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/b1cb9bc902076c0453ab089e45bd06cab870e032" target="_blank" rel="noreferrer">b1cb9bc</a></footer>
 
 </div>
 
@@ -1747,7 +1747,7 @@
     var body = el('div', 'col-body');
 
     makeComposer(addWrap, {
-      add: '+',
+      add: '+ add to ' + c.label.toLowerCase(),
       placeholder: c.prompt,
       onAdd: function (text) {
         state.cols[c.key].unshift(newItem(text));
@@ -2670,7 +2670,7 @@
   var openCardId = null;    // the card whose notes are open, if any
 
   var notesComposer = makeComposer(document.getElementById('notesFoot'), {
-    add: '+',
+    add: '+ add a note',
     placeholder: 'What is worth remembering?',
     inner: true,
     onAdd: function (text) {
