@@ -1379,7 +1379,7 @@
        the line below every time a commit is made, so the file on disk names the
        commit that holds its content and the copy in the repository names the
        one before it. The hook replaces the whole line, so keep it on one line. -->
-  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/ff6bdef0f71ed99356a9131f70b6c0d5deb1d3f4" target="_blank" rel="noreferrer">ff6bdef</a></footer>
+  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/e65f2944d5a0ecd813542fb90b8b11dff6102d03" target="_blank" rel="noreferrer">e65f294</a></footer>
 
 </div>
 
@@ -3060,9 +3060,6 @@
 
   function buildTips() {
     tipsBody.appendChild(el('h3', '', 'Callouts'));
-    tipsBody.appendChild(el('p', '', 'A quote whose first line is a noun in'
-      + ' brackets. The words after the noun are the head, and the lines below'
-      + ' it are the text.'));
     var line = el('div', 'tips-syntax');
     line.appendChild(document.createTextNode('> '));
     line.appendChild(el('b', '', '[!warning]'));
@@ -3081,8 +3078,7 @@
     tipsBody.appendChild(el('hr', 'tips-rule'));
 
     tipsBody.appendChild(el('h3', '', 'Burst'));
-    tipsBody.appendChild(el('p', '', 'The switch at the end of the row inside the'
-      + ' add box decides what a saved card leaves behind:'));
+    tipsBody.appendChild(el('p', '', 'Decides what a saved card leaves behind:'));
     TIP_BURST.forEach(function (state) {
       var row = el('div', 'tips-burst');
       row.appendChild(el('span', state.on ? 'burst on' : 'burst', 'burst'));
