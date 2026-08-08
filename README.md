@@ -25,8 +25,9 @@ Open `index.html` directly. A `file://` address works.
     while you are adding. One setting serves every box on the page, including the
     one for notes, and the board remembers it. It starts off.
 - **≡** on a card opens the menu. The menu holds **Pin to top**, **Export this
-  card** and **Delete**. A note has the same button, with **Delete note**.
-  Escape or a click outside closes the menu.
+  card** and **Delete**. A card in Backlog also holds **Sweep under the carpet**.
+  A note has the same button, with **Delete note**. Escape or a click outside
+  closes the menu.
 - **A double click** on a card opens its text in a box. This is the one way to
   write the text, and a checkbox is the one thing that a single click changes. The
   same keys apply. A single click does nothing else, and a double click on a link
@@ -102,6 +103,24 @@ Open `index.html` directly. A `file://` address works.
   that shows where the card lands. A new pin goes to the foot of the pinned
   cards. Taking a pin off puts the card at the head of the rest. Every column
   takes pins. A note takes none.
+- **Sweep under the carpet** is the far end of the pin, and only Backlog has one.
+  Backlog fills faster than it empties and not everything in it is next, so the
+  carpet is where the rest of it waits. The swept cards sit under a band in the
+  footer of the column. The band names them, counts them, and a press lifts it.
+  Backlog remembers whether its carpet is up, so it opens where you left it.
+  - A swept card shows the mark of the carpet next to its date, and its menu
+    offers **Bring back to backlog**. It is drawn flat, on the colour of the
+    column, to say that it is put away and not that it is gone.
+  - A sweep sends a card to the head of the cards under the carpet, and taking it
+    back out puts it at the foot of the ones above. A drag says the same thing:
+    drop a card on the carpet and it goes under, drag one out and it comes back.
+    A card cannot be pinned and swept at once, so a sweep takes the pin off and a
+    pin brings the card back out.
+  - A swept card dragged to another column arrives as an ordinary card, because
+    no other column has a carpet.
+  - The count at the head of Backlog reads **5+3**: five cards above the carpet
+    and three under it. The line of counts below the header reads the same way.
+    With nothing swept, there is no band and one number.
 - **Delete** removes a card from the board. **Delete note** removes a note from a
   card. Neither asks first. **clear column** empties Accomplished and asks first.
   All three show a toast with an **Undo**.
@@ -148,6 +167,11 @@ with no notes.
 
 A pin is on the card too, so it travels with Export and Import as the notes do.
 A board saved before pins existed opens with none.
+
+The carpet is on the card in the same way, and travels with it. A board saved
+before the carpet existed opens with nothing swept. A card that arrives both
+pinned and swept keeps the pin, and a card that arrives swept in a column with no
+carpet arrives as an ordinary card.
 
 Export and Import use two shapes. A whole board is `{"cols": ...}` and replaces
 the board that is here. One card is `{"card": ..., "col": ...}` and joins the
