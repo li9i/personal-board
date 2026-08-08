@@ -208,14 +208,59 @@
     margin-bottom: 14px;
     border-bottom: 1.5px solid var(--gray-200);
   }
+  /* Once the head of the page has gone past, the row pins itself to the top of
+     the window. Pinned, it drops the pair that hands files over, because a file
+     is handed over from the head of the page and not from the middle of a board.
+     The pair keeps its room, so the row is the same height pinned as it is in
+     place and nothing below it moves as it pins. */
+  .toolbar.stuck .toolpair { visibility: hidden; }
   .summary {
     font-family: var(--mono);
     font-size: 12px;
     color: var(--gray-800);
     letter-spacing: 0.01em;
+    /* The counts stay by the mark at the head of the row whatever else the row
+       is holding, so the room left over is taken after them and not between. */
+    margin-right: auto;
   }
   .summary b { color: var(--slate); font-weight: 600; }
   .summary .dot { color: var(--gray-200); margin: 0 4px; }
+  /* The head of the page is read once and then it stands in the way, so a mark
+     at the head of the count row puts it away and brings it back. It is the
+     mark the hint line uses, turned: up while the head is there, and down to
+     bring it down again. The row is the one thing the head leaves behind, and
+     it holds itself to the top of the window, so the mark is always at hand. */
+  .fold {
+    background: transparent;
+    border: none;
+    padding: 0;
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1;
+    color: var(--clay);
+    cursor: pointer;
+    transform: rotate(-90deg);
+  }
+  body.folded .fold { transform: rotate(90deg); }
+  .fold:hover { color: var(--clay-d); }
+  /* the ring the build mark takes, in the colour of the mark it goes around */
+  .fold:focus-visible {
+    outline: 2px solid var(--clay);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+  /* Folded, the head of the page is gone and the count row is all that stands
+     above the board. Tips comes down into the row and takes the end of it, the
+     place the pair that hands files over had, because it is the one button in
+     the head that the board still needs. In the row a pill is as wide as its
+     word, and not as wide as the stack it came from. */
+  body.folded header,
+  body.folded .toolpair { display: none; }
+  body.folded .toolbar .pill { width: auto; }
+  /* The room at the top of the page was there to hold the head off the top of
+     the window. With the head away the row takes the top itself, which is where
+     it holds itself once the page is scrolled, so folded it never moves. */
+  body.folded .wrap { padding-top: 0; }
   /* A dot holds the words of the hint line apart. */
   .toolsep {
     font-family: var(--mono);
@@ -1225,14 +1270,14 @@
 <body>
 <div class="wrap">
 
-  <header>
+  <header id="pagehead">
     <div class="head-of">
       <div>
         <div class="eyebrow">personal / board</div>
         <h1>Personal Board</h1>
         <div class="hintline">drag cards between columns <span class="toolsep">·</span> double-click a card to edit <span class="toolsep">·</span> hover for more options</div>
       </div>
-      <div class="tools">
+      <div class="tools" id="tools">
         <button class="pill" id="tipsBtn" type="button" aria-haspopup="dialog">tips</button>
         <span class="palette-wrap">
           <button class="pill" id="paletteBtn" aria-expanded="false" aria-haspopup="true">palette</button>
@@ -1242,7 +1287,8 @@
     </div>
   </header>
 
-  <div class="toolbar">
+  <div class="toolbar" id="toolbar">
+    <button class="fold" id="foldBtn" type="button" aria-controls="pagehead" aria-expanded="true" aria-label="Head of the page">›</button>
     <div class="summary" id="summary"></div>
     <div class="toolpair">
       <button class="pill" id="importBtn" type="button">import</button>
@@ -1257,7 +1303,7 @@
        the line below every time a commit is made, so the file on disk names the
        commit that holds its content and the copy in the repository names the
        one before it. The hook replaces the whole line, so keep it on one line. -->
-  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/b1cb9bc902076c0453ab089e45bd06cab870e032" target="_blank" rel="noreferrer">b1cb9bc</a></footer>
+  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/fab9633b02ce7d7dc0c2538d0b2669c80f5abfb0" target="_blank" rel="noreferrer">fab9633</a></footer>
 
 </div>
 
@@ -3362,6 +3408,43 @@
   // applyPalette writes the choice back to the current key
   applyPalette(readCarried(PAL_KEY, OLD_PAL_KEYS) || DEFAULT_PAL,
     Number(lsGet(TURN_KEY)) || 0);
+
+  // The row is pinned when its top has reached the top of the window. The mark
+  // is set once at the start as well, because a tab that is opened part way
+  // down the page is already scrolled before the first scroll is made.
+  var toolbar = document.getElementById('toolbar');
+  var markStuck = function () {
+    toolbar.classList.toggle('stuck', toolbar.getBoundingClientRect().top <= 0);
+  };
+  window.addEventListener('scroll', markStuck, { passive: true });
+  markStuck();
+
+  // ---------- fold ----------
+  // Tips moves, so there is one of it and not two: out of the stack in the head
+  // and into the row while the head is away, and back on top of the stack when
+  // the head returns. The palette is put away with the head, so the panel is
+  // closed before it goes. The board keeps the choice, the way it keeps the
+  // palette and the burst switch.
+  var FOLD_KEY = 'personal.fold.v1';
+  var tools = document.getElementById('tools');
+  var foldBtn = document.getElementById('foldBtn');
+  var setFold = function (on) {
+    document.body.classList.toggle('folded', on);
+    foldBtn.setAttribute('aria-expanded', on ? 'false' : 'true');
+    if (on) {
+      closePalette();
+      toolbar.appendChild(tipsBtn);
+    } else {
+      tools.insertBefore(tipsBtn, tools.firstChild);
+    }
+    markStuck();
+  };
+  foldBtn.addEventListener('click', function () {
+    var on = !document.body.classList.contains('folded');
+    lsSet(FOLD_KEY, on ? '1' : '0');
+    setFold(on);
+  });
+  setFold(lsGet(FOLD_KEY) === '1');
 
   // keep two tabs of the same board in sync
   window.addEventListener('storage', function (e) {
