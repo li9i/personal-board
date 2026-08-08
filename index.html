@@ -466,6 +466,18 @@
     /* the full text colour, unless the column sets a lighter one */
     color: var(--head, var(--slate));
   }
+  /* The mark of the column, in the colour of the name it comes before. The head
+     sets its parts on the baseline and a drawing has none, so it would hang
+     below the line. It is centred on the line of the name instead, and dropped
+     the half pixel that puts its middle on the x-height. */
+  .col-head .glyph {
+    display: flex;
+    flex: none;
+    align-self: center;
+    margin-top: 1px;
+    color: var(--head, var(--slate));
+  }
+  .col-head .glyph svg { width: 16px; height: 16px; }
   .col-head h2 {
     font-family: var(--serif);
     font-weight: 500;
@@ -1379,7 +1391,7 @@
        the line below every time a commit is made, so the file on disk names the
        commit that holds its content and the copy in the repository names the
        one before it. The hook replaces the whole line, so keep it on one line. -->
-  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/e65f2944d5a0ecd813542fb90b8b11dff6102d03" target="_blank" rel="noreferrer">e65f294</a></footer>
+  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/bbcb48ac54878ae1ddf7cea407da972f1d3bbed2" target="_blank" rel="noreferrer">bbcb48a</a></footer>
 
 </div>
 
@@ -1420,6 +1432,7 @@
 <script>
   // ---------- config ----------
   // Everything a column is. A new column is one more entry here and nothing else.
+  //   mark       the drawing that comes before its name in the head
   //   divider    draw the hairline after this column
   //   carpet     offer a carpet in the footer, and the menu row that sweeps a
   //              card under it
@@ -1431,7 +1444,8 @@
   //   text       the colour of the text on its cards
   //   head       the colour of its name
   var COLUMNS = [
-    { key: 'remember', label: 'Remember', prompt: 'What must you not forget?',
+    { key: 'remember', label: 'Remember', mark: 'rail',
+      prompt: 'What must you not forget?',
       divider: true,
       // Remember holds what you must keep in mind: a card that someone else has
       // to move, and a note to yourself that is not work at all. It is set apart
@@ -1445,11 +1459,12 @@
       card: 'var(--ivory-50)', text: 'var(--gray-600)', head: 'var(--gray-800)' },
     // Backlog fills faster than it empties, and not everything in it is next.
     // The carpet is where the rest of it waits.
-    { key: 'backlog', label: 'Backlog', prompt: 'What needs doing?',
+    { key: 'backlog', label: 'Backlog', mark: 'mise', prompt: 'What needs doing?',
       carpet: true, palette: true },
-    { key: 'now', label: 'Now', prompt: "What's underway?", palette: true },
-    { key: 'accomplished', label: 'Accomplished', prompt: 'What got done?',
-      clearable: true, palette: true }
+    { key: 'now', label: 'Now', mark: 'pan', prompt: "What's underway?",
+      palette: true },
+    { key: 'accomplished', label: 'Accomplished', mark: 'served',
+      prompt: 'What got done?', clearable: true, palette: true }
   ];
   var KEYS = COLUMNS.map(function (c) { return c.key; });
   var PAL_COLUMNS = COLUMNS.filter(function (c) { return c.palette; });
@@ -1484,12 +1499,21 @@
     return b;
   }
 
-  // The marks that the menu shows next to its words, and the one that each
-  // callout draws. Each one is a set of lines on a 24 grid, shown at 16px in the
-  // menu and at 14px in a card, so a mark is the same mark at every size and is
-  // never a character that the font of the reader can change. Each mark takes
-  // the colour of the row it sits in, so nothing here sets a colour.
+  // The marks that a column head shows before its name, that the menu shows next
+  // to its words, and the one that each callout draws. Each one is a set of lines
+  // on a 24 grid, shown at 16px in the menu and at 14px in a card, so a mark is
+  // the same mark at every size and is never a character that the font of the
+  // reader can change. Each mark takes the colour of the row it sits in, so
+  // nothing here sets a colour.
   var MARKS = {
+    // The four columns, in the order a plate takes through a kitchen: an order
+    // clipped to the rail over the pass, the bowls of food prepared before
+    // service, the pan on the heat, and the cover that goes out over a finished
+    // plate.
+    rail: 'M2.5 5h19 M7 5v9.5h4.5V5 M13.5 5v14h4.5V5',
+    mise: 'M2.5 9h9a4.5 4.5 0 0 1-9 0Z M15.5 11h6a3 3 0 0 1-6 0Z',
+    pan: 'M2.5 9h11v2.5a4 4 0 0 1-4 4h-3a4 4 0 0 1-4-4V9Z M13.5 10.25h8',
+    served: 'M2.5 17h19 M5 17a7 7 0 0 1 14 0 M12 10V8',
     send: 'M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8 M16 6l-4-4-4 4 M12 2v13',
     bin: 'M3 6h18 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6 '
        + 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2',
@@ -1957,6 +1981,7 @@
     column.dataset.col = c.key;
 
     var head = el('div', 'col-head');
+    head.appendChild(icon(c.mark));
     head.appendChild(el('h2', null, c.label));
     var count = el('span', 'count');
     head.appendChild(count);
