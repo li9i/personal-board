@@ -1,0 +1,22 @@
+#!/bin/sh
+# Writes the build mark after a clone, a checkout or a switch.
+#
+# Git passes the old head, the new head, and a flag that is 1 when a whole
+# branch was checked out and 0 when single files were. Only the branch case is
+# ours. Writing the mark after a file checkout would undo the very checkout the
+# user asked for.
+#
+# A rebase checks out the commit it is replaying onto, which lands here too.
+# Writing the mark then leaves the page changed under the rebase and it stops
+# with nothing done. So stand aside while a rebase is running. post-rewrite
+# writes the mark once the rebase is over.
+#
+# To get this on the clone itself, the hooks have to be live before the working
+# tree is written:
+#   git clone -c core.hooksPath=hooks https://github.com/li9i/personal-board
+
+[ "$3" = 1 ] || exit 0
+[ -d "$(git rev-parse --git-path rebase-merge)" ] && exit 0
+[ -d "$(git rev-parse --git-path rebase-apply)" ] && exit 0
+
+exec "$(dirname "$0")/write-build-mark"

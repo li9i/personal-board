@@ -22,8 +22,14 @@ The board is in `localStorage`, under `personal.board.v1`. Export moves it to an
 
 ## Build mark
 
-Under the board is the short hash of the commit this copy of the page came from. `hooks/post-commit` writes it. A fresh clone has to be told where the hook lives:
+Under the board is the short hash of the commit this copy of the page came from. The hooks in `hooks/` write it after a commit, a merge, a pull, a rebase, an amend and a branch checkout. A fresh clone has to be told where they live:
 
 ```bash
 git config core.hooksPath hooks
+```
+
+To have the mark written by the clone itself, turn the hooks on before the files are written:
+
+```bash
+git clone -c core.hooksPath=hooks https://github.com/li9i/personal-board
 ```

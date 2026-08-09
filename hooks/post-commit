@@ -1,18 +1,7 @@
 #!/bin/sh
-# Writes the commit just made into the build mark at the foot of the page.
+# Writes the build mark after a commit.
 #
-# A commit cannot hold its own hash, so this runs after the commit and leaves
-# the one changed line in the working tree. The page on disk always names the
-# commit that holds its content. The next commit carries that line along and
-# this hook writes the new hash over it.
-#
-# Enable it in a fresh clone with:
+# Enable the hooks in a fresh clone with:
 #   git config core.hooksPath hooks
 
-set -e
-
-short=$(git rev-parse --short HEAD)
-full=$(git rev-parse HEAD)
-url=https://github.com/li9i/personal-board/commit/$full
-
-sed -i "s|^  <footer class=\"build\">.*|  <footer class=\"build\"><a href=\"$url\" target=\"_blank\" rel=\"noreferrer\">$short</a></footer>|" index.html
+exec "$(dirname "$0")/write-build-mark"

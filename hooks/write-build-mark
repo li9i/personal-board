@@ -1,0 +1,18 @@
+#!/bin/sh
+# Writes the commit HEAD points at into the build mark at the foot of the page.
+#
+# A commit cannot hold its own hash, so this runs after the fact and leaves the
+# one changed line in the working tree. The page on disk always names the commit
+# that holds its content. The next commit carries that line along and this runs
+# again to write the new hash over it.
+#
+# The hooks that call this are post-commit, post-merge, post-rewrite and
+# post-checkout.
+
+set -e
+
+short=$(git rev-parse --short HEAD)
+full=$(git rev-parse HEAD)
+url=https://github.com/li9i/personal-board/commit/$full
+
+sed -i "s|^  <footer class=\"build\">.*|  <footer class=\"build\"><a href=\"$url\" target=\"_blank\" rel=\"noreferrer\">$short</a></footer>|" index.html

@@ -1,0 +1,9 @@
+#!/bin/sh
+# Writes the build mark after a rebase or an amend, once the whole run is done.
+#
+# Git feeds the rewritten commits in on standard input. They are of no use here,
+# so read them and drop them rather than leave the pipe unread.
+
+cat >/dev/null
+
+exec "$(dirname "$0")/write-build-mark"

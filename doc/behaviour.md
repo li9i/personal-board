@@ -109,4 +109,8 @@ The book holds 108 combinations of four colours. 24 of them are here, in eight f
 
 ## Build mark
 
-Under the board, on the right, is the short hash of the commit this copy of the page came from. It links to that commit on GitHub. `hooks/post-commit` writes it after every commit, because a commit cannot hold its own hash. The page on disk therefore names the commit that holds its content, while the copy in the repository names the one before it.
+Under the board, on the right, is the short hash of the commit this copy of the page came from. It links to that commit on GitHub. The hooks in `hooks/` write it after the fact, because a commit cannot hold its own hash. The page on disk therefore names the commit that holds its content, while the copy in the repository names the one before it.
+
+All of them run the same script, `hooks/write-build-mark`, which reads HEAD and rewrites the one line. `post-commit` covers a commit, `post-merge` a merge and so a pull that merges, `post-rewrite` a rebase and an amend, and `post-checkout` a clone, a checkout and a switch. `post-checkout` stands aside for a checkout of single files, which the mark would otherwise undo, and for the checkout a rebase makes as it works, which the mark would otherwise stop.
+
+A clone can only write the mark if the hooks are already on when the working tree is written, which means `git clone -c core.hooksPath=hooks`. A plain clone cannot run a hook it has not fetched yet, so its page names the commit before the one it is at until the next commit.
