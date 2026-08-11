@@ -1,0 +1,3 @@
+# The build mark, written by hooks/write-build-mark. It names the commit HEAD
+# is at, which no commit can hold, so it stays out of the repository.
+build.js

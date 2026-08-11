@@ -109,8 +109,12 @@ The book holds 108 combinations of four colours. 24 of them are here, in eight f
 
 ## Build mark
 
-Under the board, on the right, is the short hash of the commit this copy of the page came from. It links to that commit on GitHub. The hooks in `hooks/` write it after the fact, because a commit cannot hold its own hash. The page on disk therefore names the commit that holds its content, while the copy in the repository names the one before it.
+Under the board, on the right, is the short hash of the commit this copy of the page came from. It links to that commit on GitHub. The page ships with a plain link to the repository in its place, and `build.js` puts the hash there once it is written.
 
-All of them run the same script, `hooks/write-build-mark`, which reads HEAD and rewrites the one line. `post-commit` covers a commit, `post-merge` a merge and so a pull that merges, `post-rewrite` a rebase and an amend, and `post-checkout` a clone, a checkout and a switch. `post-checkout` stands aside for a checkout of single files, which the mark would otherwise undo, and for the checkout a rebase makes as it works, which the mark would otherwise stop.
+The hooks in `hooks/` write `build.js` after the fact, because a commit cannot hold its own hash. It is not in the repository. A copy kept there could only ever name the commit before the one you are reading, and it would leave the page changed in the working tree after every commit. `.gitignore` keeps it out, so the tree stays clean.
 
-A clone can only write the mark if the hooks are already on when the working tree is written, which means `git clone -c core.hooksPath=hooks`. A plain clone cannot run a hook it has not fetched yet, so its page names the commit before the one it is at until the next commit.
+All the hooks run the same script, `hooks/write-build-mark`, which reads HEAD and writes `build.js`. `post-commit` covers a commit, `post-merge` a merge and so a pull that merges, `post-rewrite` a rebase and an amend, and `post-checkout` a clone, a checkout and a switch. Nothing has to stand aside any more. The file the hooks touch is not one git is watching, so writing it in the middle of a rebase or a checkout of single files disturbs neither.
+
+The page loads `build.js` with a plain script tag. It cannot be a module. A module is fetched under the rules for cross origin requests, which a browser refuses on a `file://` address, and that is how the page is usually opened.
+
+A clone can only write the mark if the hooks are already on when the working tree is written, which means `git clone -c core.hooksPath=hooks`. A plain clone shows the link to the repository until the next commit, merge or checkout.

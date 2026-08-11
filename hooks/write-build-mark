@@ -1,10 +1,10 @@
 #!/bin/sh
-# Writes the commit HEAD points at into the build mark at the foot of the page.
+# Writes the commit HEAD points at into build.js, which the page loads to fill
+# in the build mark at its foot.
 #
-# A commit cannot hold its own hash, so this runs after the fact and leaves the
-# one changed line in the working tree. The page on disk always names the commit
-# that holds its content. The next commit carries that line along and this runs
-# again to write the new hash over it.
+# A commit cannot hold its own hash, so this runs after the fact. build.js is
+# kept out of the repository by .gitignore, which is what leaves the working
+# tree clean. Without it the page falls back to a plain link to the repository.
 #
 # The hooks that call this are post-commit, post-merge, post-rewrite and
 # post-checkout.
@@ -13,6 +13,14 @@ set -e
 
 short=$(git rev-parse --short HEAD)
 full=$(git rev-parse HEAD)
-url=https://github.com/li9i/personal-board/commit/$full
 
-sed -i "s|^  <footer class=\"build\">.*|  <footer class=\"build\"><a href=\"$url\" target=\"_blank\" rel=\"noreferrer\">$short</a></footer>|" index.html
+cat > build.js <<EOF
+// Written by hooks/write-build-mark after a commit, a merge, a rebase or a
+// checkout. Not in the repository. Editing it by hand gets you nowhere, since
+// the next of those writes over it.
+(function () {
+  var mark = document.getElementById('buildMark');
+  mark.href = 'https://github.com/li9i/personal-board/commit/$full';
+  mark.textContent = '$short';
+})();
+EOF

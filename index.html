@@ -1387,12 +1387,19 @@
 
   <div class="board" id="board"></div>
 
-  <!-- The commit this copy of the page came from. The hooks in hooks/ rewrite
-       the line below after a commit, a merge, a rebase and a checkout, so the
-       file on disk names the commit that holds its content and the copy in the
-       repository names the one before it. They replace the whole line, so keep
-       it on one line. -->
-  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/a4b9597a214c536f083ec64f25db233b80e51429" target="_blank" rel="noreferrer">a4b9597</a></footer>
+  <!-- The commit this copy of the page came from. It starts as a plain link to
+       the repository, which holds for any copy, and build.js points it at the
+       one commit instead. The hooks in hooks/ write build.js after a commit, a
+       merge, a rebase and a checkout.
+
+       build.js is not in the repository. A commit cannot hold its own hash, so
+       a copy kept there would always name the wrong commit. A copy of the page
+       reached without the hooks keeps the plain link, which is at least true.
+
+       The tag has to be a classic script. A module is fetched under the rules
+       for cross origin requests, which a browser refuses on a file:// address. -->
+  <footer class="build"><a id="buildMark" href="https://github.com/li9i/personal-board" target="_blank" rel="noreferrer">personal-board</a></footer>
+  <script src="build.js"></script>
 
 </div>
 
