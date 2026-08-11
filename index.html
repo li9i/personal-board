@@ -1391,7 +1391,7 @@
        the line below every time a commit is made, so the file on disk names the
        commit that holds its content and the copy in the repository names the
        one before it. The hook replaces the whole line, so keep it on one line. -->
-  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/b75f5d202555cc1eeffa61d60d457c81859c7620" target="_blank" rel="noreferrer">b75f5d2</a></footer>
+  <footer class="build"><a href="https://github.com/li9i/personal-board/commit/94a63595a945601deadb98a97114d1331bdffc08" target="_blank" rel="noreferrer">94a6359</a></footer>
 
 </div>
 
@@ -1446,6 +1446,7 @@
   var COLUMNS = [
     { key: 'remember', label: 'Remember', mark: 'rail',
       prompt: 'What must you not forget?',
+      tally: 'to remember',
       divider: true,
       // Remember holds what you must keep in mind: a card that someone else has
       // to move, and a note to yourself that is not work at all. It is set apart
@@ -1460,11 +1461,12 @@
     // Backlog fills faster than it empties, and not everything in it is next.
     // The carpet is where the rest of it waits.
     { key: 'backlog', label: 'Backlog', mark: 'mise', prompt: 'What needs doing?',
-      carpet: true, palette: true },
+      tally: 'in backlog', carpet: true, palette: true },
     { key: 'now', label: 'Now', mark: 'pan', prompt: "What's underway?",
-      palette: true },
+      tally: 'going on now', palette: true },
     { key: 'accomplished', label: 'Accomplished', mark: 'served',
-      prompt: 'What got done?', clearable: true, palette: true }
+      prompt: 'What got done?', tally: 'accomplished',
+      clearable: true, palette: true }
   ];
   var KEYS = COLUMNS.map(function (c) { return c.key; });
   var PAL_COLUMNS = COLUMNS.filter(function (c) { return c.palette; });
@@ -3199,8 +3201,8 @@
     COLUMNS.forEach(function (c, i) {
       if (i) out.appendChild(el('span', 'dot', '·'));
       out.appendChild(el('b', null, countOf(state.cols[c.key])));
-      // a hard space, so a count never wraps away from the word it counts
-      out.appendChild(document.createTextNode(' ' + c.key));
+      // a hard space, so a count never wraps away from what it counts
+      out.appendChild(document.createTextNode(' ' + c.tally));
     });
   }
 
