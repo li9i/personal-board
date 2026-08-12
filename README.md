@@ -9,7 +9,7 @@ A personal board with four columns: Remember, Backlog, Now, Accomplished. The bo
 - **+ add** at the top of a column writes a new card. Enter saves, Shift+Enter makes a new line, Escape cancels.
 - **A double click** on a card opens its text in a box. That is the one way to edit it.
 - **≡** on a card opens its menu: pin, export, delete.
-- **The dot** before the date of a card in Backlog says whether the card is normal or low. A press turns it over. Low cards grey out and gather at the foot of the column.
+- **The mark** before the date of a card in Backlog says whether the card is normal or low: a plain ring on a normal card, the same ring with spokes around it on a low one. A press turns it over. Low cards grey out and gather at the foot of the column.
 - **Drag** moves a card within a column or to another column.
 - **Notes** hang off a card and open in a window of their own.
 - Card text reads inline code, fenced blocks, links, headings, quotes, callouts, lists, checkboxes and dividers.
