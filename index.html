@@ -2398,7 +2398,7 @@
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
-    a.download = name + '-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.download = name + '-' + Math.floor(Date.now() / 1000) + '.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
