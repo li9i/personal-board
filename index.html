@@ -695,21 +695,42 @@
   .card.pinned { border-color: var(--rule, var(--gray-200)); }
   /* A low card is the same card, put off. Where a pinned card takes something
      on, a low one gives things up: the shadow goes, the fill of the column
-     shows through where the card was white, and the words drop to the grey the
-     board already uses on a tint. It stays flat below the pointer as well, so
-     the rank it has is the rank it keeps. */
+     shows through where the card was white, and everything written on it fades
+     most of the way towards the card it sits on. It stays flat below the pointer
+     as well, so the rank it has is the rank it keeps.
+
+     The fade is one opacity over the whole of what a card says, and not a
+     lighter colour on each part of it. A card holds more than words: code chips
+     and fenced blocks with a fill and a border of their own, the bar and the
+     head of a callout in the colour of its noun, list markers, rules, the boxes
+     of a task. Named colours would leave every one of those at full strength
+     while the prose around them faded, which is the opposite of putting a card
+     off. One opacity carries all of it at once, keeps the hues in the same order
+     against each other, and takes in whatever card text learns to hold next.
+
+     0.42 puts the prose of a low card between 2.7:1 and 2.8:1 against the card,
+     on every palette. That is the one piece of text on the board under 4.5:1,
+     and it is under on purpose: a low card is meant to be passed over unless it
+     is looked for. Nothing that has to be read at a glance fades.
+
+     Only a low card sets --fade. Everything that a card says reads it and falls
+     back to full strength, so the fade is named in one place and each part of a
+     card keeps whatever else it already does with its own opacity. The date, the
+     note count and the words of the card fade. The two controls in the row do
+     not: the mark that says the card is low, because a press on it is the way
+     back, and the button that opens the menu. */
   .card.low {
     background: rgba(255, 255, 255, 0.55);
     box-shadow: none;
+    --fade: 0.42;
   }
-  .card.low .ctext,
-  .card.low .date { color: var(--gray-600); }
   .card.dragging { opacity: .4; }
   .ctext {
     font-size: 13px;
     line-height: 1.35;
     /* near-black unless the column names a colour of its own for its text */
     color: var(--text, var(--slate));
+    opacity: var(--fade, 1);
     white-space: pre-wrap;
     word-break: break-word;
     margin-bottom: 7px;
@@ -940,7 +961,8 @@
   }
   /* The mark that says a card is low, and the switch that turns it over. A
      normal card wears the colour of its column, filled. A low card wears the
-     same circle emptied and turned grey, the grey its words take as well.
+     same circle emptied and turned grey. It is the one thing on a low card that
+     does not fade, because a press on it is the way the card comes back.
      The mark of a low card stays while the pointer is away, because being low is
      the reason that card is at the foot of the column. Normal is the ordinary
      case and shows nothing until you reach for it, the way the offer of a first
@@ -984,10 +1006,14 @@
   @media (hover: none) {
     .card:not(.low) .lowdot { opacity: 1; }
   }
-  .date { color: var(--gray-800); }
+  .date {
+    color: var(--gray-800);
+    opacity: var(--fade, 1);
+  }
   /* The sign that a card has notes, and the way to open them. */
   .notemark {
     color: var(--gray-600);
+    opacity: var(--fade, 1);
     margin-left: 6px;
     cursor: pointer;
   }
@@ -1008,8 +1034,8 @@
     transition: opacity 120ms ease;
   }
   .card:hover .notemark.add,
-  .card:focus-within .notemark.add { opacity: 1; }
-  @media (hover: none) { .notemark.add { opacity: 1; } }
+  .card:focus-within .notemark.add { opacity: var(--fade, 1); }
+  @media (hover: none) { .notemark.add { opacity: var(--fade, 1); } }
   .card-actions {
     margin-left: auto;
     display: flex;
