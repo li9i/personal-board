@@ -1,4 +1,3 @@
 #!/bin/sh
-# Writes the build mark after a merge, and so after a pull that merges.
 
 exec "$(dirname "$0")/write-build-mark"

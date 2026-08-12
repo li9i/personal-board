@@ -1,13 +1,4 @@
 #!/bin/sh
-# Writes the commit HEAD points at into build.js, which the page loads to fill
-# in the build mark at its foot.
-#
-# A commit cannot hold its own hash, so this runs after the fact. build.js is
-# kept out of the repository by .gitignore, which is what leaves the working
-# tree clean. Without it the page falls back to a plain link to the repository.
-#
-# The hooks that call this are post-commit, post-merge, post-rewrite and
-# post-checkout.
 
 set -e
 
@@ -15,9 +6,6 @@ short=$(git rev-parse --short HEAD)
 full=$(git rev-parse HEAD)
 
 cat > build.js <<EOF
-// Written by hooks/write-build-mark after a commit, a merge, a rebase or a
-// checkout. Not in the repository. Editing it by hand gets you nowhere, since
-// the next of those writes over it.
 (function () {
   var mark = document.getElementById('buildMark');
   mark.href = 'https://github.com/li9i/personal-board/commit/$full';

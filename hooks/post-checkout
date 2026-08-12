@@ -1,8 +1,3 @@
 #!/bin/sh
-# Writes the build mark after a clone, a checkout or a switch.
-#
-# To get this on the clone itself, the hooks have to be live before the working
-# tree is written:
-#   git clone -c core.hooksPath=hooks https://github.com/li9i/personal-board
 
 exec "$(dirname "$0")/write-build-mark"

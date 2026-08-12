@@ -1,7 +1,3 @@
 #!/bin/sh
-# Writes the build mark after a commit.
-#
-# Enable the hooks in a fresh clone with:
-#   git config core.hooksPath hooks
 
 exec "$(dirname "$0")/write-build-mark"
