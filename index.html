@@ -79,7 +79,6 @@
   }
 
   /* a word on its own. It is grey until the pointer moves over it */
-  .carpetbtn,
   .clear-ask .no,
   .clearbtn {
     background: transparent;
@@ -676,70 +675,6 @@
      takes it back to less than 4.5:1. */
   .clear-ask .yes:hover { box-shadow: 0 0 0 1.5px var(--clay-d); }
 
-  /* ---------- the carpet ---------- */
-  /* The far end of the pin. A pinned card holds the top of a column and a swept
-     card holds its foot, under a band that names what is there and counts it.
-     The band is in the footer of the column, so it stays at the bottom and does
-     not move as the stack above it grows. A column with nothing swept shows no
-     band at all, so the carpet takes no room until it is used. */
-  .carpet { display: none; }
-  .carpet.on { display: block; }
-  .carpetbtn {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    width: 100%;
-    text-align: left;
-  }
-  .carpetbtn:hover { color: var(--slate); }
-  .carpetbtn:focus-visible {
-    outline: 2px solid var(--clay);
-    outline-offset: 2px;
-    border-radius: 4px;
-  }
-  /* The count sits at the far end of the band, where the count of a column sits
-     at the far end of its head. */
-  .carpetbtn .n {
-    margin-left: auto;
-    font-variant-numeric: tabular-nums;
-  }
-  /* A drawn mark and not a character, so it keeps the height of the row and not
-     the height of the font, the same as every other mark on the board. */
-  .carpetbtn .glyph {
-    display: flex;
-    flex: none;
-    width: 13px;
-    height: 13px;
-  }
-  .carpetbtn .glyph svg { width: 13px; height: 13px; }
-  /* The mark that says the band opens, and which way it stands. It is smaller
-     than the mark of the carpet, because it is about the band and not about the
-     cards under it. */
-  .carpetbtn .chev {
-    width: 11px;
-    height: 11px;
-    transition: transform 120ms ease;
-  }
-  .carpetbtn .chev svg { width: 11px; height: 11px; }
-  .carpetbtn[aria-expanded="true"] .chev { transform: rotate(180deg); }
-  .carpetbtn[aria-expanded="false"] + .carpet-body { display: none; }
-  .carpet-body {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding-top: 4px;
-    /* the line that shows where a dragged card will land is placed against this */
-    position: relative;
-  }
-  /* The column marks a card that is going into its stack. The carpet is inside
-     the column and takes cards of its own, so it marks the ones that are going
-     under it. The mark is a shade over the fill and not an outline, because an
-     outline here would sit inside the outline the column already has. */
-  .carpet.dragover {
-    background-image: linear-gradient(rgba(20, 20, 19, 0.05), rgba(20, 20, 19, 0.05));
-    border-radius: 8px;
-  }
-
   /* ---------- card ---------- */
   .card {
     /* white unless the column names a colour of its own for its cards */
@@ -758,17 +693,17 @@
   /* A pinned card takes the accent of its column, the same --rule a column
      already puts along its own top edge. */
   .card.pinned { border-color: var(--rule, var(--gray-200)); }
-  /* A swept card is the same card, put away. Where a pinned card takes something
-     on, a swept one gives things up: the shadow goes, the fill of the column
+  /* A low card is the same card, put off. Where a pinned card takes something
+     on, a low one gives things up: the shadow goes, the fill of the column
      shows through where the card was white, and the words drop to the grey the
      board already uses on a tint. It stays flat below the pointer as well, so
      the rank it has is the rank it keeps. */
-  .card.swept {
+  .card.low {
     background: rgba(255, 255, 255, 0.55);
     box-shadow: none;
   }
-  .card.swept .ctext,
-  .card.swept .date { color: var(--gray-600); }
+  .card.low .ctext,
+  .card.low .date { color: var(--gray-600); }
   .card.dragging { opacity: .4; }
   .ctext {
     font-size: 13px;
@@ -1003,6 +938,52 @@
     width: 11px;
     height: 11px;
   }
+  /* The mark that says a card is low, and the switch that turns it over. A
+     normal card wears the colour of its column, filled. A low card wears the
+     same circle emptied and turned grey, the grey its words take as well.
+     The mark of a low card stays while the pointer is away, because being low is
+     the reason that card is at the foot of the column. Normal is the ordinary
+     case and shows nothing until you reach for it, the way the offer of a first
+     note does. A screen with no pointer has no hover to give, so there every
+     card shows its mark. */
+  .lowbtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    /* drawn at 8px and pressed at 18px, so it is a mark in the row and still a
+       button under a thumb. The margin gives back what the larger target takes,
+       and the row keeps the height it had. */
+    width: 18px;
+    height: 18px;
+    margin: -4px 0 -4px -4px;
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+  .lowbtn:focus-visible { outline: 2px solid var(--clay); outline-offset: -1px; }
+  .lowbtn:hover .lowdot { box-shadow: 0 0 0 3px rgba(20, 20, 19, 0.08); }
+  .lowdot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    /* the colour of the column, dark enough to be seen on it. See inkOf() */
+    background: var(--ink, var(--gray-500));
+    border: 1.5px solid transparent;
+    transition: opacity 120ms ease;
+  }
+  .card.low .lowdot {
+    background: transparent;
+    border-color: var(--gray-500);
+  }
+  .card:not(.low) .lowdot { opacity: 0; }
+  .card:hover .lowdot,
+  .card:focus-within .lowdot { opacity: 1; }
+  @media (hover: none) {
+    .card:not(.low) .lowdot { opacity: 1; }
+  }
   .date { color: var(--gray-800); }
   /* The sign that a card has notes, and the way to open them. */
   .notemark {
@@ -1055,10 +1036,9 @@
        menu must leave its Undo within reach */
     z-index: 35;
     /* One width for the two menus, so the rows of a note and the rows of a card
-       show as the same object. The width is no more than the longest of them
-       needs, which is the four words of Sweep under the carpet. The words are the
-       purpose of the panel, and space to the right of them is space the panel
-       does not need. */
+       show as the same object. The width is no more than the longest row needs.
+       The words are the purpose of the panel, and space to the right of them is
+       space the panel does not need. */
     min-width: 200px;
     background: var(--white);
     border: 1px solid var(--gray-200);
@@ -1442,8 +1422,8 @@
   // Everything a column is. A new column is one more entry here and nothing else.
   //   mark       the drawing that comes before its name in the head
   //   divider    draw the hairline after this column
-  //   carpet     offer a carpet in the footer, and the menu row that sweeps a
-  //              card under it
+  //   low        let a card in this column be low, with the mark that says so
+  //              and turns it over
   //   clearable  offer "clear column" in the footer
   //   palette    take a colour from the panel, in the order the columns are listed
   //   fill/rule  the colour to use when no palette sets one
@@ -1467,9 +1447,9 @@
       fill: 'var(--ivory)', rule: 'var(--gray-200)', drop: 'var(--gray-500)',
       card: 'var(--ivory-50)', text: 'var(--gray-600)', head: 'var(--gray-800)' },
     // Backlog fills faster than it empties, and not everything in it is next.
-    // The carpet is where the rest of it waits.
+    // The low level is where the rest of it waits.
     { key: 'backlog', label: 'Backlog', mark: 'mise', prompt: 'What needs doing?',
-      tally: 'in backlog', carpet: true, palette: true },
+      tally: 'in backlog', low: true, palette: true },
     { key: 'now', label: 'Now', mark: 'pan', prompt: "What's underway?",
       tally: 'going on now', palette: true },
     { key: 'accomplished', label: 'Accomplished', mark: 'served',
@@ -1486,9 +1466,6 @@
   var TURN_KEY = 'personal.palturn.v1';
   // whether an add box stays open after each entry, see makeComposer()
   var BURST_KEY = 'personal.burst.v1';
-  // whether each carpet is up or down, by column key. Its own key, so a board
-  // written before the carpet existed still opens
-  var CARPET_KEY = 'personal.carpet.v1';
   // earlier names for the same two things, newest first. readCarried() moves
   // the first one it finds
   var OLD_STORES = ['todo.board.v1', 'backlog.board.v1'];
@@ -1529,10 +1506,6 @@
        + 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2',
     pin: 'M12 17v5 M9 4.5V10a3 3 0 0 1-1.66 2.68l-1.68.84A2 2 0 0 0 4.5 15.3V17h15v-1.7'
        + 'a2 2 0 0 0-1.16-1.82l-1.68-.84A3 3 0 0 1 15 10V4.5 M8 2h8',
-    // a floor, and a lump under it. The other marks of a carpet, a turned corner
-    // and a woven edge, both close up at the 11px a card gives a mark
-    carpet: 'M3 18h18 M7 18c1.6-5.6 7.8-5.6 9.4 0',
-    chevron: 'M6 9l6 6 6-6',
     tick: 'M20 6L9 17l-5-5',
     note: 'M12 20h9 M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z',
     abstract: 'M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2 '
@@ -1640,7 +1613,7 @@
 
   // ---------- state ----------
   // state.cols = { remember: [card], backlog: [...], now: [...], accomplished: [...] }
-  // card = { id, text, created, pinned, swept, notes: [note] }. A note has the
+  // card = { id, text, created, pinned, low, notes: [note] }. A note has the
   // same shape.
   var state = load();
   // the one card in a drag: { id, level, pinned }. The level says what can
@@ -1701,49 +1674,51 @@
         created: typeof c.created === 'number' ? c.created : Date.now(),
         pinned: c.pinned === true,
         // A card cannot be in both groups. The pin holds the top of a column and
-        // the carpet holds its foot, so a card that arrives with the two of them
-        // keeps the pin.
-        swept: c.swept === true && c.pinned !== true,
+        // a low card holds its foot, so a card that arrives with the two of them
+        // keeps the pin. `swept` is the field this one used to be called, when a
+        // card was put under a carpet instead of being made low, so a board
+        // written then opens with those cards low.
+        low: (c.low === true || c.swept === true) && c.pinned !== true,
         notes: normalize(c.notes)
       };
     });
   }
 
   // Cards and notes are made the same way, so neither one can start without a
-  // field that the other has. A note is never pinned or swept, but it carries
-  // both fields.
+  // field that the other has. A note is never pinned or low, but it carries both
+  // fields. A card starts normal, which is what low being false means.
   function newItem(text) {
     return { id: uid(), text: text, created: Date.now(), pinned: false,
-      swept: false, notes: [] };
+      low: false, notes: [] };
   }
 
   // A column holds three groups in one list: the pinned cards at the top, the
-  // open stack below them, and the swept cards under the carpet at the foot.
-  // Every path that changes a column ends at commit(), so this one pass keeps
-  // them in that order: a drop, a pin, a sweep, a card from an import, an Undo.
+  // normal ones below them, and the low ones at the foot. Every path that
+  // changes a column ends at commit(), so this one pass keeps them in that
+  // order: a drop, a pin, a card made low, a card from an import, an Undo.
   // filter keeps the order inside each group, so nothing else about a column
   // moves.
   function orderGroups(cols) {
     KEYS.forEach(function (k) {
       var list = cols[k];
-      // Only a column with a carpet has somewhere to sweep a card. A card that
-      // arrives anywhere else comes out from under on the way in, so a drag to
-      // another column and an import both land an ordinary card.
-      if (!colOf(k).carpet) {
-        list.forEach(function (c) { c.swept = false; });
+      // Only a column that carries levels has anywhere for a low card to be. A
+      // card that arrives anywhere else comes up to normal on the way in, so a
+      // drag to another column and an import both land an ordinary card.
+      if (!colOf(k).low) {
+        list.forEach(function (c) { c.low = false; });
       }
       cols[k] = list.filter(function (c) { return c.pinned; })
-        .concat(list.filter(function (c) { return !c.pinned && !c.swept; }))
-        .concat(list.filter(function (c) { return !c.pinned && c.swept; }));
+        .concat(list.filter(function (c) { return !c.pinned && !c.low; }))
+        .concat(list.filter(function (c) { return !c.pinned && c.low; }));
     });
   }
 
-  // What a column counts. A carpet column counts the two groups it shows apart,
+  // What a column counts. A column with levels counts the two groups apart,
   // because the first number answers what is in front of you and the second says
-  // how much you have put off. A column with nothing swept counts once.
+  // how much you have put off. A column with nothing low counts once.
   function countOf(list) {
-    var under = list.filter(function (c) { return c.swept; }).length;
-    return under ? (list.length - under) + '+' + under : String(list.length);
+    var down = list.filter(function (c) { return c.low; }).length;
+    return down ? (list.length - down) + '+' + down : String(list.length);
   }
 
   function save() {
@@ -1869,66 +1844,6 @@
     });
   }
 
-  // ---------- the carpet ----------
-  // The band at the foot of a column and the cards under it. The band names what
-  // is there, counts it, and a press lifts it. Whether it is up or down is kept
-  // by column key, so a carpet opens where you left it and two carpets do not
-  // have to agree.
-  function makeCarpet(c) {
-    var wrap = el('div', 'carpet');
-    var band = textBtn('carpetbtn');
-    var body = el('div', 'carpet-body');
-
-    var count = el('span', 'n');
-    var chev = icon('chevron');
-    chev.classList.add('chev');
-    band.appendChild(icon('carpet'));
-    band.appendChild(el('span', null, 'under the carpet'));
-    band.appendChild(count);
-    band.appendChild(chev);
-
-    function show(up) {
-      band.setAttribute('aria-expanded', up ? 'true' : 'false');
-      band.setAttribute('aria-label', (up ? 'Put down the carpet in ' : 'Lift the carpet in ')
-        + c.label);
-    }
-    show(carpetUp(c.key));
-
-    band.addEventListener('click', function () {
-      var up = band.getAttribute('aria-expanded') !== 'true';
-      show(up);
-      writeCarpetUp(c.key, up);
-    });
-
-    wrap.appendChild(band);
-    wrap.appendChild(body);
-
-    // The column takes the cards that land in its stack and the carpet takes the
-    // ones that land under it. The carpet is inside the column, so it answers
-    // for itself and the column does not answer again for the same drop.
-    wireDrop(wrap, body, {
-      level: 'card',
-      inner: true,
-      onDrop: function (id, at) { dropCard(id, c.key, at, true); }
-    });
-
-    return { el: wrap, count: count, body: body };
-  }
-
-  // Which carpets are up, as a list of column keys. One key holds them all, so a
-  // column that has no carpet leaves nothing behind if it loses one.
-  function carpetUp(key) {
-    return (lsGet(CARPET_KEY) || '').split(',').indexOf(key) >= 0;
-  }
-
-  function writeCarpetUp(key, up) {
-    var keys = (lsGet(CARPET_KEY) || '').split(',').filter(function (k) {
-      return k && k !== key;
-    });
-    if (up) keys.push(key);
-    lsSet(CARPET_KEY, keys.join(','));
-  }
-
   // ---------- clear a whole column ----------
   // A clear of a column is the one action that can lose many cards at once. So
   // it asks in the footer first, and an Undo is still available after that.
@@ -2008,15 +1923,12 @@
       }
     });
 
-    // the footer of a column, when the column has anything to put there. The
-    // carpet comes above a clear, because a clear is the last thing on a column
-    var carpet = c.carpet ? makeCarpet(c) : null;
+    // the footer of a column, when the column has anything to put there
     var clear = c.clearable ? makeClearRow(c) : null;
     var foot = null;
-    if (carpet || clear) {
+    if (clear) {
       foot = el('div', 'col-foot');
-      if (carpet) foot.appendChild(carpet.el);
-      if (clear) foot.appendChild(clear);
+      foot.appendChild(clear);
     }
 
     column.appendChild(head);
@@ -2033,10 +1945,10 @@
 
     wireDrop(column, body, {
       level: 'card',
-      onDrop: function (id, at) { dropCard(id, c.key, at, false); }
+      onDrop: function (id, at) { dropCard(id, c.key, at); }
     });
 
-    views[c.key] = { el: column, body: body, count: count, carpet: carpet, clear: clear };
+    views[c.key] = { el: column, body: body, count: count, clear: clear };
   });
 
   // ---------- dragging ----------
@@ -2045,9 +1957,10 @@
       // a menu sits where its button was, and a card in a drag takes its button
       // with it
       closeMenu();
-      // the drag carries the pin, because the place a card can land depends on
-      // which side of the pinned group it belongs to
-      drag = { id: id, level: level, pinned: card.classList.contains('pinned') };
+      // the drag carries the pin and the low mark, because the place a card can
+      // land depends on which of the three groups it belongs to
+      drag = { id: id, level: level, pinned: card.classList.contains('pinned'),
+        low: card.classList.contains('low') };
       card.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', id);
@@ -2071,14 +1984,9 @@
   // marks itself while a card is over it, and draws a line at the place the card
   // would take. Only a column has a style for the mark, so on the notes window
   // the mark carries no style.
-  //
-  // `inner` is for a zone that sits inside another one: the carpet inside its
-  // column. The two would both answer the same drop, and one line and one drop
-  // can only mean one thing, so the inner zone keeps the event to itself.
   function wireDrop(zone, body, spec) {
     zone.addEventListener('dragover', function (e) {
       if (!dragged(spec.level)) return;
-      if (spec.inner) e.stopPropagation();
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
       zone.classList.add('dragover');
@@ -2090,11 +1998,8 @@
       hideDropline();
     });
     zone.addEventListener('drop', function (e) {
-      if (spec.inner && dragged(spec.level)) e.stopPropagation();
       e.preventDefault();
       hideDropline();
-      // A drop in an inner zone never reaches the zone around it, and that outer
-      // zone is marked as well. So every mark comes off, wherever it was put on.
       document.querySelectorAll('.dragover').forEach(function (marked) {
         marked.classList.remove('dragover');
       });
@@ -2103,10 +2008,11 @@
     });
   }
 
-  // Where the dragged card lands in the list it is over. Pinned cards hold the
-  // top of a column, so a card lands on its own side of the line between the two
-  // groups: an unpinned card no higher, a pinned card no lower. A note is never
-  // pinned, so the line sits at zero there and nothing is held back.
+  // Where the dragged card lands in the list it is over. A column holds its
+  // pinned cards at the top and its low ones at the foot, so a card lands inside
+  // the band its own group has and cannot cross into either of the others. A
+  // drag therefore moves a card and never changes what it is. A note is never
+  // pinned or low, so both lines sit at the ends there and nothing is held back.
   function insertIndex(body, y) {
     var cards = [].slice.call(body.querySelectorAll('.card:not(.dragging)'));
     var at = cards.length;
@@ -2114,11 +2020,11 @@
       var box = cards[i].getBoundingClientRect();
       if (y < box.top + box.height / 2) { at = i; break; }
     }
-    // Under the carpet there is no pinned group to hold a card back, because a
-    // card that lands there gives its pin up. So the line only holds in a stack.
-    if (body.classList.contains('carpet-body')) return at;
-    var line = body.querySelectorAll('.card.pinned:not(.dragging)').length;
-    return drag && drag.pinned ? Math.min(at, line) : Math.max(at, line);
+    var top = body.querySelectorAll('.card.pinned:not(.dragging)').length;
+    var foot = cards.length - body.querySelectorAll('.card.low:not(.dragging)').length;
+    if (drag && drag.pinned) return Math.min(at, top);
+    if (drag && drag.low) return Math.max(at, foot);
+    return Math.min(Math.max(at, top), foot);
   }
 
   // The line that shows where the dragged card will land. Only one zone can be
@@ -2175,24 +2081,11 @@
     if (found) moveItem(state.cols[found.col], state.cols[toCol], id, at);
   }
 
-  // A drop puts a card in a column, on the side of the carpet it landed on. A
-  // card dropped under the carpet is swept, and one dropped in the stack above
-  // comes back out. So a drag says the same thing the menu says, and the two
-  // never disagree.
-  function dropCard(id, toCol, at, swept) {
-    var found = find(id);
-    if (!found) return;
-    found.card.swept = swept;
-    // the two groups are at opposite ends of a column, so a card in one leaves
-    // the other
-    if (swept) found.card.pinned = false;
-    // `at` counts inside the group the card landed in. The stack is drawn above
-    // the carpet, so a place under the carpet counts on from the end of it. The
-    // card itself is left out, because it gives up its own place first.
-    var above = state.cols[toCol].filter(function (c) {
-      return !c.swept && c.id !== id;
-    }).length;
-    moveCard(id, toCol, swept ? above + at : at);
+  // A drop puts a card where the line said it would go. A column draws its three
+  // groups as one list, so the place the pointer left the card is the place in
+  // that list, and insertIndex() has already held the card inside its own group.
+  function dropCard(id, toCol, at) {
+    moveCard(id, toCol, at);
   }
 
   function moveNote(id, at) {
@@ -2203,24 +2096,24 @@
   // A pin sends a card to the foot of the pinned group at the top of its column,
   // and taking it off sends the card to the head of the rest. orderGroups() in
   // commit() does the move, so this only turns the field over. A pinned card is
-  // never swept, so a pin brings the card out from under the carpet.
+  // never low, so a pin brings the card up as well as to the top.
   function togglePin(id) {
     var found = find(id);
     if (!found) return;
     found.card.pinned = !found.card.pinned;
-    if (found.card.pinned) found.card.swept = false;
+    if (found.card.pinned) found.card.low = false;
     commit();
   }
 
-  // A sweep sends a card to the head of the group under the carpet, and taking
-  // it back out puts it at the foot of the open stack. So a card crosses the
-  // line and goes no further than it has to, which is what a pin does at the
-  // other end of the column. orderGroups() in commit() does the move.
-  function toggleSweep(id) {
+  // Making a card low sends it to the head of the low group at the foot of the
+  // column, and making it normal again puts it at the foot of the ones above.
+  // So a card crosses the line and goes no further than it has to, which is what
+  // a pin does at the other end. orderGroups() in commit() does the move.
+  function toggleLow(id) {
     var found = find(id);
     if (!found) return;
-    found.card.swept = !found.card.swept;
-    if (found.card.swept) found.card.pinned = false;
+    found.card.low = !found.card.low;
+    if (found.card.low) found.card.pinned = false;
     commit();
   }
 
@@ -2393,7 +2286,9 @@
   //   markCls  an extra class for those words, if they need one
   //   onMark   what a click on those words does, if it does anything
   //   pinned   whether this card holds the top of its column. A note has none
-  //   swept    whether this card is under the carpet at the foot of its column
+  //   low      whether this card is low, in a column that has levels at all.
+  //            Left out where there are none, and then no mark is drawn
+  //   onLow    what a press on that mark does
   //   buttons  what the menu offers, in order: { icon, title, cls, onClick },
   //            where icon names a mark in MARKS
   function makeItem(item, spec) {
@@ -2411,11 +2306,18 @@
       card.classList.add('pinned');
       bot.appendChild(icon('pin'));
     }
-    // The mark of a swept card stands where the pin does, and the two never come
-    // together. A card is at one end of its column or the other.
-    if (spec.swept) {
-      card.classList.add('swept');
-      bot.appendChild(icon('carpet'));
+    // The mark of the level stands where the pin does, and the two never come
+    // together, because a card is at one end of its column or the other. It is
+    // the only mark on a card you can press, so it says in words what pressing
+    // it will do. The words are for a reader that has no colours to go on.
+    if (spec.low != null) {
+      if (spec.low) card.classList.add('low');
+      var lowBtn = textBtn('lowbtn');
+      lowBtn.setAttribute('aria-label', spec.low ? 'Make this card normal'
+                                                 : 'Make this card low');
+      lowBtn.appendChild(el('span', 'lowdot'));
+      lowBtn.addEventListener('click', spec.onLow);
+      bot.appendChild(lowBtn);
     }
     bot.appendChild(el('span', 'date', fmtDate(item.created)));
     if (spec.mark) {
@@ -2781,27 +2683,17 @@
     return false;
   }
 
-  // `col` is the column the card is in. It decides the rows that only some
-  // columns offer, which is the carpet.
+  // `col` is the column the card is in. It decides what only some columns have,
+  // which is the level of a card.
   function makeCard(card, col) {
     var buttons = [
       { icon: 'pin', title: card.pinned ? 'Unpin' : 'Pin to top',
-        onClick: function () { togglePin(card.id); } }
-    ];
-    // The two ends of a column sit together in the menu, and the rows that move
-    // a card off the board come after them. The way back out names the column,
-    // because the carpet has no one word the way a pin has Unpin.
-    if (col.carpet) {
-      buttons.push({ icon: 'carpet',
-        title: card.swept ? 'Bring back to ' + col.label.toLowerCase()
-                          : 'Sweep under the carpet',
-        onClick: function () { toggleSweep(card.id); } });
-    }
-    buttons.push(
+        onClick: function () { togglePin(card.id); } },
       { icon: 'send', title: 'Export this card',
         onClick: function () { exportCard(card.id); } },
       { icon: 'bin', title: 'Delete', cls: 'del',
-        onClick: function () { removeCard(card.id); } });
+        onClick: function () { removeCard(card.id); } }
+    ];
     return makeItem(card, {
       level: 'card',
       redraw: render,
@@ -2809,7 +2701,10 @@
       markCls: card.notes.length ? '' : 'add',
       onMark: function () { openNotes(card.id, !card.notes.length); },
       pinned: card.pinned,
-      swept: card.swept,
+      // A pinned card is at the top of its column and can be nothing else, so it
+      // shows the pin and not a level it is not allowed to have.
+      low: col.low && !card.pinned ? card.low : null,
+      onLow: function () { toggleLow(card.id); },
       buttons: buttons
     });
   }
@@ -3173,24 +3068,10 @@
     COLUMNS.forEach(function (c) {
       var list = state.cols[c.key];
       var view = views[c.key];
-      var under = list.filter(function (card) { return card.swept; });
-      var open = list.filter(function (card) { return !card.swept; });
-      function make(card) { return makeCard(card, c); }
-      // the stack of the column is what is not under its carpet, and an empty
-      // stack says so even when the carpet holds cards
-      fillBody(view.body, open, 'nothing here', make);
+      fillBody(view.body, list, 'nothing here', function (card) {
+        return makeCard(card, c);
+      });
       view.count.textContent = countOf(list);
-      if (view.carpet) {
-        // A carpet with nothing under it is not drawn at all, so the column is
-        // the column it was before the first card was swept. It therefore has no
-        // empty line of its own to show, and does not go through fillBody.
-        view.carpet.el.classList.toggle('on', under.length > 0);
-        view.carpet.count.textContent = under.length;
-        view.carpet.body.innerHTML = '';
-        under.forEach(function (card) {
-          view.carpet.body.appendChild(make(card));
-        });
-      }
       if (view.clear) {
         // any state change drops a pending confirmation. It asked about a count
         // that can be wrong now
@@ -3265,7 +3146,7 @@
       text: item.text,
       created: item.created,
       pinned: item.pinned,
-      swept: item.swept,
+      low: item.low,
       notes: item.notes.map(reid)
     };
   }
@@ -3330,6 +3211,9 @@
   var TINT = 0.12;
   // how far towards black a column takes its own colour to mark a drop
   var SHADE = 0.22;
+  // the contrast a drawn mark has to hold against what it sits on. Text is asked
+  // for 4.5, a shape for 3
+  var MARK_RATIO = 3;
   // the background of the page, read from the stylesheet so that the tint
   // arithmetic and the icon do not each keep a copy of it
   var IVORY = getComputedStyle(document.documentElement).getPropertyValue('--ivory').trim();
@@ -3463,13 +3347,50 @@
     return [0, 1, 2].map(function (i) { return parseInt(h.substr(i * 2, 2), 16); });
   }
 
-  // a colour SHADE of the way to black. This is the colour a column marks a drop
-  // with: its own colour, dark enough to read against its fill
-  function shadeOf(hex) {
+  // a colour part of the way to black, SHADE of the way unless told otherwise.
+  // At SHADE this is the colour a column marks a drop with: its own colour, dark
+  // enough to read against its fill.
+  function shadeOf(hex, k) {
+    var far = k == null ? SHADE : k;
     return '#' + rgbOf(hex).map(function (v) {
-      var m = Math.round(v * (1 - SHADE));
+      var m = Math.round(v * (1 - far));
       return ('0' + m.toString(16)).slice(-2);
     }).join('').toUpperCase();
+  }
+
+  // how much lighter one colour is than another, the ratio that a mark has to
+  // reach against what it is drawn on
+  function lumOf(hex) {
+    var parts = rgbOf(hex).map(function (v) {
+      var c = v / 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * parts[0] + 0.7152 * parts[1] + 0.0722 * parts[2];
+  }
+
+  function ratioOf(a, b) {
+    var x = lumOf(a);
+    var y = lumOf(b);
+    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+  }
+
+  // The colour a column draws the mark of a level in. The colours of the book
+  // run from black to lemon yellow, and a small shape in the pale ones cannot be
+  // seen on a card at all: yellow on white is 1.2 to 1, where a shape needs 3.
+  // So the colour goes towards black, and stops the moment it reaches that ratio
+  // against the fill of its own column, which is the darkest ground the mark
+  // ever sits on. A colour already dark enough is left alone, which is a little
+  // under half of them, and the palest needs 40 per cent. The hue never moves,
+  // so the mark is always the colour of the column it belongs to.
+  function inkOf(hex) {
+    var fill = tintOf(hex);
+    var ink = hex;
+    var far = 0;
+    while (ratioOf(ink, fill) < MARK_RATIO && far < 1) {
+      far += 0.01;
+      ink = shadeOf(hex, far);
+    }
+    return ink;
   }
 
   // a colour over the page at TINT strength. This is the fill of a column
@@ -3506,6 +3427,10 @@
     target.style.setProperty('--fill', tone[key].fill);
     target.style.setProperty('--rule', tone[key].rule);
     target.style.setProperty('--drop', tone[key].drop);
+    // A column that takes no colour from the palette has no ink of its own, and
+    // the stylesheet holds the grey it falls back to.
+    if (tone[key].ink) target.style.setProperty('--ink', tone[key].ink);
+    else target.style.removeProperty('--ink');
     // cleared and not left in place, because the notes window is painted again
     // for the column that holds its card
     ['card', 'text', 'head'].forEach(function (name) {
@@ -3539,7 +3464,8 @@
     var colors = colorsOf(p);
     PAL_COLUMNS.forEach(function (c, i) {
       tone[c.key] = {
-        fill: tintOf(colors[i]), rule: colors[i], drop: shadeOf(colors[i])
+        fill: tintOf(colors[i]), rule: colors[i], drop: shadeOf(colors[i]),
+        ink: inkOf(colors[i])
       };
     });
     KEYS.forEach(function (k) { paint(views[k].el, k); });

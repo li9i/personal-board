@@ -8,7 +8,7 @@ The full behaviour of the board. The README keeps the short version.
 
 **burst**, at the end of the row inside the box, decides what a saved card leaves behind. Off, the box closes once the card is in. On, it stays open and empty, ready for the next one. The switch is in the box, so it is there only while you are adding. One setting serves every box on the page, including the one for notes, and the board remembers it. It starts off.
 
-**≡** on a card opens the menu. The menu holds **Pin to top**, **Export this card** and **Delete**. A card in Backlog also holds **Sweep under the carpet**. A note has the same button, with **Delete note**. Escape or a click outside closes the menu.
+**≡** on a card opens the menu. The menu holds **Pin to top**, **Export this card** and **Delete**. A note has the same button, with **Delete note**. Escape or a click outside closes the menu.
 
 **A double click** on a card opens its text in a box. This is the one way to write the text, and a checkbox is the one thing that a single click changes. The same keys apply. A single click does nothing else, and a double click on a link or a button does what that link or button does. A note behaves in the same way.
 
@@ -56,14 +56,18 @@ The window uses the colour of the column that holds the card. Escape or a click 
 
 **Pin to top** holds a card at the head of its column. A pinned card shows a pin next to its date, and its menu offers **Unpin**. A card that is not pinned cannot pass a pinned one, so a drag stops at that line and so does the line that shows where the card lands. A new pin goes to the foot of the pinned cards. Taking a pin off puts the card at the head of the rest. Every column takes pins. A note takes none.
 
-## The carpet
+## Levels
 
-**Sweep under the carpet** is the far end of the pin, and only Backlog has one. Backlog fills faster than it empties and not everything in it is next, so the carpet is where the rest of it waits. The swept cards sit under a band in the footer of the column. The band names them, counts them, and a press lifts it. Backlog remembers whether its carpet is up, so it opens where you left it.
+A card in Backlog is **normal** or **low**, and only Backlog has the two. Backlog fills faster than it empties and not everything in it is next, so low is where the rest of it waits. A card is written normal, and the low ones gather at the foot of the column.
 
-- A swept card shows the mark of the carpet next to its date, and its menu offers **Bring back to backlog**. It is drawn flat, on the colour of the column, to say that it is put away and not that it is gone.
-- A sweep sends a card to the head of the cards under the carpet, and taking it back out puts it at the foot of the ones above. A drag says the same thing: drop a card on the carpet and it goes under, drag one out and it comes back. A card cannot be pinned and swept at once, so a sweep takes the pin off and a pin brings the card back out.
-- A swept card dragged to another column arrives as an ordinary card, because no other column has a carpet.
-- The count at the head of Backlog reads **5+3**: five cards above the carpet and three under it. The line of counts below the header reads the same way. With nothing swept, there is no band and one number.
+- The dot before the date says which, and a press on it turns the card over. It is filled in the colour of the column on a normal card and drawn as an empty grey ring on a low one. There is no menu row for this: the dot is the whole of it.
+- A low card is drawn flat, on the colour of the column, with its words in grey. It is put off, not gone.
+- The dot of a low card stays while the pointer is away, because that is why the card is at the foot of the column. On a normal card the dot appears when the pointer is on the card, the way **add note** does. On a screen with no pointer, every card shows its dot.
+- Making a card low sends it to the head of the low cards, and making it normal again puts it at the foot of the ones above. A card cannot be pinned and low at once, so making it low takes the pin off, and pinning it brings it up. A pinned card shows the pin and no dot.
+- A drag moves a card and never changes its level. The three groups keep their order, so a card stops at the line its own group ends at, and so does the line that shows where it lands.
+- A low card dragged to another column arrives normal, because no other column has levels.
+- The count at the head of Backlog reads **5+3**: five normal cards and three low ones. The line of counts below the header reads the same way. With nothing low, one number.
+- The dot takes the colour of the column, darkened as far as it must go to hold 3 to 1 against the fill of that column, and no further. Half of the colours in the book are too pale to be seen on a card as they are, and a little under half need nothing done.
 
 ## Export and Import
 
@@ -81,7 +85,9 @@ The board keeps the notes of a card on the card, so a card is whole on its own. 
 
 A pin is on the card too, so it travels with Export and Import as the notes do. A board saved before pins existed opens with none.
 
-The carpet is on the card in the same way, and travels with it. A board saved before the carpet existed opens with nothing swept. A card that arrives both pinned and swept keeps the pin, and a card that arrives swept in a column with no carpet arrives as an ordinary card.
+The level is on the card in the same way, and travels with it. A board saved before levels existed opens with every card normal. A card that arrives both pinned and low keeps the pin, and a card that arrives low in a column with no levels arrives normal.
+
+Low was called swept, when a card was put under a carpet in the footer of Backlog instead of being made low. A board saved then opens with those cards low, in the same order, at the same foot of the same column.
 
 The page also reads two older keys, `todo.board.v1` and `backlog.board.v1`. At the first load, the page moves a board from an older key to the new key, and then deletes the older key. Import also reads older JSON exports.
 

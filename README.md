@@ -2,13 +2,14 @@
 
 A personal board with four columns: Remember, Backlog, Now, Accomplished. The board is one HTML file. There is no build step, no dependency and no server. Open `index.html` in a browser. A `file://` address works.
 
-![The board with cards in each column. A pinned card heads Remember, callouts sit in Remember and Backlog, three cards wait under the carpet at the foot of Backlog, and the cards show checklists, a code chip, a fenced block, a link and a note count](doc/board.png)
+![The board with cards in each column. A pinned card heads Remember, callouts sit in Remember and Backlog, three low cards wait at the foot of Backlog, and the cards show checklists, a code chip, a fenced block, a link and a note count](doc/board.png)
 
 ## Use
 
 - **+ add** at the top of a column writes a new card. Enter saves, Shift+Enter makes a new line, Escape cancels.
 - **A double click** on a card opens its text in a box. That is the one way to edit it.
-- **≡** on a card opens its menu: pin, export, delete, and in Backlog, sweep under the carpet.
+- **≡** on a card opens its menu: pin, export, delete.
+- **The dot** before the date of a card in Backlog says whether the card is normal or low. A press turns it over. Low cards grey out and gather at the foot of the column.
 - **Drag** moves a card within a column or to another column.
 - **Notes** hang off a card and open in a window of their own.
 - Card text reads inline code, fenced blocks, links, headings, quotes, callouts, lists, checkboxes and dividers.
