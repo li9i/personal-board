@@ -38,3 +38,7 @@ To have the mark written by the clone itself, turn the hooks on before the files
 ```bash
 git clone -c core.hooksPath=hooks https://github.com/li9i/personal-board
 ```
+
+## Disclaimer
+
+`personal-board` was created by li9i and coded by Claude. What a time to be alive.
