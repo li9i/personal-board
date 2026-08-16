@@ -8,7 +8,7 @@ The full behaviour of the board. The README keeps the short version.
 
 **burst**, at the end of the row inside the box, decides what a saved card leaves behind. Off, the box closes once the card is in. On, it stays open and empty, ready for the next one. The switch is in the box, so it is there only while you are adding. One setting serves every box on the page, including the one for notes, and the board remembers it. It starts off.
 
-**≡** on a card opens the menu. The menu holds **Pin to top**, **Export this card** and **Delete**. A note has the same button, with **Delete note**. Escape or a click outside closes the menu.
+**≡** on a card opens the menu. The menu holds **Pin to top**, **Download this card**, **Send this card by Gmail** and **Delete**. A note has the same button, with **Delete note**. Escape or a click outside closes the menu.
 
 **A double click** on a card opens its text in a box. This is the one way to write the text, and a checkbox is the one thing that a single click changes. The same keys apply. A single click does nothing else, and a double click on a link or a button does what that link or button does. A note behaves in the same way.
 
@@ -71,9 +71,13 @@ A card in Backlog is **normal** or **low**, and only Backlog has the two. Backlo
 
 ## Export and Import
 
-**Export** downloads the whole board as JSON. **Import** reads a board or a single card.
+**Export** opens a menu with two ways out. **Download the board** writes the whole board to a JSON file. **Send the board by Gmail** writes the same file and opens a new Gmail message in another tab, with a subject and a body that name the file. The file is not attached to the message. No page can hand Gmail a file: the Gmail compose address carries the recipient, the subject and the body and nothing else, and the mail protocols behind a plain mail link carry no attachment either. An attachment would need Google's mail interface, a signed-in account and the board served from a web address, which the board is not. So the message opens beside a downloaded file and you drag the file onto it. The menu says so under the two choices.
 
-**Export this card** writes one card to a file, with its notes. The file passes the card to someone else. Import adds the card to the board and does not change the other cards. The card goes to the column that it was in. If this board has no such column, the card goes to Backlog. The card arrives as a new card. If you import the same file twice, you get two cards.
+If the browser blocks the new tab, the file is downloaded all the same.
+
+**Import** reads a board or a single card.
+
+**Download this card** writes one card to a file, with its notes. The file passes the card to someone else. **Send this card by Gmail** writes the same file and opens a message for it, as the board does. The subject carries the first line of the card and then its id, as in `Personal board card: pay the bill (ctest456)`. The first line is the text of the line with any heading, quote, bullet, number or checkbox mark taken off the front, cut to 60 letters. The id is the one the card holds on this board. Import gives an arriving card a fresh id, so the id in the subject names the card here and not the card there. Import adds the card to the board and does not change the other cards. The card goes to the column that it was in. If this board has no such column, the card goes to Backlog. The card arrives as a new card. If you import the same file twice, you get two cards.
 
 Export and Import use two shapes. A whole board is `{"cols": ...}` and replaces the board that is here. One card is `{"card": ..., "col": ...}` and joins the board. Import reads the fields in the file to find which of the two shapes it is.
 
