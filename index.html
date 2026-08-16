@@ -89,7 +89,8 @@
   .tips-close:hover { border-color: var(--gray-500); color: var(--slate); }
 
   .composer textarea,
-  .card textarea {
+  .card textarea,
+  .notes-edit {
     width: 100%;
     resize: vertical;
     background: var(--white);
@@ -885,6 +886,12 @@
     flex-direction: column;
     overflow: hidden;
   }
+  .notes.placed {
+    position: absolute;
+    margin: 0;
+    min-height: 0;
+    max-height: none;
+  }
   .notes .col-body { overflow-y: auto; }
   .notes .dropline { left: 0; right: 0; }
   .notes-head,
@@ -901,6 +908,17 @@
     font-size: 14px;
     margin-bottom: 0;
   }
+  .notes-edit {
+    display: none;
+    font-size: 14px;
+    min-height: 140px;
+    max-height: 46vh;
+    overflow-y: auto;
+    border: 1.5px solid var(--clay);
+    border-radius: 6px;
+    padding: 8px 9px;
+  }
+  .notes-edit.on { display: block; }
   .notes-close,
   .tips-close {
     flex: none;
@@ -1841,7 +1859,8 @@
 
     card.addEventListener('dblclick', function (e) {
       if (e.target.closest('a, button, .notemark')) return;
-      editItem(card, text, item, spec.redraw);
+      if (spec.onEdit) spec.onEdit(text.getBoundingClientRect());
+      else editItem(card, text, item, spec.redraw);
     });
     return card;
   }
@@ -2086,7 +2105,8 @@
       redraw: render,
       mark: noteMark(card),
       markCls: card.notes.length ? '' : 'add',
-      onMark: function () { openNotes(card.id, !card.notes.length); },
+      onMark: function () { openNotes(card.id, card.notes.length ? null : 'compose'); },
+      onEdit: function (at) { openNotes(card.id, 'edit', at); },
       pinned: card.pinned,
       low: col.low && !card.pinned ? card.low : null,
       onLow: function () { toggleLow(card.id); },
@@ -2230,7 +2250,12 @@
   var notesPanel = document.getElementById('notes');
   var notesBody = document.getElementById('notesBody');
   var notesClose = document.getElementById('notesClose');
+  var notesWhat = document.getElementById('notesWhat');
+  var whatEdit = el('textarea', 'notes-edit');
+  var editingWhat = false;
   var openCardId = null;
+
+  notesWhat.parentNode.appendChild(whatEdit);
 
   var notesComposer = makeComposer(document.getElementById('notesFoot'), {
     add: '+ add a note',
@@ -2249,20 +2274,95 @@
     return found ? found.card.notes : null;
   }
 
-  function openNotes(cardId, compose) {
+  function editWhat() {
+    var found = openCardId ? find(openCardId) : null;
+    if (!found || editingWhat) return;
+    editingWhat = true;
+    whatEdit.value = found.card.text;
+    notesWhat.style.display = 'none';
+    whatEdit.classList.add('on');
+    fitWhat();
+    whatEdit.focus();
+    whatEdit.setSelectionRange(whatEdit.value.length, whatEdit.value.length);
+  }
+
+  function fitWhat() {
+    whatEdit.style.height = 'auto';
+    whatEdit.style.height =
+      (whatEdit.scrollHeight + whatEdit.offsetHeight - whatEdit.clientHeight) + 'px';
+  }
+
+  function finishWhat(keep) {
+    if (!editingWhat) return;
+    editingWhat = false;
+    whatEdit.classList.remove('on');
+    notesWhat.style.display = '';
+    var found = openCardId ? find(openCardId) : null;
+    var text = whatEdit.value.trim();
+    if (keep && found && text && text !== found.card.text) {
+      found.card.text = text;
+      commit();
+      return;
+    }
+    redrawNotes();
+  }
+
+  var EDGE = 12;
+  var LEAST = 250;
+  var HEAD_ROOM = 170;
+
+  function anchorNotes(at) {
+    var pad = getComputedStyle(whatEdit);
+    var box = whatEdit.getBoundingClientRect();
+    var panel = notesPanel.getBoundingClientRect();
+    var dx = box.left + whatEdit.clientLeft + parseFloat(pad.paddingLeft) - panel.left;
+    var dy = box.top + whatEdit.clientTop + parseFloat(pad.paddingTop) - panel.top;
+    var left = Math.max(EDGE, Math.min(at.left - dx, window.innerWidth - LEAST - EDGE));
+    var top = Math.max(EDGE, Math.min(at.top - dy, window.innerHeight - LEAST - EDGE));
+    var wide = Math.min(panel.width, window.innerWidth - left - EDGE);
+    var tall = Math.min(panel.height, window.innerHeight - top - EDGE);
+
+    notesPanel.classList.add('placed');
+    notesPanel.style.left = left + 'px';
+    notesPanel.style.top = top + 'px';
+    notesPanel.style.width = wide + 'px';
+    notesPanel.style.height = tall + 'px';
+    var deep = Math.max(90, tall - HEAD_ROOM);
+    whatEdit.style.minHeight = Math.min(140, deep) + 'px';
+    whatEdit.style.maxHeight = deep + 'px';
+    fitWhat();
+  }
+
+  function loosenNotes() {
+    notesPanel.classList.remove('placed');
+    notesPanel.style.left = '';
+    notesPanel.style.top = '';
+    notesPanel.style.width = '';
+    notesPanel.style.height = '';
+    whatEdit.style.minHeight = '';
+    whatEdit.style.maxHeight = '';
+  }
+
+  function openNotes(cardId, mode, at) {
     closeComposers();
+    loosenNotes();
     openCardId = cardId;
     scrim.classList.add('on');
     redrawNotes();
-    if (compose) notesComposer.open();
-    else notesClose.focus();
+    if (mode === 'compose') notesComposer.open();
+    else if (mode === 'edit') {
+      editWhat();
+      if (at) anchorNotes(at);
+    } else notesClose.focus();
   }
 
   function closeNotes() {
     if (!openCardId) return;
+    finishWhat(true);
     notesComposer.close();
     var back = document.querySelector('.card[data-id="' + openCardId + '"] .menubtn');
     openCardId = null;
+    loosenNotes();
     scrim.classList.remove('on');
     if (back) back.focus();
   }
@@ -2274,7 +2374,7 @@
 
     paint(notesPanel, found.col);
     document.getElementById('notesCol').textContent = colOf(found.col).label;
-    renderText(document.getElementById('notesWhat'), found.card.text,
+    renderText(notesWhat, found.card.text,
       function (at) { toggleTask(found.card, at); });
     document.getElementById('notesCount').textContent = found.card.notes.length;
     fillBody(notesBody, found.card.notes, 'no notes yet', makeNote);
@@ -2282,6 +2382,24 @@
 
   notesClose.addEventListener('click', closeNotes);
   scrim.addEventListener('click', function (e) { if (e.target === scrim) closeNotes(); });
+  notesWhat.addEventListener('dblclick', function (e) {
+    if (e.target.closest('a, button')) return;
+    editWhat();
+  });
+  whatEdit.addEventListener('input', fitWhat);
+  whatEdit.addEventListener('blur', function () { finishWhat(true); });
+  whatEdit.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      finishWhat(true);
+      notesClose.focus();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      finishWhat(false);
+      notesClose.focus();
+    }
+  });
   wireDrop(notesBody, notesBody, { level: 'note', onDrop: moveNote });
 
   var tipsScrim = document.getElementById('tipsScrim');
