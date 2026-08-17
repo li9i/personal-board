@@ -796,6 +796,20 @@
   .card:focus-within .card-actions,
   .card.menuopen .card-actions { opacity: 1; }
   @media (hover: none) { .card-actions { opacity: 1; } }
+  .card-actions .glyph {
+    display: flex;
+    flex: none;
+    width: 12px;
+    height: 12px;
+  }
+  .card-actions .glyph svg {
+    width: 12px;
+    height: 12px;
+  }
+  .card-actions .delbtn:hover {
+    border-color: var(--clay);
+    color: var(--clay-dd);
+  }
 
   .card-menu {
     position: fixed;
@@ -834,21 +848,6 @@
   }
   .card-menu button:hover { background: var(--gray-50); }
   .card-menu button:focus-visible { outline: 2px solid var(--clay); outline-offset: -2px; }
-  .card-menu button.del {
-    position: relative;
-    margin-top: 6px;
-    color: var(--clay-dd);
-  }
-  .card-menu button.del::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: -3px;
-    border-top: 1px solid var(--col-rule);
-  }
-  .card-menu button.del:first-child { margin-top: 0; }
-  .card-menu button.del:first-child::before { content: none; }
   .card-menu .glyph {
     display: flex;
     flex: none;
@@ -1748,6 +1747,17 @@
   document.body.appendChild(menu);
   var menuOwner = null;
 
+  function makeDeleteButton(title, onClick) {
+    var button = iconBtn('', title, 'delbtn');
+    button.appendChild(icon('bin'));
+    button.addEventListener('click', function (e) {
+      e.stopPropagation();
+      closeMenu();
+      onClick();
+    });
+    return button;
+  }
+
   function makeMenuButton(card, actions) {
     var button = iconBtn('≡', 'actions', 'menubtn');
     button.setAttribute('aria-haspopup', 'true');
@@ -1850,7 +1860,8 @@
     }
 
     var actions = el('div', 'card-actions');
-    actions.appendChild(makeMenuButton(card, spec.buttons));
+    actions.appendChild(makeDeleteButton(spec.deleteTitle, spec.onDelete));
+    if (spec.buttons.length) actions.appendChild(makeMenuButton(card, spec.buttons));
     bot.appendChild(actions);
 
     card.appendChild(text);
@@ -2096,13 +2107,13 @@
       { icon: 'down', title: 'Download this card',
         onClick: function () { exportCard(card.id); } },
       { icon: 'mail', title: 'Send this card by Gmail',
-        onClick: function () { mailCard(card.id); } },
-      { icon: 'bin', title: 'Delete', cls: 'del',
-        onClick: function () { removeCard(card.id); } }
+        onClick: function () { mailCard(card.id); } }
     ];
     return makeItem(card, {
       level: 'card',
       redraw: render,
+      deleteTitle: 'Delete',
+      onDelete: function () { removeCard(card.id); },
       mark: noteMark(card),
       markCls: card.notes.length ? '' : 'add',
       onMark: function () { openNotes(card.id, card.notes.length ? null : 'compose'); },
@@ -2118,10 +2129,9 @@
     return makeItem(note, {
       level: 'note',
       redraw: redrawNotes,
-      buttons: [
-        { icon: 'bin', title: 'Delete note', cls: 'del',
-          onClick: function () { removeNote(note.id); } }
-      ]
+      deleteTitle: 'Delete note',
+      onDelete: function () { removeNote(note.id); },
+      buttons: []
     });
   }
 

@@ -8,13 +8,13 @@ The full behaviour of the board. The README keeps the short version.
 
 **burst**, at the end of the row inside the box, decides what a saved card leaves behind. Off, the box closes once the card is in. On, it stays open and empty, ready for the next one. The switch is in the box, so it is there only while you are adding. One setting serves every box on the page, including the one for notes, and the board remembers it. It starts off.
 
-**≡** on a card opens the menu. The menu holds **Pin to top**, **Download this card**, **Send this card by Gmail** and **Delete**. A note has the same button, with **Delete note**. Escape or a click outside closes the menu.
+**≡** on a card opens the menu. The menu holds **Pin to top**, **Download this card** and **Send this card by Gmail**. Escape or a click outside closes the menu. A **bin** sits to the left of **≡** and deletes the card in one press. A note carries the bin alone, with no menu.
 
 **A double click** on a card opens its text in a box. This is the one way to write the text, and a checkbox is the one thing that a single click changes. The same keys apply. A single click does nothing else, and a double click on a link or a button does what that link or button does. A note behaves in the same way.
 
 **Drag** moves a card within a column or to another column.
 
-**Delete** removes a card from the board. **Delete note** removes a note from a card. Neither asks first. **clear column** empties Accomplished and asks first. All three show a toast with an **Undo**.
+The bin removes a card from the board, and on a note it removes the note from its card. Neither asks first. **clear column** empties Accomplished and asks first. All three show a toast with an **Undo**.
 
 ## What the card text reads
 
@@ -48,7 +48,7 @@ A blank line inside a block closes nothing. A word after the opening fence names
 
 ## Notes
 
-**Notes** open in a small window in the middle of the page. The words next to the date of a card open that window. A card with notes gives their count there. A card with no notes shows **add note** while the pointer is on the card. A click there opens the window, with the box for the first note. Notes are cards themselves. The same editing, backticks, links and dates apply to them, and a drag reorders them. They have a menu of their own, with a delete and an Undo.
+**Notes** open in a small window in the middle of the page. The words next to the date of a card open that window. A card with notes gives their count there. A card with no notes shows **add note** while the pointer is on the card. A click there opens the window, with the box for the first note. Notes are cards themselves. The same editing, backticks, links and dates apply to them, and a drag reorders them. They carry a bin of their own, with an Undo.
 
 The window uses the colour of the column that holds the card. Escape or a click outside closes the window.
 
