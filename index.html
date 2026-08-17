@@ -1374,7 +1374,7 @@
     ta.rows = 2;
     ta.placeholder = spec.placeholder;
     var saveBtn = textBtn('save', 'Add');
-    saveBtn.appendChild(el('span', 'key', '⏎'));
+    saveBtn.appendChild(el('span', 'key', 'ctrl ⏎'));
     var cancelBtn = textBtn('cancel', 'cancel');
     cancelBtn.appendChild(el('span', 'key', 'esc'));
     var burstBtn = textBtn('burst', 'burst');
@@ -1433,7 +1433,7 @@
       ta.focus();
     });
     ta.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (e.key === 'Enter' && e.ctrlKey) {
         e.preventDefault();
         submit();
       } else if (e.key === 'Escape') {
@@ -1895,7 +1895,7 @@
     }
 
     ta.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); finish(true); }
+      if (e.key === 'Enter' && e.ctrlKey) { e.preventDefault(); finish(true); }
       else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
     });
     ta.addEventListener('blur', function () { finish(true); });
@@ -2389,7 +2389,7 @@
   whatEdit.addEventListener('input', fitWhat);
   whatEdit.addEventListener('blur', function () { finishWhat(true); });
   whatEdit.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && e.ctrlKey) {
       e.preventDefault();
       finishWhat(true);
       notesClose.focus();

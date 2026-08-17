@@ -4,7 +4,7 @@ The full behaviour of the board. The README keeps the short version.
 
 ## Cards
 
-**+ add** at the top of a column writes a new card, above the rest of the stack. Enter saves the card. Shift+Enter makes a new line. Escape cancels.
+**+ add** at the top of a column writes a new card, above the rest of the stack. Ctrl+Enter saves the card. Enter makes a new line. Escape cancels.
 
 **burst**, at the end of the row inside the box, decides what a saved card leaves behind. Off, the box closes once the card is in. On, it stays open and empty, ready for the next one. The switch is in the box, so it is there only while you are adding. One setting serves every box on the page, including the one for notes, and the board remembers it. It starts off.
 
