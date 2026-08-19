@@ -66,7 +66,6 @@
   .clear-ask .no:hover { color: var(--slate); }
 
   .card-actions button,
-  .notes-close,
   .tips-close {
     --side: 20px;
     width: var(--side);
@@ -85,7 +84,6 @@
     cursor: pointer;
   }
   .card-actions button:hover,
-  .notes-close:hover,
   .tips-close:hover { border-color: var(--gray-500); color: var(--slate); }
 
   .composer textarea,
@@ -918,7 +916,6 @@
     padding: 8px 9px;
   }
   .notes-edit.on { display: block; }
-  .notes-close,
   .tips-close {
     flex: none;
     --side: 22px;
@@ -1098,14 +1095,13 @@
 </div>
 
 <div class="scrim" id="scrim">
-  <section class="notes" id="notes" role="dialog" aria-modal="true" aria-labelledby="notesWhat">
+  <section class="notes" id="notes" role="dialog" aria-modal="true" aria-labelledby="notesWhat" tabindex="-1">
     <div class="notes-head">
       <div class="notes-of">
         <div class="notes-col" id="notesCol"></div>
         <div class="notes-what ctext" id="notesWhat"></div>
       </div>
       <span class="count" id="notesCount"></span>
-      <button class="notes-close" id="notesClose" type="button" aria-label="Close notes">×</button>
     </div>
     <div class="col-body" id="notesBody"></div>
     <div class="col-foot" id="notesFoot"></div>
@@ -2259,7 +2255,6 @@
   var scrim = document.getElementById('scrim');
   var notesPanel = document.getElementById('notes');
   var notesBody = document.getElementById('notesBody');
-  var notesClose = document.getElementById('notesClose');
   var notesWhat = document.getElementById('notesWhat');
   var whatEdit = el('textarea', 'notes-edit');
   var editingWhat = false;
@@ -2363,7 +2358,7 @@
     else if (mode === 'edit') {
       editWhat();
       if (at) anchorNotes(at);
-    } else notesClose.focus();
+    } else notesPanel.focus();
   }
 
   function closeNotes() {
@@ -2390,8 +2385,12 @@
     fillBody(notesBody, found.card.notes, 'no notes yet', makeNote);
   }
 
-  notesClose.addEventListener('click', closeNotes);
-  scrim.addEventListener('click', function (e) { if (e.target === scrim) closeNotes(); });
+  var scrimPress = false;
+  scrim.addEventListener('mousedown', function (e) { scrimPress = e.target === scrim; });
+  scrim.addEventListener('mouseup', function (e) { scrimPress = scrimPress && e.target === scrim; });
+  scrim.addEventListener('click', function (e) {
+    if (scrimPress && e.target === scrim) closeNotes();
+  });
   notesWhat.addEventListener('dblclick', function (e) {
     if (e.target.closest('a, button')) return;
     editWhat();
@@ -2402,12 +2401,12 @@
     if (e.key === 'Enter' && e.ctrlKey) {
       e.preventDefault();
       finishWhat(true);
-      notesClose.focus();
+      notesPanel.focus();
     } else if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
       finishWhat(false);
-      notesClose.focus();
+      notesPanel.focus();
     }
   });
   wireDrop(notesBody, notesBody, { level: 'note', onDrop: moveNote });

@@ -50,7 +50,7 @@ A blank line inside a block closes nothing. A word after the opening fence names
 
 **Notes** open in a small window in the middle of the page. The words next to the date of a card open that window. A card with notes gives their count there. A card with no notes shows **add note** while the pointer is on the card. A click there opens the window, with the box for the first note. Notes are cards themselves. The same editing, backticks, links and dates apply to them, and a drag reorders them. They carry a bin of their own, with an Undo.
 
-The window uses the colour of the column that holds the card. Escape or a click outside closes the window.
+The window uses the colour of the column that holds the card. Escape or a click outside closes the window. A click counts as outside only when it starts and ends there, so a selection dragged out of the text leaves the window open.
 
 ## Pins
 
