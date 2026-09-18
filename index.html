@@ -650,7 +650,7 @@
     margin-right: 4px;
   }
   .task-what { min-width: 0; }
-  .ctext li.task.done .task-what { color: var(--gray-500); }
+  .ctext .done, .ctext .done code { color: var(--gray-500); }
   .tickbox {
     flex: none;
     width: 14px;
@@ -2146,6 +2146,28 @@
     items.forEach(function (item) { body.appendChild(make(item)); });
   }
 
+  function lastMark(items) {
+    var i;
+    for (i = items.length - 1; i >= 0; i--) {
+      if (items[i].done !== null) return items[i].done;
+    }
+    return null;
+  }
+
+  function fillBlocks(host, list, onToggle) {
+    var fade = false;
+    list.forEach(function (b) {
+      var node = makeBlock(b, onToggle);
+      if (b.kind === 'list') {
+        var mark = lastMark(b.items);
+        if (mark !== null) fade = mark;
+      } else if (fade) {
+        node.classList.add('done');
+      }
+      host.appendChild(node);
+    });
+  }
+
   function makeBlock(b, onToggle) {
     if (b.kind === 'rule') return document.createElement('hr');
     if (b.kind === 'code') {
@@ -2191,9 +2213,7 @@
     box.appendChild(head);
     if (call.body.trim()) {
       var body = el('div', 'callout-body');
-      blocks(call.body, from).forEach(function (b) {
-        body.appendChild(makeBlock(b, onToggle));
-      });
+      fillBlocks(body, blocks(call.body, from), onToggle);
       box.appendChild(body);
     }
     return box;
@@ -2226,7 +2246,7 @@
 
   function renderText(el, s, onToggle) {
     el.textContent = '';
-    blocks(s).forEach(function (b) { el.appendChild(makeBlock(b, onToggle)); });
+    fillBlocks(el, blocks(s), onToggle);
   }
 
   function fillInline(el, s) {
