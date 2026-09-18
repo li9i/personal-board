@@ -650,6 +650,7 @@
     margin-right: 4px;
   }
   .task-what { min-width: 0; }
+  .ctext li.task.done .task-what { color: var(--gray-500); }
   .tickbox {
     flex: none;
     width: 14px;
@@ -2162,7 +2163,7 @@
         if (item.done === null) {
           fillInline(li, item.text);
         } else {
-          li.className = 'task';
+          li.className = item.done ? 'task done' : 'task';
           li.appendChild(taskBox(item, onToggle));
           var what = el('span', 'task-what');
           fillInline(what, item.text);
