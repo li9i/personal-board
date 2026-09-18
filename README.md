@@ -25,7 +25,9 @@ The board is in `localStorage`, under `personal.board.v1`. Export moves it to an
 
 Under the board is the short hash of the commit this copy of the page came from. It lives in `build.js`, which the hooks in `hooks/` write after a commit, a merge, a pull, a rebase, an amend and a checkout. `build.js` is not in the repository. A commit cannot hold its own hash, so a copy kept there would name the wrong commit for ever, and every commit would leave the page changed in the working tree. `.gitignore` keeps it out.
 
-A copy of the page without it shows a plain link to the repository instead, which holds whatever the copy is. `index.html` on its own is still the whole board.
+A download of the repository as a zip carries no history, so the hooks have nothing to read. GitHub writes those zips with `git archive`, which fills in the commit hash where `.gitattributes` asks for it, so `stamp.js` comes out of the zip already naming the commit the zip was cut from. In a clone `stamp.js` still holds the placeholder and steps aside, and `build.js` speaks for the working tree instead.
+
+A copy of the page with neither shows a plain link to the repository instead, which holds whatever the copy is. `index.html` on its own is still the whole board.
 
 A fresh clone has to be told where the hooks live:
 
