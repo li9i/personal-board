@@ -1172,7 +1172,6 @@
        + 'M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2',
     pin: 'M12 17v5 M9 4.5V10a3 3 0 0 1-1.66 2.68l-1.68.84A2 2 0 0 0 4.5 15.3V17h15v-1.7'
        + 'a2 2 0 0 0-1.16-1.82l-1.68-.84A3 3 0 0 1 15 10V4.5 M8 2h8',
-    ring: 'M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Z',
     sun: 'M12 7.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9Z M12 2.25v2.75 M12 19v2.75 '
        + 'M2.25 12h2.75 M19 12h2.75 M5.11 5.11l1.94 1.94 M16.95 16.95l1.94 1.94 '
        + 'M5.11 18.89l1.94-1.94 M16.95 7.05l1.94-1.94',
@@ -1842,7 +1841,7 @@
       var lowBtn = textBtn('lowbtn');
       lowBtn.setAttribute('aria-label', spec.low ? 'Make this card normal'
                                                  : 'Make this card low');
-      var lowMark = icon(spec.low ? 'sun' : 'ring');
+      var lowMark = icon('sun');
       lowMark.classList.add('lowdot');
       lowBtn.appendChild(lowMark);
       lowBtn.addEventListener('click', spec.onLow);
