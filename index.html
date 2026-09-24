@@ -1921,12 +1921,16 @@
     });
   }
 
-  var LINK_RE = /(\[[^\[\]\n]+\]\([^()\s]+\)|https?:\/\/[^\s<>]+|mailto:[^\s<>]+)/i;
-  var LABELLED = /^\[([^\[\]\n]+)\]\(([^()\s]+)\)$/;
-  var OPENABLE = /^(https?:\/\/|mailto:)/i;
+  var LINK_RE = /(\[[^\[\]\n]+\]\([^()\n]+\)|https?:\/\/[^\s<>]+|mailto:[^\s<>]+|file:\/\/[^\s<>]+|\bwww\.[^\s<>]+|(?<!\S)\/[^\s<>\/][^\s<>]*)/i;
+  var LABELLED = /^\[([^\[\]\n]+)\]\(([^()\n]+)\)$/;
+  var OPENABLE = /^(https?:\/\/|mailto:|file:\/\/)/i;
+  var WEB_HOST = /^www\./i;
+  var ROOT_PATH = /^\/[^\/]/;
 
   function safeHref(url) {
-    return OPENABLE.test(url) ? url : null;
+    if (OPENABLE.test(url)) return url;
+    if (ROOT_PATH.test(url)) return 'file://' + url;
+    return WEB_HOST.test(url) ? 'https://' + url : null;
   }
 
   function trimTail(url) {
