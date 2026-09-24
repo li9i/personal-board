@@ -650,7 +650,10 @@
     margin-right: 4px;
   }
   .task-what { min-width: 0; }
+  .ctext li p { margin: 0; }
   .ctext .done, .ctext .done code { color: var(--gray-500); }
+  .ctext li.done li.task:not(.done) { color: var(--text, var(--slate)); }
+  .ctext li.done li.task:not(.done) code { color: var(--gray-800); }
   .tickbox {
     flex: none;
     width: 14px;
@@ -2000,10 +2003,11 @@
   var RULE = /^ {0,3}(?:-{3,}|\*{3,}|_{3,})\s*$/;
   var HEADING = /^ {0,3}(#{1,6})\s+(.*)$/;
   var QUOTE = /^ {0,3}>\s?(.*)$/;
-  var BULLET = /^ {0,3}[-*+]\s+(.*)$/;
-  var NUMBER = /^ {0,3}(\d+)[.)]\s+(.*)$/;
-  var TASK = /^ {0,3}[-*+]\s+\[([ x])\]\s+(.*)$/;
+  var BULLET = /^[ \t]*[-*+]\s+(.*)$/;
+  var NUMBER = /^[ \t]*(\d+)[.)]\s+(.*)$/;
+  var TASK = /^[ \t]*[-*+]\s+\[([ x])\]\s+(.*)$/;
   var BOX = /\[[ x]\]/;
+  var LEAD = /^[ \t]*/;
 
   var CALLOUTS = {
     note: 'note',
@@ -2065,17 +2069,27 @@
       }
       var bullet = BULLET.exec(line);
       m = bullet || NUMBER.exec(line);
-      if (m) {
+      var w = indentOf(line);
+      var host = open && open.kind === 'list' ? hostOf(open.trail, w) : -1;
+      if (m && (host >= 0 || w <= 3)) {
         var ordered = !bullet;
         var task = bullet && TASK.exec(line);
         var item = { text: task ? task[2] : (ordered ? m[2] : m[1]),
-          done: task ? task[1] === 'x' : null, line: off + i };
-        if (open && open.kind === 'list' && open.ordered === ordered) {
-          open.items.push(item);
-        } else {
-          start({ kind: 'list', ordered: ordered, start: ordered ? Number(m[1]) : 1,
-            items: [item] });
-        }
+          done: task ? task[1] === 'x' : null, line: off + i, blocks: [] };
+        var list = { kind: 'list', ordered: ordered, start: ordered ? Number(m[1]) : 1,
+          items: [item] };
+        var under = host >= 0 ? open.trail[host].item.blocks : null;
+        var into = under ? under[under.length - 1] : open;
+        if (into && into.kind === 'list' && into.ordered === ordered) into.items.push(item);
+        else if (under) under.push(list);
+        else start(list);
+        open.trail = under ? open.trail.slice(0, host + 1) : [];
+        open.trail.push({ indent: w, item: item });
+        return;
+      }
+      if (host >= 0 && line.trim()) {
+        joinText(open.trail[host].item, line.replace(LEAD, ''));
+        open.trail = open.trail.slice(0, host + 1);
         return;
       }
       if (!line.trim()) { open = null; return; }
@@ -2096,6 +2110,23 @@
       if (closesFence(lines[i], width)) return true;
     }
     return false;
+  }
+
+  function hostOf(trail, w) {
+    var k = trail.length - 1;
+    while (k >= 0 && w < trail[k].indent + 2) k--;
+    return k;
+  }
+
+  function indentOf(line) {
+    return LEAD.exec(line)[0].replace(/\t/g, '    ').length;
+  }
+
+  function joinText(item, s) {
+    var last = item.blocks[item.blocks.length - 1];
+    if (!last) item.text += '\n' + s;
+    else if (last.kind === 'para') last.text += '\n' + s;
+    else item.blocks.push({ kind: 'para', text: s });
   }
 
   function makeCard(card, col) {
@@ -2147,8 +2178,13 @@
   }
 
   function lastMark(items) {
-    var i;
+    var i, j, mark;
     for (i = items.length - 1; i >= 0; i--) {
+      for (j = items[i].blocks.length - 1; j >= 0; j--) {
+        if (items[i].blocks[j].kind !== 'list') continue;
+        mark = lastMark(items[i].blocks[j].items);
+        if (mark !== null) return mark;
+      }
       if (items[i].done !== null) return items[i].done;
     }
     return null;
@@ -2182,15 +2218,15 @@
       if (b.ordered && b.start !== 1) list.start = b.start;
       b.items.forEach(function (item) {
         var li = document.createElement('li');
-        if (item.done === null) {
-          fillInline(li, item.text);
-        } else {
+        var what = li;
+        if (item.done !== null) {
           li.className = item.done ? 'task done' : 'task';
           li.appendChild(taskBox(item, onToggle));
-          var what = el('span', 'task-what');
-          fillInline(what, item.text);
+          what = el('div', 'task-what');
           li.appendChild(what);
         }
+        fillInline(what, item.text);
+        item.blocks.forEach(function (sub) { what.appendChild(makeBlock(sub, onToggle)); });
         list.appendChild(li);
       });
       return list;

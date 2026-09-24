@@ -12,7 +12,7 @@ A personal board with four columns: Remember, Backlog, Now, Accomplished. The bo
 - **The mark** before the date of a card in Backlog says whether the card is normal or low: a plain ring on a normal card, the same ring with spokes around it on a low one. A press turns it over. Low cards grey out and gather at the foot of the column.
 - **Drag** moves a card within a column or to another column.
 - **Notes** hang off a card and open in a window of their own.
-- Card text reads inline code, fenced blocks, links, headings, quotes, callouts, lists, checkboxes and dividers.
+- Card text reads inline code, fenced blocks, links, headings, quotes, callouts, nested lists, checkboxes and dividers.
 - **Palette** changes the colours of Backlog, Now and Accomplished. They come from Sanzo Wada's *A Dictionary of Color Combinations*.
 - **Export** offers two ways out: download the board as JSON, or send it by Gmail, which downloads the same file and opens a new message for you to drag the file onto. A card's own menu does the same for one card, with the card's first line and id in the subject. **Import** reads a whole board or a single card.
 - **tips**, in the header, shows what the board does and what it reads.

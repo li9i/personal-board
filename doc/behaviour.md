@@ -28,7 +28,8 @@ Nothing else is a link. A `javascript:` address is not a link. An address inside
 
 - Inside a line, `**bold**`, `*italic*` and `~~struck through~~` mark the words between them. Bold and italic need asterisks. The board does not read the underscore as a mark, so a name such as `max_speed` stays as it is.
 - At the head of a line, `#` to `######` make a heading, `>` makes a quote, and `-`, `*` or `+` make a list. `1.` or `1)` makes a numbered list, which counts from the first number you write. Three or more of `-`, `*` or `_` alone on a line make a divider across the card.
-- A blank line closes a paragraph, a quote or a list. The board reads no other Markdown. There are no tables and no images.
+- An item nests under the item above it when its line starts at least two spaces, or one tab, further in than that item. Lists nest to any depth, and a numbered list and a bulleted list nest in each other. An indented line that is not an item joins the item that it sits under, as more of its words. A line that starts with `>`, `#` or a fence, with fewer than four spaces before it, still starts its own block and closes the list.
+- A blank line closes a paragraph, a quote or a list, with all the lists nested in it. The board reads no other Markdown. There are no tables and no images.
 
 **Callouts**: a quote whose first line is a noun in brackets is a callout. `> [!warning]` opens one, and the lines below it are its text. The head takes the mark and the colour of the noun. Words after the noun on that line become the head instead, so `> [!question] Do we keep the fourth column?` names itself. A word the board does not know is not a callout, and those lines stay the quote that they were.
 
@@ -40,6 +41,7 @@ The text of a callout is card text, so it takes lists, boxes, fences and a headi
 
 - Only a space or a lower case `x` goes between the brackets, and a space follows them. So `- [X] read` and `- [-] read` are items with the characters that you typed. A numbered item takes no box.
 - An item with a box carries no bullet. The box stands where the bullet would be, so one list holds both kinds of item and the words after them line up.
+- A box that is done shows its words in grey, and the plain items nested under it also. An open box nested under a done box keeps its colour, so work that is not finished still shows. A click turns over one box only, and never the boxes under it.
 - A note takes boxes too. The head of the notes window shows the text of its card, and a box there is the same box as the one on the card.
 
 **Fences** mark a block of code. Three or more backticks alone on a line open the block, and a line of at least as many backticks closes it. The lines between them show as you typed them, in one monospace box. The board reads no mark inside a block, so a `#` or an address there stays as plain characters.
