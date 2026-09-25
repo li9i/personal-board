@@ -11,7 +11,7 @@ A personal board with four columns: Remember, Backlog, Now, Accomplished. The bo
 - **≡** on a card opens its menu: pin, download, send by Gmail. The bin beside it deletes the card.
 - **The mark** before the date of a card in Backlog says whether the card is normal or low: a plain ring on a normal card, the same ring with spokes around it on a low one. A press turns it over. Low cards grey out and gather at the foot of the column.
 - **Drag** moves a card within a column or to another column.
-- **Decks** keep cards together under a head card. A drop on the middle of a card makes one: before you let go, a ring goes round the card with the words **make a deck**. A drop near the edge of a card still moves the card, and shows a line. A deck folds to its head, and its done cards gather behind one line at its foot.
+- **Decks** keep cards together under a head card. A drop on the middle of a card makes one: before you let go, a ring goes round the card with the words **make a deck**. A drop near the edge of a card still moves the card, and shows a line. A deck folds to its head, and its done cards go to its foot, below a line that counts them.
 - **Notes** hang off a card and open in a window of their own.
 - Card text reads inline code, fenced blocks, links, headings, quotes, callouts, nested lists, checkboxes and dividers.
 - **Palette** changes the colours of Backlog, Now and Accomplished. They come from Sanzo Wada's *A Dictionary of Color Combinations*.

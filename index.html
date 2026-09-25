@@ -623,12 +623,9 @@
   }
   .deckfold:hover { background: rgba(20, 20, 19, 0.08); color: var(--slate); }
   .deckfold:focus-visible { outline: 2px solid var(--clay); outline-offset: -1px; }
-  .deckfold .glyph,
-  .deck-done .glyph { display: flex; transition: transform 120ms ease; }
-  .deckfold svg,
-  .deck-done svg { width: 12px; height: 12px; }
-  .deckfold[aria-expanded="true"] .glyph,
-  .deck-done[aria-expanded="true"] .glyph { transform: rotate(90deg); }
+  .deckfold .glyph { display: flex; transition: transform 120ms ease; }
+  .deckfold svg { width: 12px; height: 12px; }
+  .deckfold[aria-expanded="true"] .glyph { transform: rotate(90deg); }
   .deck:has(> .deck-cards) > .head { position: relative; }
   .deck:has(> .deck-cards) > .head::before {
     content: "";
@@ -669,23 +666,23 @@
     border-left: 1.5px solid var(--thread);
   }
   .deck-body > :last-child::after { bottom: auto; height: 20.5px; }
-  .deck-done {
+  .deck-rule { border-left: 1.5px solid transparent; }
+  .deck-body > .deck-rule::before { content: none; }
+  .deck-rule span {
     display: flex;
     align-items: center;
-    gap: 6px;
-    width: 100%;
-    background: transparent;
-    border: 1.5px solid rgba(20, 20, 19, 0.10);
-    border-radius: 8px;
+    gap: 8px;
+    padding: 5px 2px 3px;
     color: var(--gray-600);
     font-family: var(--mono);
     font-size: 11px;
-    padding: 6px 9px 5px;
-    cursor: pointer;
-    text-align: left;
   }
-  .deck-done:hover { border-color: var(--gray-500); color: var(--slate); }
-  .deck-done:focus-visible { outline: 2px solid var(--clay); outline-offset: -2px; }
+  .deck-rule span::before,
+  .deck-rule span::after {
+    content: "";
+    flex: 1;
+    border-top: 1.5px solid var(--thread);
+  }
   .deck-add { padding: 4px 0 2px; }
   .ctext {
     font-size: 13px;
@@ -2381,7 +2378,6 @@
     });
   }
 
-  var doneOpen = {};
   var deckAdd = null;
 
   function makeDeck(card, col) {
@@ -2421,17 +2417,10 @@
     var make = function (c) { return makeCard(c, col, card); };
     open.forEach(function (c) { body.appendChild(make(c)); });
     if (done.length) {
-      var shown = doneOpen[card.id] === true;
-      var line = textBtn('deck-done');
-      line.setAttribute('aria-expanded', shown ? 'true' : 'false');
-      line.appendChild(icon('chev'));
-      line.appendChild(document.createTextNode(done.length + ' done'));
-      line.addEventListener('click', function () {
-        doneOpen[card.id] = !shown;
-        render();
-      });
-      body.appendChild(line);
-      if (shown) done.forEach(function (c) { body.appendChild(make(c)); });
+      var rule = el('div', 'deck-rule');
+      rule.appendChild(el('span', null, done.length + ' done'));
+      body.appendChild(rule);
+      done.forEach(function (c) { body.appendChild(make(c)); });
     }
     zone.appendChild(body);
 

@@ -80,7 +80,7 @@ A deck is a card with cards of its own under it. The card on top is the head. It
 - **+ add to deck**, under the cards of a deck, writes a new card at the foot of the deck. It works as the box at the top of a column does, burst included.
 - Over the cards of a deck, only the line shows. A drop there puts the card into the deck at that line, and never makes a deck inside a deck. A drag also takes a card out of a deck to any place in a column. A card that joins a deck loses its pin and its level. A drag on the head moves the whole deck. A head never shows the ring, because a deck cannot go into another deck, so a head dropped on the cards of a deck lands in the column next to that deck. When the last card leaves a deck, the head is a plain card again.
 - Under its text, the head shows a bar and a count such as `3 of 14 done`. A card in a deck is done when it has at least one box and every box on it is ticked. A card with no box is never done.
-- Done cards gather at the foot of the deck behind one line, such as `3 done`. A press on the line shows them, and a second press hides them. The line starts closed each time the page opens.
+- Done cards go to the foot of the deck, below a line such as `3 done`. The line only counts them, and the done cards always show.
 - The arrow before the date of the head folds the deck to its head, and a second press unfolds it. The fold is on the head, so it travels with Export and shows in another tab.
 - A card in a deck is a full card, with a date, notes, a bin and a menu. Its menu holds **Download this card** and **Send this card by Gmail**. It takes no pin and no level.
 - The bin on the head deletes the deck and every card in it, in one press. The toast says how many cards went, and offers **Undo**.
