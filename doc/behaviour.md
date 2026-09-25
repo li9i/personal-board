@@ -6,15 +6,15 @@ The full behaviour of the board. The README keeps the short version.
 
 **+ add** at the top of a column writes a new card, above the rest of the stack. Ctrl+Enter saves the card. Enter makes a new line. Escape cancels.
 
-**burst**, at the end of the row inside the box, decides what a saved card leaves behind. Off, the box closes once the card is in. On, it stays open and empty, ready for the next one. The switch is in the box, so it is there only while you are adding. One setting serves every box on the page, including the one for notes, and the board remembers it. It starts off.
+**burst**, at the end of the row inside the box, decides what a saved card leaves behind. Off, the box closes once the card is in. On, it stays open and empty, ready for the next one. The switch is in the box, so it is there only while you are adding. One setting serves every box on the page, including the ones for notes and decks, and the board remembers it. It starts off.
 
 **≡** on a card opens the menu. The menu holds **Pin to top**, **Download this card** and **Send this card by Gmail**. Escape or a click outside closes the menu. A **bin** sits to the left of **≡** and deletes the card in one press. A note carries the bin alone, with no menu.
 
 **A double click** on a card opens its text in a box. This is the one way to write the text, and a checkbox is the one thing that a single click changes. The same keys apply. A single click does nothing else, and a double click on a link or a button does what that link or button does. A note behaves in the same way.
 
-**Drag** moves a card within a column or to another column.
+**Drag** moves a card within a column or to another column. A drop on the middle of another card puts the card under it, in a deck. Decks, below, has the rest.
 
-The bin removes a card from the board, and on a note it removes the note from its card. Neither asks first. **clear column** empties Accomplished and asks first. All three show a toast with an **Undo**.
+The bin removes a card from the board, and on a note it removes the note from its card. On the head of a deck it removes the deck and every card in it. None of these asks first. **clear column** empties Accomplished and asks first. All three show a toast with an **Undo**.
 
 ## What the card text reads
 
@@ -56,7 +56,7 @@ The window shows all of its notes at once. It becomes as tall as the notes need,
 
 ## Pins
 
-**Pin to top** holds a card at the head of its column. A pinned card shows a pin next to its date, and its menu offers **Unpin**. A card that is not pinned cannot pass a pinned one, so a drag stops at that line and so does the line that shows where the card lands. A new pin goes to the foot of the pinned cards. Taking a pin off puts the card at the head of the rest. Every column takes pins. A note takes none.
+**Pin to top** holds a card at the head of its column. A pinned card shows a pin next to its date, and its menu offers **Unpin**. A card that is not pinned cannot pass a pinned one, so a drag stops at that line and so does the line that shows where the card lands. A new pin goes to the foot of the pinned cards. Taking a pin off puts the card at the head of the rest. Every column takes pins. A note takes none, and a card in a deck takes none. A pin on the head of a deck holds the whole deck.
 
 ## Levels
 
@@ -66,10 +66,26 @@ A card in Backlog is **normal** or **low**, and only Backlog has the two. Backlo
 - A low card is drawn flat, on the colour of the column, and everything written on it fades most of the way towards the card. Words, code chips, fenced blocks, callouts, list markers, rules, tick boxes, the date and the note count all fade together, so the card recedes as one thing. The mark and the menu button do not fade, because they are how you act on the card. It is put off, not gone.
 - The mark of a low card stays while the pointer is away, because that is why the card is at the foot of the column. On a normal card the mark appears when the pointer is on the card, the way **add note** does. On a screen with no pointer, every card shows its mark.
 - Making a card low sends it to the head of the low cards, and making it normal again puts it at the foot of the ones above. A card cannot be pinned and low at once, so making it low takes the pin off, and pinning it brings it up. A pinned card shows the pin and no mark.
-- A drag moves a card and never changes its level. The three groups keep their order, so a card stops at the line its own group ends at, and so does the line that shows where it lands.
+- A drag moves a card and never changes its level, except into or out of a deck. A card that joins a deck loses its level, and a card taken out of a low deck arrives normal. The three groups keep their order, so a card stops at the line its own group ends at, and so does the line that shows where it lands.
 - A low card dragged to another column arrives normal, because no other column has levels.
-- The count at the head of Backlog reads **5+3**: five normal cards and three low ones. The line of counts below the header reads the same way. With nothing low, one number.
+- The count at the head of Backlog reads **5+3**: five normal cards and three low ones. The line of counts below the header reads the same way. With nothing low, one number. Every count on the board counts each card of a deck, the head included, so a head with 14 cards under it counts 15, and a low deck adds all 15 to the low number.
 - The mark of a normal card takes the colour of the column, darkened as far as it must go to hold 3 to 1 against the fill of that column, and no further. Half of the colours in the book are too pale to be seen on a card as they are, and a little under half need nothing done.
+
+## Decks
+
+A deck is a card with cards of its own under it. The card on top is the head. It keeps its own text, notes and menu, and its text names the deck. The cards of the deck hang under the head at the full width of the column, and a thin line in the margin ties each one to the head. A deck goes one level deep, so a card in a deck cannot hold cards.
+
+- A drop on another card makes a deck. While you drag, the board shows which of two things a drop will do. Near the top or bottom edge of a card, a line appears between the cards, and a drop moves the card to that line, as it always did. Over the middle half of a card, a ring goes round that card with the words **make a deck**, and a drop puts the dragged card under it. The card inside the ring becomes the head, and keeps its text, notes, pin and level.
+- Over the head of a deck, everything below its top quarter shows the ring with **add to deck**, and a drop puts the card at the foot of the deck.
+- **+ add to deck**, under the cards of a deck, writes a new card at the foot of the deck. It works as the box at the top of a column does, burst included.
+- Over the cards of a deck, only the line shows. A drop there puts the card into the deck at that line, and never makes a deck inside a deck. A drag also takes a card out of a deck to any place in a column. A card that joins a deck loses its pin and its level. A drag on the head moves the whole deck. A head never shows the ring, because a deck cannot go into another deck, so a head dropped on the cards of a deck lands in the column next to that deck. When the last card leaves a deck, the head is a plain card again.
+- Under its text, the head shows a bar and a count such as `3 of 14 done`. A card in a deck is done when it has at least one box and every box on it is ticked. A card with no box is never done.
+- Done cards gather at the foot of the deck behind one line, such as `3 done`. A press on the line shows them, and a second press hides them. The line starts closed each time the page opens.
+- The arrow before the date of the head folds the deck to its head, and a second press unfolds it. The fold is on the head, so it travels with Export and shows in another tab.
+- A card in a deck is a full card, with a date, notes, a bin and a menu. Its menu holds **Download this card** and **Send this card by Gmail**. It takes no pin and no level.
+- The bin on the head deletes the deck and every card in it, in one press. The toast says how many cards went, and offers **Undo**.
+- A pin or a level on the head acts on the whole deck. A low deck in Backlog fades as one and gathers with the low cards.
+- Every column takes decks.
 
 ## Export and Import
 
@@ -79,15 +95,17 @@ If the browser blocks the new tab, the file is downloaded all the same.
 
 **Import** reads a board or a single card.
 
-**Download this card** writes one card to a file, with its notes. The file passes the card to someone else. **Send this card by Gmail** writes the same file and opens a message for it, as the board does. The subject carries the first line of the card and then its id, as in `Personal board card: pay the bill (ctest456)`. The first line is the text of the line with any heading, quote, bullet, number or checkbox mark taken off the front, cut to 60 letters. The id is the one the card holds on this board. Import gives an arriving card a fresh id, so the id in the subject names the card here and not the card there. Import adds the card to the board and does not change the other cards. The card goes to the column that it was in. If this board has no such column, the card goes to Backlog. The card arrives as a new card. If you import the same file twice, you get two cards.
+**Download this card** writes one card to a file, with its notes. On the head of a deck it writes the whole deck, with every card and note in it. The file passes the card to someone else. **Send this card by Gmail** writes the same file and opens a message for it, as the board does. The subject carries the first line of the card and then its id, as in `Personal board card: pay the bill (ctest456)`. The first line is the text of the line with any heading, quote, bullet, number or checkbox mark taken off the front, cut to 60 letters. The id is the one the card holds on this board. Import gives an arriving card a fresh id, so the id in the subject names the card here and not the card there. Import adds the card to the board and does not change the other cards. The card goes to the column that it was in. If this board has no such column, the card goes to Backlog. The card arrives as a new card. If you import the same file twice, you get two cards.
 
-Export and Import use two shapes. A whole board is `{"cols": ...}` and replaces the board that is here. One card is `{"card": ..., "col": ...}` and joins the board. Import reads the fields in the file to find which of the two shapes it is.
+Export and Import use two shapes. A whole board is `{"cols": ...}` and replaces the board that is here. One card is `{"card": ..., "col": ...}` and joins the board. A deck is one card, with its cards in the list `cards` of the head. Import reads the fields in the file to find which of the two shapes it is.
 
 ## Storage
 
 The board is in `localStorage`, in the key `personal.board.v1`. The palette is in the key `personal.palette.v1`. The two keys belong to one browser on one machine. Export moves a board to another machine. Two tabs on the same board stay in sync.
 
 The board keeps the notes of a card on the card, so a card is whole on its own. Notes travel with Export and Import. A delete removes the notes of the card too. Undo returns the card and the notes. A board saved before notes existed opens with no notes.
+
+The cards of a deck are on its head in the same way, so a deck travels whole. A delete of the head removes its cards too, and Undo returns them. A board saved before decks existed opens with no decks. A copy of the page from before decks does not know the list `cards`. If it opens this board, it drops the cards of every deck the next time it saves. Do not open an older copy of the page on a board that holds decks.
 
 A pin is on the card too, so it travels with Export and Import as the notes do. A board saved before pins existed opens with none.
 
