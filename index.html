@@ -23,6 +23,7 @@
     --ivory-50: #FEFEFD;
 
     --col-rule: rgba(20, 20, 19, 0.07);
+    --thread: rgba(20, 20, 19, 0.22);
     --serif: ui-serif, Georgia, "Times New Roman", serif;
     --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
     --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -546,12 +547,133 @@
   .card:active { cursor: grabbing; }
   .card.pinned { border-color: var(--rule, var(--gray-200)); }
 
-  .card.low {
+  .card.low,
+  .deck.low .card {
     background: rgba(255, 255, 255, 0.55);
     box-shadow: none;
     --fade: 0.42;
   }
-  .card.dragging { opacity: .4; }
+  .card.dragging,
+  .deck.dragging { opacity: .4; }
+  .card.nesting {
+    position: relative;
+    border-color: var(--drop, var(--gray-500));
+    box-shadow: 0 0 0 2px var(--drop, var(--gray-500));
+  }
+  .card.nesting::after {
+    content: attr(data-nest);
+    position: absolute;
+    right: 10px;
+    bottom: -9px;
+    font-family: var(--mono);
+    font-size: 10px;
+    line-height: 1;
+    color: var(--ivory);
+    background: var(--slate);
+    border-radius: 999px;
+    padding: 4px 8px 3px;
+    pointer-events: none;
+  }
+
+  .deck { display: flex; flex-direction: column; }
+  .deck-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 7px;
+    opacity: var(--fade, 1);
+  }
+  .deck-track {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(20, 20, 19, 0.08);
+    overflow: hidden;
+  }
+  .deck-fill {
+    display: block;
+    height: 100%;
+    border-radius: 2px;
+    background: var(--clay-d);
+  }
+  .deck-tally {
+    flex: none;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--gray-600);
+  }
+  .deckfold {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 18px;
+    height: 18px;
+    margin: -4px 2px -4px -4px;
+    padding: 0;
+    color: var(--gray-600);
+    background: none;
+    border: 0;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .deckfold:hover { background: rgba(20, 20, 19, 0.08); color: var(--slate); }
+  .deckfold:focus-visible { outline: 2px solid var(--clay); outline-offset: -1px; }
+  .deckfold .glyph,
+  .deck-done .glyph { display: flex; transition: transform 120ms ease; }
+  .deckfold svg,
+  .deck-done svg { width: 12px; height: 12px; }
+  .deckfold[aria-expanded="true"] .glyph,
+  .deck-done[aria-expanded="true"] .glyph { transform: rotate(90deg); }
+  .deck:has(> .deck-cards) > .head { position: relative; }
+  .deck:has(> .deck-cards) > .head::before {
+    content: "";
+    position: absolute;
+    left: -7px;
+    bottom: 0;
+    width: 7px;
+    height: 14.5px;
+    border-top: 1.5px solid var(--thread);
+    border-left: 1.5px solid var(--thread);
+    pointer-events: none;
+  }
+  .deck-body {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-top: 2px;
+  }
+  .deck-body > :not(.dropline) { position: relative; }
+  .deck-body > :not(.dropline)::before,
+  .deck-body > :not(.dropline)::after {
+    content: "";
+    position: absolute;
+    left: -7px;
+    background: var(--thread);
+    pointer-events: none;
+  }
+  .deck-body > :not(.dropline)::before { top: 13px; width: 7px; height: 1.5px; }
+  .deck-body > :not(.dropline)::after { top: -5px; bottom: 0; width: 1.5px; }
+  .deck-body > :last-child::after { bottom: auto; height: 19.5px; }
+  .deck-done {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    background: transparent;
+    border: 1.5px solid rgba(20, 20, 19, 0.10);
+    border-radius: 8px;
+    color: var(--gray-600);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 9px 5px;
+    cursor: pointer;
+    text-align: left;
+  }
+  .deck-done:hover { border-color: var(--gray-500); color: var(--slate); }
+  .deck-done:focus-visible { outline: 2px solid var(--clay); outline-offset: -2px; }
+  .deck-add { padding: 4px 0 2px; }
   .ctext {
     font-size: 13px;
     line-height: 1.35;
@@ -1180,6 +1302,7 @@
        + 'M2.25 12h2.75 M19 12h2.75 M5.11 5.11l1.94 1.94 M16.95 16.95l1.94 1.94 '
        + 'M5.11 18.89l1.94-1.94 M16.95 7.05l1.94-1.94',
     tick: 'M20 6L9 17l-5-5',
+    chev: 'M9 6l6 6-6 6',
     note: 'M12 20h9 M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z',
     abstract: 'M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2 '
        + 'M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1Z M8 12h8 M8 16h5',
@@ -1308,25 +1431,28 @@
     return fresh;
   }
 
-  function normalize(list) {
+  function normalize(list, held) {
     if (!Array.isArray(list)) return [];
     return list.filter(function (c) {
       return c && typeof c.text === 'string';
     }).map(function (c) {
-      return {
+      var item = {
         id: c.id || uid(),
         text: c.text,
         created: typeof c.created === 'number' ? c.created : Date.now(),
-        pinned: c.pinned === true,
-        low: (c.low === true || c.swept === true) && c.pinned !== true,
-        notes: normalize(c.notes)
+        pinned: !held && c.pinned === true,
+        low: !held && (c.low === true || c.swept === true) && c.pinned !== true,
+        notes: normalize(c.notes, true),
+        cards: held ? [] : normalize(c.cards, true)
       };
+      if (!held && c.folded === true) item.folded = true;
+      return item;
     });
   }
 
   function newItem(text) {
     return { id: uid(), text: text, created: Date.now(), pinned: false,
-      low: false, notes: [] };
+      low: false, notes: [], cards: [] };
   }
 
   function orderGroups(cols) {
@@ -1341,9 +1467,14 @@
     });
   }
 
+  function sizeOf(list) {
+    return list.reduce(function (n, c) { return n + 1 + c.cards.length; }, 0);
+  }
+
   function countOf(list) {
-    var down = list.filter(function (c) { return c.low; }).length;
-    return down ? (list.length - down) + '+' + down : String(list.length);
+    var down = sizeOf(list.filter(function (c) { return c.low; }));
+    var all = sizeOf(list);
+    return down ? (all - down) + '+' + down : String(all);
   }
 
   function save() {
@@ -1359,8 +1490,16 @@
   function find(id) {
     for (var i = 0; i < KEYS.length; i++) {
       var list = state.cols[KEYS[i]];
-      var at = indexOfId(list, id);
-      if (at >= 0) return { col: KEYS[i], index: at, card: list[at] };
+      for (var j = 0; j < list.length; j++) {
+        if (list[j].id === id) {
+          return { col: KEYS[i], list: list, index: j, card: list[j], deck: null };
+        }
+        var at = indexOfId(list[j].cards, id);
+        if (at >= 0) {
+          return { col: KEYS[i], list: list[j].cards, index: at,
+            card: list[j].cards[at], deck: list[j] };
+        }
+      }
     }
     return null;
   }
@@ -1476,7 +1615,7 @@
     row.closeAsk = closeAsk;
 
     open.addEventListener('click', function () {
-      var n = state.cols[c.key].length;
+      var n = sizeOf(state.cols[c.key]);
       if (!n) return;
       var what = plural(n, 'card');
       question.textContent = 'clear ' + what + '?';
@@ -1549,25 +1688,31 @@
 
     wireDrop(column, body, {
       level: 'card',
-      onDrop: function (id, at) { dropCard(id, c.key, at); }
+      onDrop: function (id, at) { dropCard(id, c.key, at); },
+      onNest: function (id, onto) { joinDeck(id, onto, null); }
     });
 
     views[c.key] = { el: column, body: body, count: count, clear: clear };
   });
 
   function wireDrag(card, id, level) {
+    function moving() {
+      return card.classList.contains('head') ? card.parentNode : card;
+    }
     card.addEventListener('dragstart', function (e) {
       closeMenu();
-      drag = { id: id, level: level, pinned: card.classList.contains('pinned'),
-        low: card.classList.contains('low') };
-      card.classList.add('dragging');
+      var item = moving();
+      drag = { id: id, level: level, pinned: item.classList.contains('pinned'),
+        low: item.classList.contains('low'), deck: item !== card };
+      item.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', id);
     });
     card.addEventListener('dragend', function () {
       drag = null;
-      card.classList.remove('dragging');
+      moving().classList.remove('dragging');
       hideDropline();
+      markNest(null);
       document.querySelectorAll('.dragover').forEach(function (zone) {
         zone.classList.remove('dragover');
       });
@@ -1579,38 +1724,84 @@
   }
 
   function wireDrop(zone, body, spec) {
+    function taken() {
+      var id = dragged(spec.level);
+      return id && !(spec.flat && drag.deck) ? id : null;
+    }
     zone.addEventListener('dragover', function (e) {
-      if (!dragged(spec.level)) return;
+      if (!taken()) return;
       e.preventDefault();
+      e.stopPropagation();
       e.dataTransfer.dropEffect = 'move';
       zone.classList.add('dragover');
-      showDropline(body, e.clientY);
+      var onto = spec.onNest ? nestTarget(body, e.clientY) : null;
+      markNest(onto);
+      if (onto) hideDropline();
+      else showDropline(body, e.clientY, spec.flat);
     });
     zone.addEventListener('dragleave', function (e) {
       if (zone.contains(e.relatedTarget)) return;
       zone.classList.remove('dragover');
       hideDropline();
+      markNest(null);
     });
     zone.addEventListener('drop', function (e) {
+      var id = taken();
+      if (!id) return;
       e.preventDefault();
+      e.stopPropagation();
       hideDropline();
       document.querySelectorAll('.dragover').forEach(function (marked) {
         marked.classList.remove('dragover');
       });
-      var id = dragged(spec.level);
-      if (id) spec.onDrop(id, insertIndex(body, e.clientY));
+      var onto = spec.onNest ? nestTarget(body, e.clientY) : null;
+      markNest(null);
+      if (onto) spec.onNest(id, onto.dataset.id);
+      else spec.onDrop(id, insertIndex(body, e.clientY, spec.flat));
     });
   }
 
-  function insertIndex(body, y) {
-    var cards = [].slice.call(body.querySelectorAll('.card:not(.dragging)'));
+  function nestTarget(body, y) {
+    if (!drag || drag.deck) return null;
+    var items = itemsIn(body);
+    for (var i = 0; i < items.length; i++) {
+      var card = items[i].classList.contains('deck') ? items[i].firstChild : items[i];
+      var box = card.getBoundingClientRect();
+      var foot = card.classList.contains('head') ? box.bottom : box.bottom - box.height / 4;
+      if (y > box.top + box.height / 4 && y < foot) return card;
+    }
+    return null;
+  }
+
+  var nesting = null;
+
+  function markNest(card) {
+    if (nesting === card) return;
+    if (nesting) {
+      nesting.classList.remove('nesting');
+      nesting.removeAttribute('data-nest');
+    }
+    nesting = card;
+    if (!card) return;
+    card.classList.add('nesting');
+    card.dataset.nest = card.classList.contains('head') ? 'add to deck' : 'make a deck';
+  }
+
+  function itemsIn(body, cls) {
+    var tail = (cls || '') + ':not(.dragging)';
+    return [].slice.call(body.querySelectorAll(':scope > .card' + tail + ', :scope > .deck' + tail));
+  }
+
+  function insertIndex(body, y, flat) {
+    var cards = itemsIn(body);
     var at = cards.length;
     for (var i = 0; i < cards.length; i++) {
       var box = cards[i].getBoundingClientRect();
       if (y < box.top + box.height / 2) { at = i; break; }
     }
-    var top = body.querySelectorAll('.card.pinned:not(.dragging)').length;
-    var foot = cards.length - body.querySelectorAll('.card.low:not(.dragging)').length;
+    if (flat) return at;
+    var top = itemsIn(body, '.pinned').length;
+    var foot = cards.length - itemsIn(body, '.low').length;
     if (drag && drag.pinned) return Math.min(at, top);
     if (drag && drag.low) return Math.max(at, foot);
     return Math.min(Math.max(at, top), foot);
@@ -1622,10 +1813,10 @@
     if (dropline && dropline.parentNode) dropline.parentNode.removeChild(dropline);
   }
 
-  function showDropline(body, y) {
-    var cards = [].slice.call(body.querySelectorAll('.card:not(.dragging)'));
+  function showDropline(body, y, flat) {
+    var cards = itemsIn(body);
     if (!cards.length) return hideDropline();
-    var at = insertIndex(body, y);
+    var at = insertIndex(body, y, flat);
     var half = (parseFloat(getComputedStyle(body).rowGap) || 0) / 2;
     var mid;
     if (at === 0) {
@@ -1652,11 +1843,24 @@
 
   function moveCard(id, toCol, at) {
     var found = find(id);
-    if (found) moveItem(state.cols[found.col], state.cols[toCol], id, at);
+    if (found) moveItem(found.list, state.cols[toCol], id, at);
   }
 
   function dropCard(id, toCol, at) {
     moveCard(id, toCol, at);
+  }
+
+  function joinDeck(id, deckId, beforeId) {
+    var found = find(id);
+    var host = find(deckId);
+    if (!found || !host || host.deck || id === deckId || found.card.cards.length) return;
+    found.list.splice(found.index, 1);
+    found.card.pinned = false;
+    found.card.low = false;
+    var kids = host.card.cards;
+    var at = beforeId ? indexOfId(kids, beforeId) : -1;
+    kids.splice(at < 0 ? kids.length : at, 0, found.card);
+    commit();
   }
 
   function moveNote(id, at) {
@@ -1689,8 +1893,10 @@
   function removeCard(id) {
     var found = find(id);
     if (!found) return;
-    state.cols[found.col].splice(found.index, 1);
-    discard({ col: found.col, index: found.index, cards: [found.card] }, 'Card deleted');
+    found.list.splice(found.index, 1);
+    var held = found.card.cards.length;
+    discard({ col: found.col, deckOf: found.deck && found.deck.id, index: found.index,
+      cards: [found.card] }, held ? 'Deck of ' + plural(held + 1, 'card') + ' deleted' : 'Card deleted');
   }
 
   function removeNote(id) {
@@ -1705,7 +1911,7 @@
     var taken = state.cols[key];
     if (!taken.length) return;
     state.cols[key] = [];
-    discard({ col: key, index: 0, cards: taken }, plural(taken.length, 'card') + ' cleared');
+    discard({ col: key, index: 0, cards: taken }, plural(sizeOf(taken), 'card') + ' cleared');
   }
 
   var toast = document.getElementById('toast');
@@ -1726,9 +1932,11 @@
   }
 
   function undoList(rec) {
-    if (!rec.noteOf) return state.cols[rec.col];
-    var found = find(rec.noteOf);
-    return found ? found.card.notes : null;
+    var owner = rec.noteOf || rec.deckOf;
+    if (!owner) return state.cols[rec.col];
+    var found = find(owner);
+    if (!found) return null;
+    return rec.noteOf ? found.card.notes : found.card.cards;
   }
 
   document.getElementById('undoBtn').addEventListener('click', function () {
@@ -2133,15 +2341,17 @@
     else item.blocks.push({ kind: 'para', text: s });
   }
 
-  function makeCard(card, col) {
+  function makeCard(card, col, deck) {
     var buttons = [
-      { icon: 'pin', title: card.pinned ? 'Unpin' : 'Pin to top',
-        onClick: function () { togglePin(card.id); } },
       { icon: 'down', title: 'Download this card',
         onClick: function () { exportCard(card.id); } },
       { icon: 'mail', title: 'Send this card by Gmail',
         onClick: function () { mailCard(card.id); } }
     ];
+    if (!deck) {
+      buttons.unshift({ icon: 'pin', title: card.pinned ? 'Unpin' : 'Pin to top',
+        onClick: function () { togglePin(card.id); } });
+    }
     return makeItem(card, {
       level: 'card',
       redraw: render,
@@ -2152,10 +2362,87 @@
       onMark: function () { openNotes(card.id, card.notes.length ? null : 'compose'); },
       onEdit: function (at) { openNotes(card.id, 'edit', at); },
       pinned: card.pinned,
-      low: col.low && !card.pinned ? card.low : null,
+      low: col.low && !card.pinned && !deck ? card.low : null,
       onLow: function () { toggleLow(card.id); },
       buttons: buttons
     });
+  }
+
+  var doneOpen = {};
+  var deckAdd = null;
+
+  function makeDeck(card, col) {
+    var deck = el('section', 'deck');
+    deck.dataset.id = card.id;
+    if (card.pinned) deck.classList.add('pinned');
+    if (card.low && col.low) deck.classList.add('low');
+
+    var head = makeCard(card, col);
+    head.classList.add('head');
+    var bot = head.lastChild;
+    var fold = textBtn('deckfold');
+    fold.setAttribute('aria-expanded', card.folded ? 'false' : 'true');
+    fold.setAttribute('aria-label', card.folded ? 'Unfold the deck' : 'Fold the deck');
+    fold.appendChild(icon('chev'));
+    fold.addEventListener('click', function () {
+      card.folded = !card.folded;
+      commit();
+    });
+    bot.insertBefore(fold, bot.firstChild);
+
+    var done = card.cards.filter(isDone);
+    var open = card.cards.filter(function (c) { return !isDone(c); });
+    var bar = el('div', 'deck-bar');
+    var track = el('span', 'deck-track');
+    var fill = el('span', 'deck-fill');
+    fill.style.width = (100 * done.length / card.cards.length) + '%';
+    track.appendChild(fill);
+    bar.appendChild(track);
+    bar.appendChild(el('span', 'deck-tally', done.length + ' of ' + card.cards.length + ' done'));
+    head.insertBefore(bar, bot);
+    deck.appendChild(head);
+    if (card.folded) return deck;
+
+    var zone = el('div', 'deck-cards');
+    var body = el('div', 'deck-body');
+    var make = function (c) { return makeCard(c, col, card); };
+    open.forEach(function (c) { body.appendChild(make(c)); });
+    if (done.length) {
+      var shown = doneOpen[card.id] === true;
+      var line = textBtn('deck-done');
+      line.setAttribute('aria-expanded', shown ? 'true' : 'false');
+      line.appendChild(icon('chev'));
+      line.appendChild(document.createTextNode(done.length + ' done'));
+      line.addEventListener('click', function () {
+        doneOpen[card.id] = !shown;
+        render();
+      });
+      body.appendChild(line);
+      if (shown) done.forEach(function (c) { body.appendChild(make(c)); });
+    }
+    zone.appendChild(body);
+
+    var foot = el('div', 'deck-add');
+    makeComposer(foot, {
+      add: '+ add to deck',
+      placeholder: 'What else belongs here?',
+      onAdd: function (text) {
+        card.cards.push(newItem(text));
+        deckAdd = { id: card.id, open: burst };
+        commit();
+      }
+    });
+    zone.appendChild(foot);
+    deck.appendChild(zone);
+    wireDrop(zone, body, {
+      level: 'card',
+      flat: true,
+      onDrop: function (id, at) {
+        var next = itemsIn(body)[at];
+        joinDeck(id, card.id, next ? next.dataset.id : null);
+      }
+    });
+    return deck;
   }
 
   function makeNote(note) {
@@ -2192,6 +2479,26 @@
       if (items[i].done !== null) return items[i].done;
     }
     return null;
+  }
+
+  function boxesOf(list) {
+    var out = [];
+    list.forEach(function (b) {
+      if (b.kind === 'list') {
+        b.items.forEach(function (item) {
+          if (item.done !== null) out.push(item.done);
+          out = out.concat(boxesOf(item.blocks));
+        });
+      }
+      var call = b.kind === 'quote' && calloutOf(b.text);
+      if (call) out = out.concat(boxesOf(blocks(call.body)));
+    });
+    return out;
+  }
+
+  function isDone(card) {
+    var boxes = boxesOf(blocks(card.text));
+    return boxes.length > 0 && boxes.every(Boolean);
   }
 
   function fillBlocks(host, list, onToggle) {
@@ -2571,7 +2878,7 @@
       var list = state.cols[c.key];
       var view = views[c.key];
       fillBody(view.body, list, 'nothing here', function (card) {
-        return makeCard(card, c);
+        return card.cards.length ? makeDeck(card, c) : makeCard(card, c);
       });
       view.count.textContent = countOf(list);
       if (view.clear) {
@@ -2581,6 +2888,12 @@
     });
     renderSummary();
     redrawNotes();
+    if (deckAdd) {
+      var add = board.querySelector('.deck[data-id="' + deckAdd.id + '"] .deck-add .addbtn');
+      if (add && deckAdd.open) add.click();
+      else if (add) add.focus();
+      deckAdd = null;
+    }
   }
 
   function renderSummary() {
@@ -2661,7 +2974,7 @@
   function importBoard(parsed) {
     var total = 0;
     KEYS.concat(GONE_KEY).forEach(function (k) {
-      if (Array.isArray(parsed.cols[k])) total += parsed.cols[k].length;
+      total += sizeOf(normalize(parsed.cols[k]));
     });
     if (!confirm('Replace the current board with ' + total + ' card(s) from this file?')) return;
     lsSet(STORE, JSON.stringify(parsed));
@@ -2670,14 +2983,17 @@
   }
 
   function reid(item) {
-    return {
+    var copy = {
       id: uid(),
       text: item.text,
       created: item.created,
       pinned: item.pinned,
       low: item.low,
-      notes: item.notes.map(reid)
+      notes: item.notes.map(reid),
+      cards: item.cards.map(reid)
     };
+    if (item.folded) copy.folded = true;
+    return copy;
   }
 
   function importCard(parsed) {
@@ -2685,9 +3001,10 @@
     if (!arriving.length) throw new Error('bad shape');
     var card = reid(arriving[0]);
     var col = colOf(parsed.col) || colOf('backlog');
+    var what = card.cards.length ? 'this deck of ' + plural(card.cards.length + 1, 'card') : 'this card';
     var brought = card.notes.length ? ' and ' + plural(card.notes.length, 'note') : '';
     var says = card.text.length > 60 ? card.text.slice(0, 60) + '...' : card.text;
-    if (!confirm('Add this card' + brought + ' to ' + col.label + '?\n\n' + says)) return;
+    if (!confirm('Add ' + what + brought + ' to ' + col.label + '?\n\n' + says)) return;
     state.cols[col.key].push(card);
     commit();
   }
