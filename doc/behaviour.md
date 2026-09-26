@@ -147,4 +147,6 @@ All the hooks run the same script, `hooks/write-build-mark`, which reads HEAD an
 
 The page loads `build.js` with a plain script tag. It cannot be a module. A module is fetched under the rules for cross origin requests, which a browser refuses on a `file://` address, and that is how the page is usually opened.
 
-A clone can only write the mark if the hooks are already on when the working tree is written, which means `git clone -c core.hooksPath=hooks`. A plain clone shows the link to the repository until the next commit, merge or checkout.
+A download of the repository as a zip carries no history, so the hooks have nothing to read. GitHub writes those zips with `git archive`, which fills in the commit hash where `.gitattributes` asks for it, so `stamp.js` comes out of the zip already naming the commit the zip was cut from. In a clone `stamp.js` still holds the placeholder and steps aside, and `build.js` speaks for the working tree instead. A copy of the page with neither shows the plain link, and `index.html` on its own is still the whole board.
+
+A clone can only write the mark if the hooks are already on when the working tree is written, which means `git clone -c core.hooksPath=hooks`. A plain clone shows the link to the repository until the next commit, merge or checkout after `git config core.hooksPath hooks`.
