@@ -654,7 +654,7 @@
     pointer-events: none;
   }
   .deck-body > :not(.dropline)::before {
-    top: 13px;
+    top: 50%;
     width: 7px;
     height: 0;
     border-top: 1.5px solid var(--thread);
@@ -665,7 +665,7 @@
     width: 0;
     border-left: 1.5px solid var(--thread);
   }
-  .deck-body > :last-child::after { bottom: auto; height: 20.5px; }
+  .deck-body > :last-child::after { bottom: 50%; }
   .deck-rule { border-left: 1.5px solid transparent; }
   .deck-body > .deck-rule::before { content: none; }
   .deck-rule span {
