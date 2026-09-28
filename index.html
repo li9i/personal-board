@@ -683,7 +683,16 @@
     flex: 1;
     border-top: 1.5px solid var(--thread);
   }
-  .deck-add { padding: 4px 0 2px; }
+  .deck-add { position: relative; padding: 4px 0 2px; }
+  .deck-add::before {
+    content: "";
+    position: absolute;
+    left: -5.5px;
+    top: 0;
+    bottom: 0;
+    border-left: 1.5px solid var(--thread);
+    pointer-events: none;
+  }
   .ctext {
     font-size: 13px;
     line-height: 1.35;
@@ -2413,6 +2422,18 @@
     if (card.folded) return deck;
 
     var zone = el('div', 'deck-cards');
+    var top = el('div', 'deck-add');
+    makeComposer(top, {
+      add: '+ add to deck',
+      placeholder: 'What else belongs here?',
+      onAdd: function (text) {
+        card.cards.unshift(newItem(text));
+        deckAdd = { id: card.id, open: burst };
+        commit();
+      }
+    });
+    zone.appendChild(top);
+
     var body = el('div', 'deck-body');
     var make = function (c) { return makeCard(c, col, card); };
     open.forEach(function (c) { body.appendChild(make(c)); });
@@ -2423,18 +2444,6 @@
       done.forEach(function (c) { body.appendChild(make(c)); });
     }
     zone.appendChild(body);
-
-    var foot = el('div', 'deck-add');
-    makeComposer(foot, {
-      add: '+ add to deck',
-      placeholder: 'What else belongs here?',
-      onAdd: function (text) {
-        card.cards.push(newItem(text));
-        deckAdd = { id: card.id, open: burst };
-        commit();
-      }
-    });
-    zone.appendChild(foot);
     deck.appendChild(zone);
     wireDrop(zone, body, {
       level: 'card',
