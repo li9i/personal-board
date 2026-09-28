@@ -1708,7 +1708,10 @@
     wireDrop(column, body, {
       level: 'card',
       onDrop: function (id, at) { dropCard(id, c.key, at); },
-      onNest: function (id, onto) { joinDeck(id, onto, null); }
+      onNest: function (id, onto) {
+        var first = find(onto).card.cards.filter(function (k) { return k.id !== id; })[0];
+        joinDeck(id, onto, first ? first.id : null);
+      }
     });
 
     views[c.key] = { el: column, body: body, count: count, clear: clear };
