@@ -668,6 +668,8 @@
   .deck-body > :last-child::after { bottom: 50%; }
   .deck-rule { border-left: 1.5px solid transparent; }
   .deck-body > .deck-rule::before { content: none; }
+  .deck-body > .deck-rule:last-child::after { bottom: calc(50% - 1px); }
+  .deck-body > .deck-rule:last-child span::before { margin-left: -9px; }
   .deck-rule span {
     display: flex;
     align-items: center;
@@ -1468,6 +1470,7 @@
         cards: held ? [] : normalize(c.cards, true)
       };
       if (!held && c.folded === true) item.folded = true;
+      if (!held && c.doneFolded === true) item.doneFolded = true;
       return item;
     });
   }
@@ -2404,15 +2407,7 @@
     var head = makeCard(card, col);
     head.classList.add('head');
     var bot = head.lastChild;
-    var fold = textBtn('deckfold');
-    fold.setAttribute('aria-expanded', card.folded ? 'false' : 'true');
-    fold.setAttribute('aria-label', card.folded ? 'Unfold the deck' : 'Fold the deck');
-    fold.appendChild(icon('chev'));
-    fold.addEventListener('click', function () {
-      card.folded = !card.folded;
-      commit();
-    });
-    bot.insertBefore(fold, bot.firstChild);
+    bot.insertBefore(makeFold(card, 'folded', 'the deck'), bot.firstChild);
 
     var done = card.cards.filter(isDone);
     var open = card.cards.filter(function (c) { return !isDone(c); });
@@ -2445,9 +2440,11 @@
     open.forEach(function (c) { body.appendChild(make(c)); });
     if (done.length) {
       var rule = el('div', 'deck-rule');
-      rule.appendChild(el('span', null, done.length + ' done'));
+      var tally = el('span', null, done.length + ' done');
+      tally.insertBefore(makeFold(card, 'doneFolded', 'the done cards'), tally.firstChild);
+      rule.appendChild(tally);
       body.appendChild(rule);
-      done.forEach(function (c) { body.appendChild(make(c)); });
+      if (!card.doneFolded) done.forEach(function (c) { body.appendChild(make(c)); });
     }
     zone.appendChild(body);
     deck.appendChild(zone);
@@ -2460,6 +2457,18 @@
       }
     });
     return deck;
+  }
+
+  function makeFold(card, key, what) {
+    var fold = textBtn('deckfold');
+    fold.setAttribute('aria-expanded', card[key] ? 'false' : 'true');
+    fold.setAttribute('aria-label', (card[key] ? 'Unfold ' : 'Fold ') + what);
+    fold.appendChild(icon('chev'));
+    fold.addEventListener('click', function () {
+      card[key] = !card[key];
+      commit();
+    });
+    return fold;
   }
 
   function makeNote(note) {
@@ -3010,6 +3019,7 @@
       cards: item.cards.map(reid)
     };
     if (item.folded) copy.folded = true;
+    if (item.doneFolded) copy.doneFolded = true;
     return copy;
   }
 
