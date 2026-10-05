@@ -796,7 +796,7 @@
     margin-right: 4px;
   }
   .task-what { min-width: 0; }
-  .ctext li p { margin: 0; }
+  .ctext li p, .ctext li blockquote { margin: 0; }
   .ctext .done, .ctext .done code { color: var(--gray-500); }
   .ctext li.done li.task:not(.done) { color: var(--text, var(--slate)); }
   .ctext li.done li.task:not(.done) code { color: var(--gray-800); }
@@ -2302,6 +2302,13 @@
         open = null;
         return;
       }
+      var w = indentOf(line);
+      var host = open && open.kind === 'list' ? hostOf(open.trail, w) : -1;
+      if (host >= 0 && (m = QUOTE.exec(line.replace(LEAD, '')))) {
+        quoteInto(open.trail[host].item, m[1], off + i);
+        open.trail = open.trail.slice(0, host + 1);
+        return;
+      }
       if ((m = QUOTE.exec(line))) {
         if (open && open.kind === 'quote') open.text += '\n' + m[1];
         else start({ kind: 'quote', text: m[1], at: off + i });
@@ -2309,8 +2316,6 @@
       }
       var bullet = BULLET.exec(line);
       m = bullet || NUMBER.exec(line);
-      var w = indentOf(line);
-      var host = open && open.kind === 'list' ? hostOf(open.trail, w) : -1;
       if (m && (host >= 0 || w <= 3)) {
         var ordered = !bullet;
         var task = bullet && TASK.exec(line);
@@ -2367,6 +2372,12 @@
     if (!last) item.text += '\n' + s;
     else if (last.kind === 'para') last.text += '\n' + s;
     else item.blocks.push({ kind: 'para', text: s });
+  }
+
+  function quoteInto(item, s, at) {
+    var last = item.blocks[item.blocks.length - 1];
+    if (last && last.kind === 'quote') last.text += '\n' + s;
+    else item.blocks.push({ kind: 'quote', text: s, at: at });
   }
 
   function makeCard(card, col, deck) {
@@ -2604,7 +2615,7 @@
 
   function unquoted(line) {
     var m;
-    while ((m = QUOTE.exec(line))) line = m[1];
+    while ((m = QUOTE.exec(line.replace(LEAD, '')))) line = m[1];
     return line;
   }
 
