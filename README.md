@@ -12,7 +12,7 @@ A personal board with four columns: Remember, Backlog, Now, Accomplished. The bo
 - **The sun** after the date of a card in Backlog says whether the card is normal or low: in the colour of the column on a normal card, in grey on a low one. A press turns it over. Low cards grey out and gather at the foot of the column.
 - **Drag** moves a card within a column or to another column.
 - **Decks** keep cards together under a head card. A drop on the middle of a card makes one: before you let go, a ring goes round the card with the words **make a deck**. A drop near the edge of a card still moves the card, and shows a line. A deck folds to its head, and its done cards go to its foot, below a line that counts them and folds them away.
-- **Boards** sit inside cards. **Turn into a board**, in the menu of a card, gives the card a board of its own, with the same four columns. **open** on the card steps into that board, and the names in the heading step back out. The top board is the **Mother Board**. Boards nest to any depth, and everything on the page acts on the board you are in. A card that holds a board takes no part in a deck.
+- **Boards** sit inside cards. **Turn into a board**, in the menu of a card, gives the card a board of its own, with the same four columns. The **board** tab on the card steps into that board, and the names in the heading step back out. The top board is the **Mother Board**. Boards nest to any depth, and everything on the page acts on the board you are in. A card that holds a board takes no part in a deck.
 - **Notes** hang off a card and open in a window of their own.
 - Card text reads inline code, fenced blocks, links, headings, quotes, callouts, nested lists, checkboxes and dividers.
 - **Palette** changes the colours of Backlog, Now and Accomplished on the board you are in, so each board keeps its own. The colours come from Sanzo Wada's *A Dictionary of Color Combinations*.
@@ -43,7 +43,7 @@ node --test
 
 They open the page in headless Google Chrome, the `google-chrome` command, with a profile of their own. They delete the profile afterwards, so they do not touch the board in your own browser. You need Node and Google Chrome. There is no package to install, and the tests download nothing. They were run with Node 22.
 
-The first test checks that a save keeps the parts of a board that the page does not know. The second checks that the first load moves the board from `personal.board.v1` to `personal.board.v2` and leaves a sign in the old key. [doc/behaviour.md](doc/behaviour.md#storage) has the rest.
+The first test checks that a save keeps the parts of a board that the page does not know. The second checks that the first load moves the board from `personal.board.v1` to `personal.board.v2` and leaves a sign in the old key. The third checks that a board card shows only its name and a count such as `3 of 9 done`, that its tab steps into the board, and that a double click on its name opens the card to edit. [doc/behaviour.md](doc/behaviour.md#storage) has the rest.
 
 ## Disclaimer
 

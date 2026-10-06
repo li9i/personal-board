@@ -621,7 +621,8 @@
     border-radius: 2px;
     background: var(--clay-d);
   }
-  .deck-tally {
+  .deck-tally,
+  .board-done {
     flex: none;
     font-family: var(--mono);
     font-size: 10px;
@@ -719,45 +720,64 @@
     border-right: 1.5px solid var(--thread);
     pointer-events: none;
   }
-  .board-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 7px;
+  .card.inner {
+    position: relative;
+    margin-top: 22px;
+    border-top-left-radius: 0;
   }
-  .board-tally {
+  .board-tab {
+    position: absolute;
+    bottom: 100%;
+    left: -1px;
     display: flex;
     align-items: center;
-    gap: 3px;
-    font-family: var(--mono);
-    font-size: 10px;
-    color: var(--gray-600);
-    opacity: var(--fade, 1);
-  }
-  .board-tally .glyph { display: flex; }
-  .board-tally svg { width: 12px; height: 12px; }
-  .board-open {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    margin-left: auto;
-    padding: 3px 5px 2px 9px;
+    gap: 5px;
+    padding: 5px 7px 4px 9px;
     font-family: var(--mono);
     font-size: 10px;
     line-height: 1;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     color: var(--gray-800);
-    background: var(--white);
-    border: 1.5px solid var(--gray-200);
-    border-radius: 999px;
+    background: inherit;
+    border: 1.5px solid;
+    border-color: inherit;
+    border-bottom: 0;
+    border-radius: 7px 7px 0 0;
     cursor: pointer;
   }
-  .board-open:hover { border-color: var(--clay); color: var(--clay-d); }
-  .board-open:focus-visible {
+  .board-tab:hover { color: var(--clay-d); }
+  .board-tab:focus-visible {
     outline: 2px solid var(--clay);
     outline-offset: 1px;
   }
-  .board-open .glyph { display: flex; }
-  .board-open svg { width: 11px; height: 11px; }
+  .board-tab .glyph { display: flex; }
+  .board-tab svg { width: 12px; height: 12px; }
+  .board-tab .glyph:last-child {
+    margin-left: -4px;
+    transform: translateY(-1.5px);
+  }
+  .board-band {
+    display: flex;
+    gap: 2px;
+    height: 5px;
+    margin: -10px -11px 9px;
+    border-top-right-radius: 6.5px;
+    overflow: hidden;
+    opacity: var(--fade, 1);
+  }
+  .board-band.hollow { opacity: 0.3; }
+  .board-title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+  .board-done {
+    margin-bottom: 7px;
+    opacity: var(--fade, 1);
+  }
   .ctext {
     font-size: 13px;
     line-height: 1.35;
@@ -2211,7 +2231,8 @@
     card.dataset.id = item.id;
 
     var text = el('div', 'ctext');
-    renderText(text, item.text, function (at) { toggleTask(item, at); });
+    if (spec.head) text.appendChild(spec.head);
+    else renderText(text, item.text, function (at) { toggleTask(item, at); });
 
     var bot = el('div', 'card-bot');
     if (spec.pinned) {
@@ -2552,33 +2573,54 @@
       pinned: card.pinned,
       low: col.low && !card.pinned && !deck ? card.low : null,
       onLow: function () { toggleLow(card.id); },
+      head: card.board && !deck
+        ? el('div', 'board-title', cardTitle(card)) : null,
       buttons: buttons
     });
     if (card.board && !deck) {
       item.classList.add('inner');
-      item.insertBefore(makeBoardBar(card), item.lastChild);
+      item.insertBefore(makeBoardBand(card.board), item.firstChild);
+      item.insertBefore(makeBoardTab(card), item.firstChild);
+      item.insertBefore(
+        el('div', 'board-done', boardDone(card.board)), item.lastChild);
     }
     return item;
   }
 
-  function makeBoardBar(card) {
-    var bar = el('div', 'board-bar');
+  function boardDone(board) {
+    if (!boardSize(board)) return 'empty board';
+    var all = ['backlog', 'now', 'accomplished'].reduce(function (n, k) {
+      return n + sizeOf(board.cols[k]);
+    }, 0);
+    return sizeOf(board.cols.accomplished) + ' of ' + all + ' done';
+  }
+
+  function makeBoardBand(board) {
+    var band = el('div', 'board-band');
+    var colors = turned(paletteOf(board.palette).colors, board.turn || 0);
+    var empty = !boardSize(board);
+    if (empty) band.classList.add('hollow');
     COLUMNS.forEach(function (c) {
-      var tally = el('span', 'board-tally');
-      tally.title = c.label;
-      tally.appendChild(icon(c.mark));
-      tally.appendChild(
-        document.createTextNode(countOf(card.board.cols[c.key])));
-      bar.appendChild(tally);
+      var n = sizeOf(board.cols[c.key]);
+      if (!n && !empty) return;
+      var part = el('span');
+      part.style.flexGrow = empty ? 1 : n;
+      part.style.background =
+        c.palette ? colors[PAL_COLUMNS.indexOf(c)] : c.rule;
+      band.appendChild(part);
     });
-    var open = textBtn('board-open', 'open');
-    open.setAttribute('aria-label', 'Open the board ' + cardTitle(card));
-    open.appendChild(icon('chev'));
-    open.addEventListener('click', function () {
+    return band;
+  }
+
+  function makeBoardTab(card) {
+    var tab = textBtn('board-tab', 'board');
+    tab.setAttribute('aria-label', 'Open the board ' + cardTitle(card));
+    tab.insertBefore(icon('board'), tab.firstChild);
+    tab.appendChild(icon('chev'));
+    tab.addEventListener('click', function () {
       enter(path.concat(card.id));
     });
-    bar.appendChild(open);
-    return bar;
+    return tab;
   }
 
   function turnIntoBoard(id) {
@@ -3492,9 +3534,13 @@
     return turned(p.names.split(' · '), p.id === currentPal ? palTurn : 0).join(' · ');
   }
 
-  function applyPalette(id, turn) {
-    var p = pick(PALETTES, function (x) { return x.id === id; }) ||
+  function paletteOf(id) {
+    return pick(PALETTES, function (x) { return x.id === id; }) ||
       pick(PALETTES, function (x) { return x.id === DEFAULT_PAL; });
+  }
+
+  function applyPalette(id, turn) {
+    var p = paletteOf(id);
     currentPal = p.id;
     palTurn = ((turn || 0) % 2 + 2) % 2;
     var colors = colorsOf(p);

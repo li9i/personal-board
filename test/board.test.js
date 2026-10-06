@@ -167,3 +167,52 @@ test('the first load moves the board and leaves a sign', async () => {
     assert.match(list[0].text, /^This copy of the page is out of date\./);
   });
 });
+
+test('a board card steps in by its tab and edits by its name', async () => {
+  const seen = await inPage(async (page) => {
+    const some = (name, n) => Array.from({ length: n },
+      (_, i) => ({ id: name + i, text: name + ' ' + i, created: 1 }));
+    await seed(page, STORE, {
+      cols: {
+        remember: [],
+        backlog: [],
+        now: [
+          { id: 'kitchen', text: 'Kitchen renovation\n- budget 4k',
+            created: 1, board: { cols: {
+              remember: some('r', 2), backlog: some('b', 4),
+              now: some('n', 2), accomplished: some('a', 3) } } },
+          { id: 'test', text: 'test', created: 1, board: { cols: {} } }
+        ],
+        accomplished: []
+      }
+    });
+    await page.go();
+    const card = (id) => 'document.querySelector(\'.card[data-id="'
+      + id + '"]\')';
+    const shown = {
+      kitchen: await page.run(card('kitchen') + '.innerText'),
+      empty: await page.run(card('test') + '.innerText')
+    };
+    await page.run('Array.from(' + card('kitchen') + '.querySelectorAll("*"))'
+      + '.find((e) => Array.from(e.childNodes).some((n) => n.nodeType === 3'
+      + ' && n.textContent.trim() === "Kitchen renovation"))'
+      + '.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }))');
+    shown.byName = await page.run('location.hash');
+    shown.editing = await page.run('document.activeElement.value');
+    await page.go();
+    await page.run('Array.from(' + card('kitchen') + '.querySelectorAll('
+      + '"button")).find((b) => b.textContent.trim().toLowerCase()'
+      + ' === "board").click()');
+    shown.byTab = await page.run('location.hash');
+    return shown;
+  });
+
+  assert.match(seen.kitchen, /Kitchen renovation/);
+  assert.doesNotMatch(seen.kitchen, /budget 4k/);
+  assert.doesNotMatch(seen.kitchen, /\bopen\b/);
+  assert.match(seen.kitchen, /3 of 9 done/);
+  assert.match(seen.empty, /empty board/);
+  assert.strictEqual(seen.byName, '');
+  assert.strictEqual(seen.editing, 'Kitchen renovation\n- budget 4k');
+  assert.strictEqual(seen.byTab, '#kitchen');
+});
