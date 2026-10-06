@@ -1289,13 +1289,19 @@
   var KEYS = COLUMNS.map(function (c) { return c.key; });
   var PAL_COLUMNS = COLUMNS.filter(function (c) { return c.palette; });
 
-  var STORE = 'personal.board.v1';
+  var STORE = 'personal.board.v2';
   var PAL_KEY = 'personal.palette.v1';
   var TURN_KEY = 'personal.palturn.v1';
   var BURST_KEY = 'personal.burst.v1';
-  var OLD_STORES = ['todo.board.v1', 'backlog.board.v1'];
+  var OLD_STORES = ['personal.board.v1', 'todo.board.v1', 'backlog.board.v1'];
+  var SIGN = 'This copy of the page is out of date.\n\n'
+    + 'Your board is safe. Open the newest copy of the page to see it.\n\n'
+    + 'What you add here stays in this copy.';
   var OLD_PAL_KEYS = ['todo.palette.v1', 'backlog.palette.v1'];
   var GONE_KEY = 'cut';
+  var OLD_COLS = ['later', 'waiting', GONE_KEY];
+  var CARD_PARTS = ['id', 'text', 'created', 'pinned', 'low', 'swept',
+    'notes', 'cards', 'folded', 'doneFolded'];
   var GMAIL = 'https://mail.google.com/mail/?view=cm&fs=1';
 
   function el(tag, cls, text) {
@@ -1426,6 +1432,15 @@
     return carried;
   }
 
+  function carry() {
+    if (lsGet(STORE) != null || readCarried(STORE, OLD_STORES) == null) return;
+    var sign = blank();
+    sign.cols.remember.push(newItem(SIGN));
+    sign.cols.waiting = sign.cols.remember;
+    lsSet(OLD_STORES[0], JSON.stringify(sign));
+  }
+
+  carry();
   var state = load();
   var drag = null;
   var lastDeleted = null;
@@ -1440,7 +1455,7 @@
   function load() {
     var fresh = blank();
     try {
-      var raw = readCarried(STORE, OLD_STORES);
+      var raw = lsGet(STORE);
       if (!raw) return fresh;
       var parsed = JSON.parse(raw);
       if (!parsed || !parsed.cols) return fresh;
@@ -1455,6 +1470,8 @@
         fresh.cols[k] = normalize(cols[k]);
       });
       fresh.cols.backlog = fresh.cols.backlog.concat(normalize(cols[GONE_KEY]));
+      keep(fresh.cols, cols, KEYS.concat(OLD_COLS));
+      keep(fresh, parsed, ['cols']);
       orderGroups(fresh.cols);
     } catch (e) { }
     return fresh;
@@ -1472,12 +1489,19 @@
         pinned: !held && c.pinned === true,
         low: !held && (c.low === true || c.swept === true) && c.pinned !== true,
         notes: normalize(c.notes, true),
-        cards: held ? [] : normalize(c.cards, true)
+        cards: normalize(c.cards, true)
       };
       if (!held && c.folded === true) item.folded = true;
       if (!held && c.doneFolded === true) item.doneFolded = true;
-      return item;
+      return keep(item, c, CARD_PARTS);
     });
+  }
+
+  function keep(into, from, known) {
+    Object.keys(from).forEach(function (k) {
+      if (known.indexOf(k) < 0) into[k] = from[k];
+    });
+    return into;
   }
 
   function newItem(text) {
@@ -3038,7 +3062,7 @@
     };
     if (item.folded) copy.folded = true;
     if (item.doneFolded) copy.doneFolded = true;
-    return copy;
+    return keep(copy, item, CARD_PARTS);
   }
 
   function importCard(parsed) {
