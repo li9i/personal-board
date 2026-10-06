@@ -8,7 +8,7 @@ The full behaviour of the board. The README keeps the short version.
 
 **burst**, at the end of the row inside the box, decides what a saved card leaves behind. Off, the box closes once the card is in. On, it stays open and empty, ready for the next one. The switch is in the box, so it is there only while you are adding. One setting serves every box on the page, including the ones for notes and decks, and the board remembers it. It starts off.
 
-**≡** on a card opens the menu. The menu holds **Pin to top**, **Download this card** and **Send this card by Gmail**. Escape or a click outside closes the menu. A **bin** sits to the left of **≡** and deletes the card in one press. A note carries the bin alone, with no menu.
+**≡** on a card opens the menu. The menu holds **Pin to top**, **Turn into a board**, **Download this card** and **Send this card by Gmail**. Escape or a click outside closes the menu. A **bin** sits to the left of **≡** and deletes the card in one press. A note carries the bin alone, with no menu.
 
 **A double click** on a card opens its text in a box. This is the one way to write the text, and a checkbox is the one thing that a single click changes. The same keys apply. A single click does nothing else, and a double click on a link or a button does what that link or button does. A note behaves in the same way.
 
@@ -65,7 +65,7 @@ The window shows all of its notes at once. It becomes as tall as the notes need,
 A card in Backlog is **normal** or **low**, and only Backlog has the two. Backlog fills faster than it empties and not everything in it is next, so low is where the rest of it waits. A card is written normal, and the low ones gather at the foot of the column.
 
 - The mark after the date says which, and a press on it turns the card over. The mark is a sun, a ring with eight spokes around it. On a normal card it is in the colour of the column. On a low one it is grey. The colour is the whole of the difference. There is no menu row for this: the mark is the whole of it.
-- A low card is drawn flat, on the colour of the column, and everything written on it fades most of the way towards the card. Words, code chips, fenced blocks, callouts, list markers, rules, tick boxes, the date and the note count all fade together, so the card recedes as one thing. The mark and the menu button do not fade, because they are how you act on the card. It is put off, not gone.
+- A low card is drawn flat, on the colour of the column, and everything written on it fades most of the way towards the card. Words, code chips, fenced blocks, callouts, list markers, rules, tick boxes, the date and the note count all fade together, so the card recedes as one thing. The mark, the menu button and **open** on a board card do not fade, because they are how you act on the card. It is put off, not gone.
 - The mark of a low card stays while the pointer is away, because that is why the card is at the foot of the column. On a normal card the mark appears when the pointer is on the card, the way **add note** does. On a screen with no pointer, every card shows its mark.
 - Making a card low sends it to the head of the low cards, and making it normal again puts it at the foot of the ones above. A card cannot be pinned and low at once, so making it low takes the pin off, and pinning it brings it up. A pinned card shows the pin and no mark.
 - A drag moves a card and never changes its level, except into or out of a deck. A card that joins a deck loses its level, and a card taken out of a low deck arrives normal. The three groups keep their order, so a card stops at the line its own group ends at, and so does the line that shows where it lands.
@@ -88,26 +88,45 @@ A deck is a card with cards of its own under it. The card on top is the head. It
 - The bin on the head deletes the deck and every card in it, in one press. The toast says how many cards went, and offers **Undo**.
 - A pin or a level on the head acts on the whole deck. A low deck in Backlog fades as one and gathers with the low cards.
 - Every column takes decks.
+- A card that holds a board takes no part in a deck. Boards, below, has the rest.
+
+## Boards
+
+A card can hold a board of its own. Such a card is a board card. The top board is the **Mother Board**. There, the heading of the page and the browser tab read **Mother Board**. Every board is the same as the Mother Board, and boards nest to any depth.
+
+- **Turn into a board** is in the menu of every card in a column, below **Pin to top**. A card in a deck does not have it, and a card that already holds a board does not have it. A press gives the card a board of its own, with the same four columns.
+- The text of the card names the board. The name is the first line of the text, cut to 60 letters. The page takes off any heading, quote, bullet, number or checkbox mark at the front of that line. The Gmail subject of a card uses the same rule.
+- The head of a deck can turn into a board too. The cards of its deck go to Backlog on the new board, in the same order, and the head becomes a plain board card. The card keeps its text, notes, pin and level.
+- Under its text, a board card shows a row with the mark of each column. Next to each mark is the count of that column in its board. A count has the same form as a column count, such as **5+3**. **open** is at the right end of the row. On a low card, the marks and counts fade with the rest of the card. **open** does not fade.
+- **open** steps into the board. The heading becomes a trail, such as `Mother Board / Work / Robot arm`. Each name before the last is a button that steps back out to that board. The Back and Forward buttons of the browser step out and in too. The address keeps the place after `#`, so a reload or a bookmark opens the same board. The browser tab shows the name of the board you are in.
+- Inside a board, everything acts on that board. This covers new cards, drags, pins, levels, decks and notes. It also covers the counts at the head of each column and the line of counts below the header. So do **clear column**, the toast and **Undo**, **Export** and **Import**.
+- A board card counts as one card in the counts of the board that holds it. The cards inside its board count only inside that board.
+- A board card takes no part in a deck. It cannot join a deck and it cannot head one. When you drag a board card over a card, or a card over a board card, no ring shows. The line shows, and a drop moves the card to that line. A board card dropped on the cards of a deck lands in the column next to that deck, as a head does.
+- A drop never puts a card into another board. To move a card to another board, use **Download this card**, open the other board and **Import** the file there.
+- The bin on a board card deletes the card and its whole board in one press. It does not ask first. The toast says how many cards went, such as `Board of 12 cards deleted`, and offers **Undo**. The number is the count of that board, with each board inside it counted as one card.
+- **Undo** puts the card back in the board it came from, even if you stepped into another board before you pressed it. This holds for every delete: **Undo** returns a card, a note, a deck or a cleared column to the board it came from.
 
 ## Export and Import
 
-**Export** opens a menu with two ways out. **Download the board** writes the whole board to a JSON file. **Send the board by Gmail** writes the same file and opens a new Gmail message in another tab, with a subject and a body that name the file. The file is not attached to the message. No page can hand Gmail a file: the Gmail compose address carries the recipient, the subject and the body and nothing else, and the mail protocols behind a plain mail link carry no attachment either. An attachment would need Google's mail interface, a signed-in account and the board served from a web address, which the board is not. So the message opens beside a downloaded file and you drag the file onto it. The menu says so under the two choices.
+**Export** opens a menu with two ways out. **Download the board** writes the board you are in to a JSON file, with every board inside it. **Send the board by Gmail** writes the same file and opens a new Gmail message in another tab, with a subject and a body that name the file. The file is not attached to the message. No page can hand Gmail a file: the Gmail compose address carries the recipient, the subject and the body and nothing else, and the mail protocols behind a plain mail link carry no attachment either. An attachment would need Google's mail interface, a signed-in account and the board served from a web address, which the board is not. So the message opens beside a downloaded file and you drag the file onto it. The menu says so under the two choices.
 
 If the browser blocks the new tab, the file is downloaded all the same.
 
 **Import** reads a board or a single card.
 
-**Download this card** writes one card to a file, with its notes. On the head of a deck it writes the whole deck, with every card and note in it. The file passes the card to someone else. **Send this card by Gmail** writes the same file and opens a message for it, as the board does. The subject carries the first line of the card and then its id, as in `Personal board card: pay the bill (ctest456)`. The first line is the text of the line with any heading, quote, bullet, number or checkbox mark taken off the front, cut to 60 letters. The id is the one the card holds on this board. Import gives an arriving card a fresh id, so the id in the subject names the card here and not the card there. Import adds the card to the board and does not change the other cards. The card goes to the column that it was in. If this board has no such column, the card goes to Backlog. The card arrives as a new card. If you import the same file twice, you get two cards.
+**Download this card** writes one card to a file, with its notes. On the head of a deck it writes the whole deck, with every card and note in it. On a board card it writes the card with its whole board. The file passes the card to someone else. **Send this card by Gmail** writes the same file and opens a message for it, as the board does. The subject carries the first line of the card and then its id, as in `Personal board card: pay the bill (ctest456)`. The first line is the text of the line with any heading, quote, bullet, number or checkbox mark taken off the front, cut to 60 letters. The id is the one the card holds on this board. Import gives an arriving card a fresh id, so the id in the subject names the card here and not the card there. Import adds the card to the board you are in and does not change the other cards. The card goes to the column that it was in. If there is no such column, the card goes to Backlog. A board card arrives with its board, and the cards inside that board keep their ids. The card arrives as a new card. If you import the same file twice, you get two cards.
 
-Export and Import use two shapes. A whole board is `{"cols": ...}` and replaces the board that is here. One card is `{"card": ..., "col": ...}` and joins the board. A deck is one card, with its cards in the list `cards` of the head. Import reads the fields in the file to find which of the two shapes it is.
+Export and Import use two shapes. A whole board is `{"cols": ...}` and replaces the board you are in. The boards above it and beside it do not change. One card is `{"card": ..., "col": ...}` and joins the board you are in. A deck is one card, with its cards in the list `cards` of the head. A board card is one card, with its board inside it. Import reads the fields in the file to find which of the two shapes it is.
 
 ## Storage
 
-The board is in `localStorage`, in the key `personal.board.v1`. The palette is in the key `personal.palette.v1`. The two keys belong to one browser on one machine. Export moves a board to another machine. Two tabs on the same board stay in sync.
+The board is in `localStorage`, in the key `personal.board.v2`. The Mother Board holds everything, and each board inside it is on its card. The key belongs to one browser on one machine. Export moves a board to another machine. Two tabs on the same board stay in sync.
+
+The palette of each board is on that board. A Mother Board saved before boards kept a palette of their own takes its palette from the old keys `personal.palette.v1` and `personal.palturn.v1`. The page no longer writes those keys.
 
 The board keeps the notes of a card on the card, so a card is whole on its own. Notes travel with Export and Import. A delete removes the notes of the card too. Undo returns the card and the notes. A board saved before notes existed opens with no notes.
 
-The cards of a deck are on its head in the same way, so a deck travels whole. A delete of the head removes its cards too, and Undo returns them. A board saved before decks existed opens with no decks. A copy of the page from before decks does not know the list `cards`. If it opens this board, it drops the cards of every deck the next time it saves. Do not open an older copy of the page on a board that holds decks.
+The cards of a deck are on its head in the same way, so a deck travels whole. A delete of the head removes its cards too, and Undo returns them. A board saved before decks existed opens with no decks.
 
 A pin is on the card too, so it travels with Export and Import as the notes do. A board saved before pins existed opens with none.
 
@@ -115,15 +134,23 @@ The level is on the card in the same way, and travels with it. A board saved bef
 
 Low was called swept, when a card was put under a carpet in the footer of Backlog instead of being made low. A board saved then opens with those cards low, in the same order, at the same foot of the same column.
 
-The page also reads two older keys, `todo.board.v1` and `backlog.board.v1`. At the first load, the page moves a board from an older key to the new key, and then deletes the older key. Import also reads older JSON exports.
+The page keeps every part of a board that it does not know, and saves that part back as it found it. This covers an unknown field on a card, a note, a card in a deck or a board, and a whole unknown column. The page also keeps cards that hang under a card in a deck. It keeps a board under a note or under a card in a deck too. It does not show the cards under a card in a deck, or a board under a note or under a card in a deck. So a copy of the page never drops what a newer copy wrote.
+
+What the page knows, it treats by its own rules. For example, a card that joins a deck still loses its pin.
+
+A copy of the page from before this rule drops what it does not know. For example, a copy from before decks drops the cards of every deck the next time it saves. That is why the board moved from `personal.board.v1` to `personal.board.v2`. Such a copy reads only the old key, so it never sees the board in the new key and cannot overwrite it.
+
+At the first load, the page moves the board from `personal.board.v1`, or from the older `todo.board.v1` or `backlog.board.v1`, into `personal.board.v2`, and deletes the older keys. It then writes a sign into `personal.board.v1`: a board with one card in Remember that reads `This copy of the page is out of date. Your board is safe. Open the newest copy of the page to see it. What you add here stays in this copy.` A copy that still calls that column Waiting for shows the same card there. What you add in an old copy stays in the old key, and the page does not read that key again. Import also reads older JSON exports.
 
 The Remember column was called Waiting for and was stored under `waiting`. A board saved under that name opens with those cards in Remember.
 
 ## Palette
 
-**Palette** changes the colours of Backlog, Now and Accomplished. You select a family, then a combination from that family. The panel stays open while you try the combinations. A click outside or Escape closes the panel.
+**Palette** changes the colours of Backlog, Now and Accomplished on the board you are in. You select a family, then a combination from that family. The panel stays open while you try the combinations. A click outside or Escape closes the panel.
 
 Click the combination that is on the board again and Backlog and Now swap their colours. Accomplished keeps its green. A second click gives the order in the book again. The bars in the panel show the order that the board has.
+
+Each board keeps its own palette and its own swap of Backlog and Now. A new board starts with the palette of the board it is made in. The palette is on the board, so it travels with Export. **Download this card** on a board card carries the palette of its board. When you import a whole board, a file that holds a palette brings it. A file that holds none keeps the palette of the board that it replaces. The icon of the browser tab shows the palette of the board you are in.
 
 The colour combinations come from Sanzo Wada's *A Dictionary of Color Combinations*. The board groups the combinations into families by their main colour, and keeps three colours from each combination. Backlog, Now and Accomplished get one colour each. The palette gives no colour to Remember.
 
