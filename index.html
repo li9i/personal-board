@@ -1393,6 +1393,11 @@
     return new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }
 
+  function fmtStamp(ms) {
+    return new Date(ms).toLocaleString(undefined,
+      { dateStyle: 'medium', timeStyle: 'medium' });
+  }
+
   function lsGet(key) {
     try { return localStorage.getItem(key); } catch (e) { return null; }
   }
@@ -2075,7 +2080,9 @@
       card.classList.add('pinned');
       bot.appendChild(icon('pin'));
     }
-    bot.appendChild(el('span', 'date', fmtDate(item.created)));
+    var date = el('span', 'date', fmtDate(item.created));
+    date.title = fmtStamp(item.created);
+    bot.appendChild(date);
     if (spec.low != null) {
       if (spec.low) card.classList.add('low');
       var lowBtn = textBtn('lowbtn');

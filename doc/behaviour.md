@@ -12,6 +12,8 @@ The full behaviour of the board. The README keeps the short version.
 
 **A double click** on a card opens its text in a box. This is the one way to write the text, and a checkbox is the one thing that a single click changes. The same keys apply. A single click does nothing else, and a double click on a link or a button does what that link or button does. A note behaves in the same way.
 
+**The date** on a card is the day it was written. Hold the pointer on the date and the exact time shows, down to the second. A note and a card in a deck show theirs in the same way.
+
 **Drag** moves a card within a column or to another column. A drop on the middle of another card puts the card under it, in a deck. Decks, below, has the rest.
 
 The bin removes a card from the board, and on a note it removes the note from its card. On the head of a deck it removes the deck and every card in it. None of these asks first. **clear column** empties Accomplished and asks first. All three show a toast with an **Undo**.
