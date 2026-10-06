@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Personal Board</title>
+<title>Mother Board</title>
 <link id="favicon" rel="icon" type="image/svg+xml" />
 <style>
   :root {
@@ -138,6 +138,27 @@
     letter-spacing: -0.01em;
     margin: 6px 0 4px;
   }
+  .trail-step {
+    font: inherit;
+    letter-spacing: inherit;
+    color: var(--gray-600);
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+  .trail-step:hover {
+    color: var(--slate);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 4px;
+  }
+  .trail-step:focus-visible {
+    outline: 2px solid var(--clay);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+  .trail-sep { color: var(--gray-200); }
   .hintline {
     font-family: var(--mono);
     font-size: 11px;
@@ -698,6 +719,45 @@
     border-right: 1.5px solid var(--thread);
     pointer-events: none;
   }
+  .board-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 7px;
+  }
+  .board-tally {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--gray-600);
+    opacity: var(--fade, 1);
+  }
+  .board-tally .glyph { display: flex; }
+  .board-tally svg { width: 12px; height: 12px; }
+  .board-open {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+    padding: 3px 5px 2px 9px;
+    font-family: var(--mono);
+    font-size: 10px;
+    line-height: 1;
+    color: var(--gray-800);
+    background: var(--white);
+    border: 1.5px solid var(--gray-200);
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .board-open:hover { border-color: var(--clay); color: var(--clay-d); }
+  .board-open:focus-visible {
+    outline: 2px solid var(--clay);
+    outline-offset: 1px;
+  }
+  .board-open .glyph { display: flex; }
+  .board-open svg { width: 11px; height: 11px; }
   .ctext {
     font-size: 13px;
     line-height: 1.35;
@@ -1210,7 +1270,7 @@
     <div class="head-of">
       <div>
         <div class="eyebrow">personal / board</div>
-        <h1>Personal Board</h1>
+        <h1 id="trail">Mother Board</h1>
         <div class="hintline">drag cards between columns <span class="toolsep">·</span> double-click a card to edit <span class="toolsep">·</span> hover for more options</div>
       </div>
       <div class="tools" id="tools">
@@ -1301,7 +1361,8 @@
   var GONE_KEY = 'cut';
   var OLD_COLS = ['later', 'waiting', GONE_KEY];
   var CARD_PARTS = ['id', 'text', 'created', 'pinned', 'low', 'swept',
-    'notes', 'cards', 'folded', 'doneFolded'];
+    'notes', 'cards', 'folded', 'doneFolded', 'board'];
+  var MOTHER = 'Mother Board';
   var GMAIL = 'https://mail.google.com/mail/?view=cm&fs=1';
 
   function el(tag, cls, text) {
@@ -1332,6 +1393,7 @@
        + 'M2.25 12h2.75 M19 12h2.75 M5.11 5.11l1.94 1.94 M16.95 16.95l1.94 1.94 '
        + 'M5.11 18.89l1.94-1.94 M16.95 7.05l1.94-1.94',
     tick: 'M20 6L9 17l-5-5',
+    board: 'M3.5 4.5h17v15h-17Z M8 4.5v15 M12 4.5v15 M16 4.5v15',
     chev: 'M9 6l6 6-6 6',
     note: 'M12 20h9 M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z',
     abstract: 'M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2 '
@@ -1442,6 +1504,7 @@
 
   carry();
   var state = load();
+  var path = [];
   var drag = null;
   var lastDeleted = null;
   var toastTimer = null;
@@ -1459,21 +1522,31 @@
       if (!raw) return fresh;
       var parsed = JSON.parse(raw);
       if (!parsed || !parsed.cols) return fresh;
-      var cols = parsed.cols;
-      if (Array.isArray(cols.later) && !Array.isArray(cols.accomplished)) {
-        cols.accomplished = cols.later;
+      fresh = normalizeBoard(parsed);
+      if (!('palette' in fresh)) {
+        fresh.palette = readCarried(PAL_KEY, OLD_PAL_KEYS);
+        fresh.turn = Number(lsGet(TURN_KEY)) || 0;
       }
-      if (Array.isArray(cols.waiting) && !Array.isArray(cols.remember)) {
-        cols.remember = cols.waiting;
-      }
-      KEYS.forEach(function (k) {
-        fresh.cols[k] = normalize(cols[k]);
-      });
-      fresh.cols.backlog = fresh.cols.backlog.concat(normalize(cols[GONE_KEY]));
-      keep(fresh.cols, cols, KEYS.concat(OLD_COLS));
-      keep(fresh, parsed, ['cols']);
-      orderGroups(fresh.cols);
     } catch (e) { }
+    return fresh;
+  }
+
+  function normalizeBoard(parsed) {
+    var fresh = blank();
+    var cols = parsed.cols;
+    if (Array.isArray(cols.later) && !Array.isArray(cols.accomplished)) {
+      cols.accomplished = cols.later;
+    }
+    if (Array.isArray(cols.waiting) && !Array.isArray(cols.remember)) {
+      cols.remember = cols.waiting;
+    }
+    KEYS.forEach(function (k) {
+      fresh.cols[k] = normalize(cols[k]);
+    });
+    fresh.cols.backlog = fresh.cols.backlog.concat(normalize(cols[GONE_KEY]));
+    keep(fresh.cols, cols, KEYS.concat(OLD_COLS));
+    keep(fresh, parsed, ['cols']);
+    orderGroups(fresh.cols);
     return fresh;
   }
 
@@ -1493,6 +1566,7 @@
       };
       if (!held && c.folded === true) item.folded = true;
       if (!held && c.doneFolded === true) item.doneFolded = true;
+      if (c.board) item.board = normalizeBoard(c.board);
       return keep(item, c, CARD_PARTS);
     });
   }
@@ -1525,6 +1599,12 @@
     return list.reduce(function (n, c) { return n + 1 + c.cards.length; }, 0);
   }
 
+  function boardSize(board) {
+    return KEYS.reduce(function (n, k) {
+      return n + sizeOf(board.cols[k]);
+    }, 0);
+  }
+
   function countOf(list) {
     var down = sizeOf(list.filter(function (c) { return c.low; }));
     var all = sizeOf(list);
@@ -1536,14 +1616,38 @@
   }
 
   function commit() {
-    orderGroups(state.cols);
+    orderGroups(here().cols);
     save();
     render();
   }
 
-  function find(id) {
+  function steps(ids) {
+    var out = [{ name: MOTHER, board: state }];
+    ids.every(function (id) {
+      var found = find(id, out[out.length - 1].board);
+      var card = found && !found.deck && found.card.board ? found.card : null;
+      if (card) out.push({ name: cardTitle(card), board: card.board });
+      return card;
+    });
+    return out;
+  }
+
+  function here() {
+    return steps(path).pop().board;
+  }
+
+  function readPath() {
+    path = location.hash.slice(1).split('/').filter(Boolean);
+  }
+
+  function enter(ids) {
+    location.hash = ids.join('/');
+  }
+
+  function find(id, board) {
+    var cols = (board || here()).cols;
     for (var i = 0; i < KEYS.length; i++) {
-      var list = state.cols[KEYS[i]];
+      var list = cols[KEYS[i]];
       for (var j = 0; j < list.length; j++) {
         if (list[j].id === id) {
           return { col: KEYS[i], list: list, index: j, card: list[j], deck: null };
@@ -1669,7 +1773,7 @@
     row.closeAsk = closeAsk;
 
     open.addEventListener('click', function () {
-      var n = sizeOf(state.cols[c.key]);
+      var n = sizeOf(here().cols[c.key]);
       if (!n) return;
       var what = plural(n, 'card');
       question.textContent = 'clear ' + what + '?';
@@ -1716,7 +1820,7 @@
       add: '+ add to ' + c.label.toLowerCase(),
       placeholder: c.prompt,
       onAdd: function (text) {
-        state.cols[c.key].unshift(newItem(text));
+        here().cols[c.key].unshift(newItem(text));
         commit();
       }
     });
@@ -1760,7 +1864,8 @@
       closeMenu();
       var item = moving();
       drag = { id: id, level: level, pinned: item.classList.contains('pinned'),
-        low: item.classList.contains('low'), deck: item !== card };
+        low: item.classList.contains('low'), deck: item !== card,
+        board: card.classList.contains('inner') };
       item.classList.add('dragging');
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', id);
@@ -1783,7 +1888,7 @@
   function wireDrop(zone, body, spec) {
     function taken() {
       var id = dragged(spec.level);
-      return id && !(spec.flat && drag.deck) ? id : null;
+      return id && !(spec.flat && (drag.deck || drag.board)) ? id : null;
     }
     zone.addEventListener('dragover', function (e) {
       if (!taken()) return;
@@ -1819,10 +1924,11 @@
   }
 
   function nestTarget(body, y) {
-    if (!drag || drag.deck) return null;
+    if (!drag || drag.deck || drag.board) return null;
     var items = itemsIn(body);
     for (var i = 0; i < items.length; i++) {
       var card = items[i].classList.contains('deck') ? items[i].firstChild : items[i];
+      if (card.classList.contains('inner')) continue;
       var box = card.getBoundingClientRect();
       var foot = card.classList.contains('head') ? box.bottom : box.bottom - box.height / 4;
       if (y > box.top + box.height / 4 && y < foot) return card;
@@ -1900,7 +2006,7 @@
 
   function moveCard(id, toCol, at) {
     var found = find(id);
-    if (found) moveItem(found.list, state.cols[toCol], id, at);
+    if (found) moveItem(found.list, here().cols[toCol], id, at);
   }
 
   function dropCard(id, toCol, at) {
@@ -1942,6 +2048,7 @@
   }
 
   function discard(rec, msg) {
+    rec.path = path.slice();
     lastDeleted = rec;
     commit();
     showToast(msg);
@@ -1952,8 +2059,14 @@
     if (!found) return;
     found.list.splice(found.index, 1);
     var held = found.card.cards.length;
+    var msg = held ? 'Deck of ' + plural(held + 1, 'card') + ' deleted'
+                   : 'Card deleted';
+    if (found.card.board) {
+      msg = 'Board of ' + plural(boardSize(found.card.board), 'card')
+        + ' deleted';
+    }
     discard({ col: found.col, deckOf: found.deck && found.deck.id, index: found.index,
-      cards: [found.card] }, held ? 'Deck of ' + plural(held + 1, 'card') + ' deleted' : 'Card deleted');
+      cards: [found.card] }, msg);
   }
 
   function removeNote(id) {
@@ -1965,9 +2078,9 @@
   }
 
   function clearColumn(key) {
-    var taken = state.cols[key];
+    var taken = here().cols[key];
     if (!taken.length) return;
-    state.cols[key] = [];
+    here().cols[key] = [];
     discard({ col: key, index: 0, cards: taken }, plural(sizeOf(taken), 'card') + ' cleared');
   }
 
@@ -1990,8 +2103,9 @@
 
   function undoList(rec) {
     var owner = rec.noteOf || rec.deckOf;
-    if (!owner) return state.cols[rec.col];
-    var found = find(owner);
+    var board = steps(rec.path).pop().board;
+    if (!owner) return board.cols[rec.col];
+    var found = find(owner, board);
     if (!found) return null;
     return rec.noteOf ? found.card.notes : found.card.cards;
   }
@@ -2419,10 +2533,14 @@
         onClick: function () { mailCard(card.id); } }
     ];
     if (!deck) {
+      if (!card.board) {
+        buttons.unshift({ icon: 'board', title: 'Turn into a board',
+          onClick: function () { turnIntoBoard(card.id); } });
+      }
       buttons.unshift({ icon: 'pin', title: card.pinned ? 'Unpin' : 'Pin to top',
         onClick: function () { togglePin(card.id); } });
     }
-    return makeItem(card, {
+    var item = makeItem(card, {
       level: 'card',
       redraw: render,
       deleteTitle: 'Delete',
@@ -2436,6 +2554,43 @@
       onLow: function () { toggleLow(card.id); },
       buttons: buttons
     });
+    if (card.board && !deck) {
+      item.classList.add('inner');
+      item.insertBefore(makeBoardBar(card), item.lastChild);
+    }
+    return item;
+  }
+
+  function makeBoardBar(card) {
+    var bar = el('div', 'board-bar');
+    COLUMNS.forEach(function (c) {
+      var tally = el('span', 'board-tally');
+      tally.title = c.label;
+      tally.appendChild(icon(c.mark));
+      tally.appendChild(
+        document.createTextNode(countOf(card.board.cols[c.key])));
+      bar.appendChild(tally);
+    });
+    var open = textBtn('board-open', 'open');
+    open.setAttribute('aria-label', 'Open the board ' + cardTitle(card));
+    open.appendChild(icon('chev'));
+    open.addEventListener('click', function () {
+      enter(path.concat(card.id));
+    });
+    bar.appendChild(open);
+    return bar;
+  }
+
+  function turnIntoBoard(id) {
+    var card = find(id).card;
+    card.board = blank();
+    card.board.cols.backlog = card.cards;
+    card.board.palette = currentPal;
+    card.board.turn = palTurn;
+    card.cards = [];
+    delete card.folded;
+    delete card.doneFolded;
+    commit();
   }
 
   var deckAdd = null;
@@ -2942,8 +3097,9 @@
 
   function render() {
     closeMenu();
+    renderTrail();
     COLUMNS.forEach(function (c) {
-      var list = state.cols[c.key];
+      var list = here().cols[c.key];
       var view = views[c.key];
       fillBody(view.body, list, 'nothing here', function (card) {
         return card.cards.length ? makeDeck(card, c) : makeCard(card, c);
@@ -2969,9 +3125,26 @@
     out.textContent = '';
     COLUMNS.forEach(function (c, i) {
       if (i) out.appendChild(el('span', 'dot', '·'));
-      out.appendChild(el('b', null, countOf(state.cols[c.key])));
+      out.appendChild(el('b', null, countOf(here().cols[c.key])));
       out.appendChild(document.createTextNode(' ' + c.tally));
     });
+  }
+
+  function renderTrail() {
+    var heading = document.getElementById('trail');
+    var all = steps(path);
+    heading.textContent = '';
+    all.forEach(function (step, i) {
+      if (i) heading.appendChild(el('span', 'trail-sep', ' / '));
+      if (i === all.length - 1) {
+        heading.appendChild(document.createTextNode(step.name));
+        return;
+      }
+      var back = textBtn('trail-step', step.name);
+      back.addEventListener('click', function () { enter(path.slice(0, i)); });
+      heading.appendChild(back);
+    });
+    document.title = all[all.length - 1].name;
   }
 
   function cardTitle(card) {
@@ -3014,7 +3187,7 @@
   }
 
   function mailBoard() {
-    gmail('My personal board', 'My board', download('personal-board', state));
+    gmail('My personal board', 'My board', download('personal-board', here()));
   }
 
   function mailCard(id) {
@@ -3034,20 +3207,24 @@
     if (mine) return;
     openMenu(null, exportBtn, [
       { icon: 'down', title: 'Download the board',
-        onClick: function () { download('personal-board', state); } },
+        onClick: function () { download('personal-board', here()); } },
       { icon: 'mail', title: 'Send the board by Gmail', onClick: mailBoard }
     ], 'Gmail opens with the board downloaded. Drag the file onto the message.');
   });
 
   function importBoard(parsed) {
-    var total = 0;
-    KEYS.concat(GONE_KEY).forEach(function (k) {
-      total += sizeOf(normalize(parsed.cols[k]));
-    });
+    var arriving = normalizeBoard(parsed);
+    var total = boardSize(arriving);
     if (!confirm('Replace the current board with ' + total + ' card(s) from this file?')) return;
-    lsSet(STORE, JSON.stringify(parsed));
-    state = load();
+    var board = here();
+    if (!('palette' in arriving)) {
+      arriving.palette = board.palette;
+      arriving.turn = board.turn;
+    }
+    Object.keys(board).forEach(function (k) { delete board[k]; });
+    Object.assign(board, arriving);
     commit();
+    applyPalette(board.palette, board.turn);
   }
 
   function reid(item) {
@@ -3062,6 +3239,7 @@
     };
     if (item.folded) copy.folded = true;
     if (item.doneFolded) copy.doneFolded = true;
+    if (item.board) copy.board = item.board;
     return keep(copy, item, CARD_PARTS);
   }
 
@@ -3074,7 +3252,7 @@
     var brought = card.notes.length ? ' and ' + plural(card.notes.length, 'note') : '';
     var says = card.text.length > 60 ? card.text.slice(0, 60) + '...' : card.text;
     if (!confirm('Add ' + what + brought + ' to ' + col.label + '?\n\n' + says)) return;
-    state.cols[col.key].push(card);
+    here().cols[col.key].push(card);
     commit();
   }
 
@@ -3329,8 +3507,6 @@
     KEYS.forEach(function (k) { paint(views[k].el, k); });
     redrawNotes();
     setFavicon(colors);
-    lsSet(PAL_KEY, p.id);
-    lsSet(TURN_KEY, String(palTurn));
   }
 
   var palPanel = document.getElementById('palettePanel');
@@ -3417,6 +3593,9 @@
         note: namesOf(p),
         onClick: function () {
           applyPalette(p.id, p.id === currentPal ? palTurn + 1 : 0);
+          here().palette = currentPal;
+          here().turn = palTurn;
+          save();
           markPalettes();
         }
       });
@@ -3464,8 +3643,10 @@
     closeTips();
   });
 
-  applyPalette(readCarried(PAL_KEY, OLD_PAL_KEYS) || DEFAULT_PAL,
-    Number(lsGet(TURN_KEY)) || 0);
+  function show() {
+    applyPalette(here().palette, here().turn);
+    render();
+  }
 
   var toolbar = document.getElementById('toolbar');
   var markStuck = function () {
@@ -3498,10 +3679,16 @@
   window.addEventListener('storage', function (e) {
     if (e.key !== STORE) return;
     state = load();
-    render();
+    show();
   });
 
-  render();
+  window.addEventListener('hashchange', function () {
+    readPath();
+    show();
+  });
+
+  readPath();
+  show();
 </script>
 </body>
 </html>
