@@ -216,3 +216,41 @@ test('a board card steps in by its tab and edits by its name', async () => {
   assert.strictEqual(seen.editing, 'Kitchen renovation\n- budget 4k');
   assert.strictEqual(seen.byTab, '#kitchen');
 });
+
+test('a name in backticks shows as code on its card and in the heading',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, {
+        cols: {
+          remember: [],
+          backlog: [
+            { id: 'outer', text: 'see `outer_board`', created: 1, board: {
+              cols: { backlog: [
+                { id: 'inner', text: '`inner_board`', created: 1,
+                  board: { cols: {} } }] } } }
+          ],
+          now: [],
+          accomplished: []
+        }
+      });
+      await page.go();
+      const codes = (where) => page.run('Array.from(document.querySelectorAll('
+        + JSON.stringify(where + ' code') + ')).map((c) => c.textContent)');
+      const shown = {
+        card: await codes('.card[data-id="outer"]'),
+        cardText: await page.run(
+          'document.querySelector(\'.card[data-id="outer"]\').innerText')
+      };
+      await page.run('location.hash = "outer/inner"');
+      shown.heading = await codes('#trail');
+      shown.headingText = await page.run(
+        'document.getElementById("trail").innerText');
+      return shown;
+    });
+
+    assert.deepStrictEqual(seen.card, ['outer_board']);
+    assert.doesNotMatch(seen.cardText, /`/);
+    assert.deepStrictEqual(seen.heading, ['outer_board', 'inner_board']);
+    assert.strictEqual(seen.headingText,
+      'Mother Board / see outer_board / inner_board');
+  });

@@ -43,7 +43,7 @@ node --test
 
 They open the page in headless Google Chrome, the `google-chrome` command, with a profile of their own. They delete the profile afterwards, so they do not touch the board in your own browser. You need Node and Google Chrome. There is no package to install, and the tests download nothing. They were run with Node 22.
 
-The first test checks that a save keeps the parts of a board that the page does not know. The second checks that the first load moves the board from `personal.board.v1` to `personal.board.v2` and leaves a sign in the old key. The third checks that a board card shows only its name and a count such as `3 of 9 done`, that its tab steps into the board, and that a double click on its name opens the card to edit. [doc/behaviour.md](doc/behaviour.md#storage) has the rest.
+The first test checks that a save keeps the parts of a board that the page does not know. The second checks that the first load moves the board from `personal.board.v1` to `personal.board.v2` and leaves a sign in the old key. The third checks that a board card shows only its name and a count such as `3 of 9 done`, that its tab steps into the board, and that a double click on its name opens the card to edit. The fourth checks that a name in backticks shows as code on its board card and in the heading. [doc/behaviour.md](doc/behaviour.md#storage) has the rest.
 
 ## Disclaimer
 

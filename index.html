@@ -787,7 +787,7 @@
     word-break: break-word;
     margin-bottom: 7px;
   }
-  .ctext code {
+  .ctext code, #trail code, .board-title code {
     font-family: var(--mono);
     font-size: 12px;
     color: var(--gray-800);
@@ -797,6 +797,7 @@
     padding: 0 3px;
     line-height: 1.15;
   }
+  #trail code, .board-title code { font-size: 0.75em; }
   .ctext a {
     color: inherit;
     cursor: pointer;
@@ -2574,7 +2575,7 @@
       low: col.low && !card.pinned && !deck ? card.low : null,
       onLow: function () { toggleLow(card.id); },
       head: card.board && !deck
-        ? el('div', 'board-title', cardTitle(card)) : null,
+        ? fillCode(el('div', 'board-title'), cardTitle(card)) : null,
       buttons: buttons
     });
     if (card.board && !deck) {
@@ -2859,6 +2860,14 @@
   function renderText(el, s, onToggle) {
     el.textContent = '';
     fillBlocks(el, blocks(s), onToggle);
+  }
+
+  function fillCode(node, s) {
+    codeSpans(s).forEach(function (seg) {
+      node.appendChild(seg.code
+        ? el('code', null, seg.text) : document.createTextNode(seg.text));
+    });
+    return node;
   }
 
   function fillInline(el, s) {
@@ -3179,10 +3188,10 @@
     all.forEach(function (step, i) {
       if (i) heading.appendChild(el('span', 'trail-sep', ' / '));
       if (i === all.length - 1) {
-        heading.appendChild(document.createTextNode(step.name));
+        fillCode(heading, step.name);
         return;
       }
-      var back = textBtn('trail-step', step.name);
+      var back = fillCode(textBtn('trail-step'), step.name);
       back.addEventListener('click', function () { enter(path.slice(0, i)); });
       heading.appendChild(back);
     });
