@@ -3542,7 +3542,11 @@
           + view.getUint16(local + 28, true);
         var path = new TextDecoder()
           .decode(new Uint8Array(buffer, at + 46, named));
-        out[path] = file.slice(start, start + view.getUint32(at + 20, true));
+        var data = file.slice(start, start + view.getUint32(at + 20, true));
+        out[path] = view.getUint16(at + 10, true) === 8
+          ? new Response(data.stream().pipeThrough(
+            new DecompressionStream('deflate-raw'))).blob()
+          : data;
         at += 46 + named + view.getUint16(at + 30, true)
           + view.getUint16(at + 32, true);
       }
@@ -3708,9 +3712,18 @@
   var NOT_EXPORT = "That file doesn't look like a personal board export.";
 
   function importZip(f) {
-    unzip(f).then(function (entries) {
-      var json = entries['card.json'] || entries['board.json'];
-      return json.text().then(function (text) {
+    unzip(f).then(function (found) {
+      var json = pick(Object.keys(found), function (path) {
+        return /(^|\/)(card|board)\.json$/.test(path);
+      });
+      var root = json.slice(0, json.lastIndexOf('/') + 1);
+      var entries = {};
+      Object.keys(found).forEach(function (path) {
+        entries[path.slice(root.length)] = found[path];
+      });
+      return Promise.resolve(found[json]).then(function (blob) {
+        return blob.text();
+      }).then(function (text) {
         readExport(JSON.parse(text), entries);
       });
     }).catch(function () { alert(NOT_EXPORT); });

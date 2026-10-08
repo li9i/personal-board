@@ -740,3 +740,71 @@ test('a card or a board with no files downloads as plain JSON',
     assert.strictEqual('blobs' in seen.card, false);
     assert.strictEqual('blobs' in seen.board, false);
   });
+
+function repacked(files) {
+  const heads = [];
+  const dir = [];
+  let at = 0;
+  for (const [name, text] of Object.entries(files)) {
+    const data = Buffer.from(text);
+    const body = zlib.deflateRawSync(data);
+    const named = Buffer.from(name);
+    const common = Buffer.alloc(26);
+    common.writeUInt16LE(20, 0);
+    common.writeUInt16LE(0x800, 2);
+    common.writeUInt16LE(8, 4);
+    common.writeUInt32LE(zlib.crc32(data), 10);
+    common.writeUInt32LE(body.length, 14);
+    common.writeUInt32LE(data.length, 18);
+    common.writeUInt16LE(named.length, 22);
+    const tail = Buffer.alloc(14);
+    tail.writeUInt32LE(at, 10);
+    heads.push(Buffer.from('PK\x03\x04', 'latin1'), common, named, body);
+    dir.push(Buffer.from('PK\x01\x02\x1e\x03', 'latin1'), common, tail,
+      named);
+    at += 30 + named.length + body.length;
+  }
+  const size = dir.reduce((n, part) => n + part.length, 0);
+  const end = Buffer.alloc(22);
+  end.write('PK\x05\x06', 'latin1');
+  end.writeUInt16LE(dir.length / 4, 8);
+  end.writeUInt16LE(dir.length / 4, 10);
+  end.writeUInt32LE(size, 12);
+  end.writeUInt32LE(at, 16);
+  return Buffer.concat(heads.concat(dir, [end]));
+}
+
+test('import reads a zip that another program packed again', async () => {
+  const zip = await inPage(async (page) => {
+    await twoFiles(page);
+    await page.run('document.querySelector(\'' + cardOf('a')
+      + ' .menubtn\').click()');
+    return unzipped(await page.saved(call(choose, 'Download this card'),
+      ZIP, null));
+  });
+
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'files-'));
+  const file = path.join(dir, 'again.zip');
+  fs.writeFileSync(file, repacked(Object.fromEntries(Object.entries(zip)
+    .map(([name, text]) => ['personal-board-card/' + name, text]))));
+  try {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, { cols: { remember: [], backlog: [], now: [],
+        accomplished: [] } });
+      await page.go();
+      await page.run('window.confirm = () => true');
+      await page.chosen('document.getElementById("importBtn").click()',
+        [file]);
+      const files = await filesOf(page, (saved) => saved.cols.backlog[0]);
+      const id = (await stored(page, STORE)).cols.backlog[0].id;
+      return { files,
+        opened: await page.shown(call(press, cardOf(id), 'hello.txt')) };
+    });
+
+    assert.deepStrictEqual(seen.files.map((f) => f.name),
+      ['hello.txt', 'data.bin']);
+    assert.strictEqual(seen.opened, 'hello');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
