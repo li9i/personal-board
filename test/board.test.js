@@ -651,6 +651,8 @@ test('send by gmail downloads the card and each of its files', async () => {
   assert.strictEqual(seen.raw, 'raw bytes');
   assert.match(seen.body, /^The card is in the file personal-board-card-/);
   assert.doesNotMatch(seen.body, /attached/);
+  assert.match(seen.body,
+    /\nIts files come with it: hello\.txt, data\.bin\.\n$/);
 });
 
 test('emailing a card downloads only the files on the card and its notes',

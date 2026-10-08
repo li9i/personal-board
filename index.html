@@ -3506,16 +3506,19 @@
     download('personal-board-card', { card: found.card, col: found.col });
   }
 
-  function gmail(subject, what, file) {
+  function gmail(subject, what, file, files) {
+    var names = files.map(function (f) { return f.name; }).join(', ');
     var url = GMAIL + '&su=' + encodeURIComponent(subject)
       + '&body=' + encodeURIComponent(what + ' is in the file ' + file
-        + '.\n\nOpen a personal board and press import to read it.\n');
+        + '.\n\nOpen a personal board and press import to read it.\n'
+        + (names ? '\nIts files come with it: ' + names + '.\n' : ''));
     var tab = window.open(url, '_blank');
     if (tab) tab.opener = null;
   }
 
   function mailBoard() {
-    gmail('My personal board', 'My board', download('personal-board', here()));
+    gmail('My personal board', 'My board', download('personal-board', here()),
+      []);
   }
 
   function mailCard(id) {
@@ -3524,7 +3527,8 @@
     var title = cardTitle(found.card);
     gmail('Personal board card' + (title ? ': ' + title : '')
       + ' (' + found.card.id + ')', 'The card',
-      download('personal-board-card', { card: found.card, col: found.col }));
+      download('personal-board-card', { card: found.card, col: found.col }),
+      looseFiles(found.card));
     looseFiles(found.card).forEach(saveFile);
   }
 
