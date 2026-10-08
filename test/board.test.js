@@ -884,3 +884,33 @@ test('opening the page clears stored files that no card holds',
     assert.deepStrictEqual(seen.after,
       ['card.txt', 'inside.txt', 'kept.txt', 'note.txt']);
   });
+
+test('a clean-up in another tab keeps the files of a pending undo',
+  async () => {
+    const browser = launch();
+    try {
+      const one = await browser.open();
+      await seed(one, STORE, oneNote([{ id: 'b', text: 'card b',
+        created: 1 }]));
+      await one.go();
+      await one.run(call(dropFiles, cardOf('a'), [HELLO]));
+      await filesOf(one, cardA);
+      await one.run(call(dropFiles, cardOf('b'),
+        [['gone.txt', 'x', 'text/plain']]));
+      await filesOf(one, (saved) => saved.cols.backlog[1]);
+      await one.run('document.querySelector(\'' + cardOf('b')
+        + ' [aria-label="Remove gone.txt"]\').click()');
+      await one.run('document.querySelector(\'' + cardOf('a')
+        + ' [aria-label="Delete"]\').click()');
+      const before = (await one.run(call(storedKeys))).length;
+      const two = await browser.open();
+      await until(async () => (await two.run(call(storedKeys))).length
+        < before);
+      await one.run('document.getElementById("undoBtn").click()');
+      const opened = await one.shown(call(press, cardOf('a'), 'hello.txt'));
+      assert.strictEqual(before, 2);
+      assert.strictEqual(opened, 'hello');
+    } finally {
+      await browser.close();
+    }
+  });

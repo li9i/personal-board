@@ -1436,6 +1436,9 @@
   var CARD_PARTS = ['id', 'text', 'created', 'pinned', 'low', 'swept',
     'notes', 'cards', 'folded', 'doneFolded', 'board', 'files'];
   var FILES = 'personal.files.v1';
+  var UNDOS = 'personal.undo.v1.';
+  var MY_UNDO = UNDOS + uid();
+  var UNDO_TIME = 6000;
   var ATTACH = 'Attach a file';
   var SHOWN = /^(image\/(?!svg)|audio\/|video\/|application\/pdf$|text\/plain$)/;
   var MOTHER = 'Mother Board';
@@ -1598,11 +1601,22 @@
     });
   }
 
+  function pendingUndos() {
+    var held = '';
+    Object.keys(localStorage).forEach(function (key) {
+      if (key.indexOf(UNDOS) !== 0) return;
+      var undo = JSON.parse(lsGet(key));
+      if (undo.until > Date.now()) held += undo.ids;
+      else lsDel(key);
+    });
+    return held;
+  }
+
   function sweepFiles() {
     fileStore('readwrite', function (store) {
       var all = store.getAllKeys();
       all.onsuccess = function () {
-        var held = lsGet(STORE) + JSON.stringify(lastDeleted);
+        var held = lsGet(STORE) + pendingUndos();
         all.result.forEach(function (id) {
           if (held.indexOf(id) < 0) store.delete(id);
         });
@@ -2198,6 +2212,8 @@
   function discard(rec, msg) {
     rec.path = path.slice();
     lastDeleted = rec;
+    lsSet(MY_UNDO, JSON.stringify({ until: Date.now() + UNDO_TIME,
+      ids: JSON.stringify(rec).match(/"id":"[^"]*"/g).join(' ') }));
     commit();
     showToast(msg);
   }
@@ -2240,8 +2256,13 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () {
       toast.classList.remove('on');
-      lastDeleted = null;
-    }, 6000);
+      dropUndo();
+    }, UNDO_TIME);
+  }
+
+  function dropUndo() {
+    lastDeleted = null;
+    lsDel(MY_UNDO);
   }
 
   function hideToast() {
@@ -2265,9 +2286,9 @@
       var at = Math.min(lastDeleted.index, list.length);
       list.splice.apply(list, [at, 0].concat(lastDeleted.cards));
     }
-    lastDeleted = null;
     hideToast();
     commit();
+    dropUndo();
   });
 
   var menu = el('div', 'card-menu');
@@ -4177,6 +4198,8 @@
     state = load();
     show();
   });
+
+  window.addEventListener('pagehide', dropUndo);
 
   window.addEventListener('hashchange', function () {
     readPath();
