@@ -4,6 +4,7 @@ const { spawn } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const zlib = require('node:zlib');
 
 const PAGE = 'file://' + path.join(__dirname, '..', 'index.html');
 const STORE = 'personal.board.v2';
@@ -89,11 +90,11 @@ function launch() {
       return out.result.value;
     }
 
-    async function saved(trigger, pattern) {
+    async function saved(trigger, pattern, encoding = 'utf8') {
       await run(trigger);
       const name = await until(() => fs.existsSync(downloads)
         && fs.readdirSync(downloads).find((f) => pattern.test(f)));
-      return fs.readFileSync(path.join(downloads, name), 'utf8');
+      return fs.readFileSync(path.join(downloads, name), encoding);
     }
 
     async function shown(trigger) {
@@ -573,126 +574,169 @@ test('a chip opens or downloads its file and its cross removes it',
     assert.deepStrictEqual(seen.back, ['hello.txt', 'data.bin']);
   });
 
-test('export carries the files and import brings them back', async () => {
-  const sent = await inPage(async (page) => {
-    await seed(page, STORE, oneNote([]));
-    await page.go();
-    await page.run(call(dropFiles, cardOf('a'), [HELLO]));
-    await filesOf(page, cardA);
-    await page.run(call(dropFiles, cardOf('a'), [RAW]));
-    await until(async () => described(cardA(await stored(page, STORE)))
-      .length === 2);
-    return {
-      board: await page.saved('document.getElementById("exportBtn").click();'
-        + call(choose, 'Download the board'), /^personal-board-\d+\.json$/),
-      card: await page.saved('document.querySelector(\'' + cardOf('a')
-        + ' .menubtn\').click();' + call(choose, 'Download this card'),
-        /^personal-board-card-\d+\.json$/)
-    };
-  });
-
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'files-'));
-  const bringBack = (name) => inPage(async (page) => {
-    const file = path.join(dir, name + '.json');
-    fs.writeFileSync(file, sent[name]);
-    await seed(page, STORE, { cols: { remember: [], backlog: [], now: [],
-      accomplished: [] } });
-    await page.go();
-    await page.run('window.confirm = () => true');
-    await page.chosen('document.getElementById("importBtn").click()',
-      [file]);
-    const files = await filesOf(page, (saved) => saved.cols.backlog[0]);
-    const id = (await stored(page, STORE)).cols.backlog[0].id;
-    return { files,
-      opened: await page.shown(call(press, cardOf(id), 'hello.txt')) };
-  });
-  try {
-    const board = await bringBack('board');
-    const card = await bringBack('card');
-
-    const both = [{ name: 'hello.txt', type: 'text/plain', size: 5 },
-      { name: 'data.bin', type: 'application/octet-stream', size: 9 }];
-    assert.deepStrictEqual(board.files, both);
-    assert.deepStrictEqual(card.files, both);
-    assert.strictEqual(board.opened, 'hello');
-    assert.strictEqual(card.opened, 'hello');
-  } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+function unzipped(zip) {
+  const end = zip.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+  const out = {};
+  let at = zip.readUInt32LE(end + 16);
+  for (let i = 0; i < zip.readUInt16LE(end + 10); i++) {
+    const size = zip.readUInt32LE(at + 20);
+    const named = zip.readUInt16LE(at + 28);
+    const local = zip.readUInt32LE(at + 42);
+    const start = local + 30 + zip.readUInt16LE(local + 26)
+      + zip.readUInt16LE(local + 28);
+    const data = zip.subarray(start, start + size);
+    assert.strictEqual(zlib.crc32(data), zip.readUInt32LE(at + 16));
+    out[zip.toString('utf8', at + 46, at + 46 + named)] = data.toString();
+    at += 46 + named + zip.readUInt16LE(at + 30) + zip.readUInt16LE(at + 32);
   }
-});
+  return out;
+}
 
-test('send by gmail downloads the card and each of its files', async () => {
+const ZIP = /^personal-board-card-\d+\.zip$/;
+
+async function twoFiles(page) {
+  await seed(page, STORE, oneNote([]));
+  await page.go();
+  await page.run(call(dropFiles, cardOf('a'), [HELLO, RAW]));
+  await until(async () => described(cardA(await stored(page, STORE)))
+    .length === 2);
+}
+
+test('export carries the files in a zip and import brings them back',
+  async () => {
+    const sent = await inPage(async (page) => {
+      await twoFiles(page);
+      return {
+        board: await page.saved('document.getElementById("exportBtn")'
+          + '.click();' + call(choose, 'Download the board'),
+          /^personal-board-\d+\.zip$/, null),
+        card: await page.saved('document.querySelector(\'' + cardOf('a')
+          + ' .menubtn\').click();' + call(choose, 'Download this card'),
+          ZIP, null)
+      };
+    });
+
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'files-'));
+    const bringBack = (name) => inPage(async (page) => {
+      const file = path.join(dir, name + '.zip');
+      fs.writeFileSync(file, sent[name]);
+      await seed(page, STORE, { cols: { remember: [], backlog: [], now: [],
+        accomplished: [] } });
+      await page.go();
+      await page.run('window.confirm = () => true');
+      await page.chosen('document.getElementById("importBtn").click()',
+        [file]);
+      const files = await filesOf(page, (saved) => saved.cols.backlog[0]);
+      const id = (await stored(page, STORE)).cols.backlog[0].id;
+      return { files,
+        opened: await page.shown(call(press, cardOf(id), 'hello.txt')) };
+    });
+    try {
+      const board = await bringBack('board');
+      const card = await bringBack('card');
+
+      const both = [{ name: 'hello.txt', type: 'text/plain', size: 5 },
+        { name: 'data.bin', type: 'application/octet-stream', size: 9 }];
+      assert.deepStrictEqual(Object.keys(unzipped(sent.board)).sort(),
+        ['board.json', 'card a/data.bin', 'card a/hello.txt']);
+      assert.deepStrictEqual(board.files, both);
+      assert.deepStrictEqual(card.files, both);
+      assert.strictEqual(board.opened, 'hello');
+      assert.strictEqual(card.opened, 'hello');
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+test('send by gmail downloads one zip and names the files', async () => {
   const seen = await inPage(async (page) => {
-    await seed(page, STORE, oneNote([]));
-    await page.go();
-    await page.run(call(dropFiles, cardOf('a'), [HELLO, RAW]));
-    await until(async () => described(cardA(await stored(page, STORE)))
-      .length === 2);
+    await twoFiles(page);
     await page.run('window.open = (url) => { window.mailed = url; }');
     await page.run('document.querySelector(\'' + cardOf('a')
       + ' .menubtn\').click()');
     const out = {};
     out.menu = await page.run('Array.from(document.querySelectorAll('
       + '\'[role="menu"]\')).find((m) => m.checkVisibility()).innerText');
-    out.card = JSON.parse(await page.saved(
-      call(choose, 'Send this card by Gmail'),
-      /^personal-board-card-\d+\.json$/));
-    out.hello = await page.saved('0', /^hello\.txt$/);
-    out.raw = await page.saved('0', /^data\.bin$/);
+    out.zip = unzipped(await page.saved(
+      call(choose, 'Send this card by Gmail'), ZIP, null));
+    out.listed = page.listed();
     out.body = await page.run(
       'new URL(window.mailed).searchParams.get("body")');
     return out;
   });
 
   assert.match(seen.menu,
-    /Gmail opens with the card and its files downloaded\. Drag them onto/i);
-  assert.strictEqual(seen.card.card.text, 'card a');
-  assert.strictEqual(seen.hello, 'hello');
-  assert.strictEqual(seen.raw, 'raw bytes');
-  assert.match(seen.body, /^The card is in the file personal-board-card-/);
+    /Gmail opens with the card downloaded\. Drag the file onto the message/i);
+  assert.strictEqual(JSON.parse(seen.zip['card.json']).card.text, 'card a');
+  assert.strictEqual(seen.zip['card a/hello.txt'], 'hello');
+  assert.strictEqual(seen.zip['card a/data.bin'], 'raw bytes');
+  assert.strictEqual(seen.listed.length, 1);
+  assert.match(seen.body,
+    /^The card is in the file personal-board-card-\d+\.zip\./);
   assert.doesNotMatch(seen.body, /attached/);
   assert.match(seen.body,
     /\nIts files come with it: hello\.txt, data\.bin\.\n$/);
 });
 
-test('emailing a card downloads only the files on the card and its notes',
+test('a zip holds a folder for each card and note that has files',
   async () => {
-    const seen = await inPage(async (page) => {
+    const zip = await inPage(async (page) => {
       await seed(page, STORE, { cols: { remember: [], now: [],
-        accomplished: [], backlog: [{ id: 'b', text: 'board b', created: 1,
-          notes: [{ id: 'n', text: 'note n', created: 1 }],
+        accomplished: [], backlog: [{ id: 'b', text: 'Robot arm',
+          created: 1, notes: [{ id: 'n', text: 'Robot arm', created: 1 }],
           board: { cols: { backlog: [
-            { id: 'i', text: 'inside', created: 1 }] } } }] } });
+            { id: 'i', text: 'inside: a/b', created: 1 }] } } }] } });
       await page.go();
-      const one = (name) => [[name, 'x', 'text/plain']];
       const cardB = (saved) => saved.cols.backlog[0];
-      await page.run(call(dropFiles, cardOf('b'), one('card.txt')));
+      await page.run(call(dropFiles, cardOf('b'),
+        [['a.txt', 'one', 'text/plain'], ['a.txt', 'two', 'text/plain']]));
       await filesOf(page, cardB);
       await page.run(call(dropFiles, '#notes ' + cardOf('n'),
-        one('note.txt')));
+        [['note.txt', 'three', 'text/plain']]));
       await filesOf(page, (saved) => cardB(saved).notes[0]);
       await page.run('location.hash = "b"');
       await until(() => page.run('!!document.querySelector(\''
         + cardOf('i') + '\')'));
-      await page.run(call(dropFiles, cardOf('i'), one('inside.txt')));
-      await filesOf(page,
-        (saved) => cardB(saved).board.cols.backlog[0]);
+      await page.run(call(dropFiles, cardOf('i'),
+        [['inside.txt', 'four', 'text/plain']]));
+      await filesOf(page, (saved) => cardB(saved).board.cols.backlog[0]);
       await page.run('location.hash = ""');
       await until(() => page.run('!!document.querySelector(\''
         + cardOf('b') + '\')'));
-      await page.run('window.open = () => null');
       await page.run('document.querySelector(\'' + cardOf('b')
         + ' .menubtn\').click()');
-      const card = JSON.parse(await page.saved(
-        call(choose, 'Send this card by Gmail'),
-        /^personal-board-card-\d+\.json$/));
-      await page.saved('0', /^card\.txt$/);
-      await page.saved('0', /^note\.txt$/);
-      return { card, listed: page.listed() };
+      return unzipped(await page.saved(call(choose, 'Download this card'),
+        ZIP, null));
     });
 
-    assert.deepStrictEqual(
-      seen.listed.filter((f) => !f.endsWith('.json')),
-      ['card.txt', 'note.txt']);
-    assert.strictEqual(Object.keys(seen.card.blobs).length, 3);
+    const { 'card.json': json, ...files } = zip;
+    assert.strictEqual(JSON.parse(json).card.text, 'Robot arm');
+    assert.deepStrictEqual(files, {
+      'Robot arm/a.txt': 'one',
+      'Robot arm/a (2).txt': 'two',
+      'Robot arm (2)/note.txt': 'three',
+      'inside- a-b/inside.txt': 'four'
+    });
+  });
+
+test('a card or a board with no files downloads as plain JSON',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, oneNote([]));
+      await page.go();
+      await page.run('document.querySelector(\'' + cardOf('a')
+        + ' .menubtn\').click()');
+      return {
+        card: JSON.parse(await page.saved(call(choose, 'Download this card'),
+          /^personal-board-card-\d+\.json$/)),
+        board: JSON.parse(await page.saved('document.getElementById('
+          + '"exportBtn").click();' + call(choose, 'Download the board'),
+          /^personal-board-\d+\.json$/))
+      };
+    });
+
+    assert.strictEqual(seen.card.card.text, 'card a');
+    assert.strictEqual(seen.board.cols.backlog[0].text, 'card a');
+    assert.strictEqual('blobs' in seen.card, false);
+    assert.strictEqual('blobs' in seen.board, false);
   });

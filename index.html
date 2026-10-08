@@ -1361,7 +1361,8 @@
       <button class="pill" id="importBtn" type="button">import</button>
       <button class="pill" id="exportBtn" type="button" aria-haspopup="true" aria-expanded="false">export</button>
     </div>
-    <input type="file" id="fileInput" accept="application/json,.json" hidden />
+    <input type="file" id="fileInput"
+      accept="application/json,.json,application/zip,.zip" hidden />
     <input type="file" id="attachInput" multiple hidden />
   </div>
 
@@ -2477,7 +2478,7 @@
     return [].indexOf.call(e.dataTransfer.types, 'Files') >= 0;
   }
 
-  function looseFiles(card) {
+  function cardFiles(card) {
     return card.notes.reduce(function (all, note) {
       return all.concat(note.files);
     }, card.files);
@@ -2508,7 +2509,7 @@
   function openFile(meta) {
     if (!SHOWN.test(meta.type)) { saveFile(meta); return; }
     fileGet(meta.id).then(function (blob) {
-      var url = URL.createObjectURL(blob);
+      var url = URL.createObjectURL(new Blob([blob], { type: meta.type }));
       var tab = window.open(url, '_blank');
       if (tab) tab.opener = null;
       setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
@@ -2796,11 +2797,8 @@
       hideFiles: card.board && !deck,
       attached: attached,
       buttons: buttons,
-      cap: looseFiles(card).length
-        ? 'Gmail opens with the card and its files downloaded.'
-          + ' Drag them onto the message.'
-        : 'Gmail opens with the card downloaded.'
-          + ' Drag the file onto the message.'
+      cap: 'Gmail opens with the card downloaded.'
+        + ' Drag the file onto the message.'
     });
     if (card.board && !deck) {
       item.classList.add('inner');
@@ -3438,48 +3436,68 @@
     return line.length > 60 ? line.slice(0, 60).trim() + '...' : line;
   }
 
-  function boardFiles(board) {
+  var CRCS = crcTable();
+
+  function boardHolders(board) {
     return KEYS.reduce(function (out, k) {
       return board.cols[k].reduce(function (all, c) {
-        return all.concat(filesOf(c));
+        return all.concat(holdersOf(c));
       }, out);
     }, []);
   }
 
-  function dataUrlOf(blob) {
-    return new Promise(function (done) {
-      var reader = new FileReader();
-      reader.onload = function () { done(reader.result); };
-      reader.readAsDataURL(blob);
-    });
+  function crc32(bytes) {
+    var crc = 0xFFFFFFFF;
+    for (var i = 0; i < bytes.length; i++) {
+      crc = CRCS[(crc ^ bytes[i]) & 255] ^ (crc >>> 8);
+    }
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function crcTable() {
+    var table = [];
+    for (var n = 0; n < 256; n++) {
+      var c = n;
+      for (var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+      table.push(c >>> 0);
+    }
+    return table;
   }
 
   function download(name, data) {
-    var file = name + '-' + Math.floor(Date.now() / 1000) + '.json';
-    pack(data).then(function (out) {
-      saveBlob(file, new Blob([JSON.stringify(out, null, 2)],
+    var holders = data.card ? holdersOf(data.card) : boardHolders(data);
+    var file = name + '-' + Math.floor(Date.now() / 1000);
+    if (!holders.length) {
+      saveBlob(file + '.json', new Blob([JSON.stringify(data, null, 2)],
         { type: 'application/json' }));
+      return file + '.json';
+    }
+    zipped(data, holders).then(function (blob) {
+      saveBlob(file + '.zip', blob);
     });
-    return file;
+    return file + '.zip';
   }
 
-  function filesOf(card) {
+  function holdersOf(card) {
     var out = card.notes.concat(card.cards).reduce(function (all, c) {
-      return all.concat(filesOf(c));
-    }, card.files);
-    return card.board ? out.concat(boardFiles(card.board)) : out;
+      return all.concat(holdersOf(c));
+    }, card.files.length ? [card] : []);
+    return card.board ? out.concat(boardHolders(card.board)) : out;
   }
 
-  function pack(data) {
-    var files = data.card ? filesOf(data.card) : boardFiles(data);
-    return Promise.all(files.map(function (f) {
-      return fileGet(f.id).then(dataUrlOf);
-    })).then(function (urls) {
-      if (!files.length) return data;
-      var blobs = {};
-      files.forEach(function (f, i) { blobs[f.id] = urls[i]; });
-      return Object.assign({}, data, { blobs: blobs });
+  function packed(fields) {
+    var view = new DataView(new ArrayBuffer(fields.length * 4));
+    var at = 0;
+    fields.forEach(function (f) {
+      if (f[1] === 2) view.setUint16(at, f[0], true);
+      else view.setUint32(at, f[0], true);
+      at += f[1];
     });
+    return new Uint8Array(view.buffer, 0, at);
+  }
+
+  function safeName(name) {
+    return name.replace(/[\\\/:*?"<>|\x00-\x1f]/g, '-');
   }
 
   function saveBlob(file, blob) {
@@ -3493,17 +3511,108 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
 
-  function unpack(blobs) {
+  function unique(taken, stem, ext) {
+    var out = stem + ext;
+    for (var n = 2; taken[out.toLowerCase()]; n++) {
+      out = stem + ' (' + n + ')' + ext;
+    }
+    taken[out.toLowerCase()] = true;
+    return out;
+  }
+
+  function unpack(blobs, entries) {
     return Promise.all(Object.keys(blobs).map(function (id) {
-      return fetch(blobs[id]).then(function (r) { return r.blob(); })
-        .then(function (blob) { return filePut(id, blob); });
+      var got = entries ? Promise.resolve(entries[blobs[id]])
+        : fetch(blobs[id]).then(function (r) { return r.blob(); });
+      return got.then(function (blob) { return filePut(id, blob); });
     }));
+  }
+
+  function unzip(file) {
+    return file.arrayBuffer().then(function (buffer) {
+      var view = new DataView(buffer);
+      var end = buffer.byteLength - 22;
+      while (view.getUint32(end, true) !== 0x06054b50) end--;
+      var at = view.getUint32(end + 16, true);
+      var out = {};
+      for (var i = view.getUint16(end + 10, true); i > 0; i--) {
+        var named = view.getUint16(at + 28, true);
+        var local = view.getUint32(at + 42, true);
+        var start = local + 30 + view.getUint16(local + 26, true)
+          + view.getUint16(local + 28, true);
+        var path = new TextDecoder()
+          .decode(new Uint8Array(buffer, at + 46, named));
+        out[path] = file.slice(start, start + view.getUint32(at + 20, true));
+        at += 46 + named + view.getUint16(at + 30, true)
+          + view.getUint16(at + 32, true);
+      }
+      return out;
+    });
+  }
+
+  function zip(entries) {
+    var now = new Date();
+    var time = (now.getHours() << 11) | (now.getMinutes() << 5)
+      | (now.getSeconds() >> 1);
+    var date = ((now.getFullYear() - 1980) << 9)
+      | ((now.getMonth() + 1) << 5) | now.getDate();
+    return Promise.all(entries.map(function (e) {
+      return e.blob.arrayBuffer();
+    })).then(function (buffers) {
+      var parts = [];
+      var dir = [];
+      var at = 0;
+      buffers.forEach(function (buffer, i) {
+        var bytes = new Uint8Array(buffer);
+        var name = new TextEncoder().encode(entries[i].path);
+        var common = [[0x800, 2], [0, 2], [time, 2], [date, 2],
+          [crc32(bytes), 4], [bytes.length, 4], [bytes.length, 4],
+          [name.length, 2], [0, 2]];
+        var head = packed([[0x04034b50, 4], [20, 2]].concat(common));
+        dir.push(packed([[0x02014b50, 4], [0x031E, 2], [20, 2]].concat(common,
+          [[0, 2], [0, 2], [0, 2], [0x81A40000, 4], [at, 4]])), name);
+        parts.push(head, name, bytes);
+        at += head.length + name.length + bytes.length;
+      });
+      var size = dir.reduce(function (n, part) { return n + part.length; }, 0);
+      var end = packed([[0x06054b50, 4], [0, 2], [0, 2],
+        [entries.length, 2], [entries.length, 2], [size, 4], [at, 4], [0, 2]]);
+      return new Blob(parts.concat(dir, [end]), { type: 'application/zip' });
+    });
+  }
+
+  function zipped(data, holders) {
+    var blobs = {};
+    var folders = {};
+    var files = [];
+    holders.forEach(function (item) {
+      var folder = unique(folders, safeName(cardTitle(item)), '');
+      var names = {};
+      item.files.forEach(function (meta) {
+        var name = safeName(meta.name);
+        var dot = name.lastIndexOf('.');
+        if (dot <= 0) dot = name.length;
+        var path = folder + '/'
+          + unique(names, name.slice(0, dot), name.slice(dot));
+        blobs[meta.id] = path;
+        files.push({ path: path, id: meta.id });
+      });
+    });
+    var json = { path: data.card ? 'card.json' : 'board.json',
+      blob: new Blob([JSON.stringify(
+        Object.assign({}, data, { blobs: blobs }), null, 2)]) };
+    return Promise.all(files.map(function (f) {
+      return fileGet(f.id).then(function (blob) {
+        return { path: f.path, blob: blob };
+      });
+    })).then(function (got) { return zip([json].concat(got)); });
   }
 
   function exportCard(id) {
     var found = find(id);
     if (!found) return;
-    download('personal-board-card', { card: found.card, col: found.col });
+    return download('personal-board-card',
+      { card: found.card, col: found.col });
   }
 
   function gmail(subject, what, file, files) {
@@ -3526,10 +3635,8 @@
     if (!found) return;
     var title = cardTitle(found.card);
     gmail('Personal board card' + (title ? ': ' + title : '')
-      + ' (' + found.card.id + ')', 'The card',
-      download('personal-board-card', { card: found.card, col: found.col }),
-      looseFiles(found.card));
-    looseFiles(found.card).forEach(saveFile);
+      + ' (' + found.card.id + ')', 'The card', exportCard(id),
+      cardFiles(found.card));
   }
 
   var exportBtn = document.getElementById('exportBtn');
@@ -3545,11 +3652,11 @@
     ], 'Gmail opens with the board downloaded. Drag the file onto the message.');
   });
 
-  function importBoard(parsed, blobs) {
+  function importBoard(parsed, blobs, entries) {
     var arriving = normalizeBoard(parsed);
     var total = boardSize(arriving);
     if (!confirm('Replace the current board with ' + total + ' card(s) from this file?')) return;
-    unpack(blobs).then(function () {
+    unpack(blobs, entries).then(function () {
       var board = here();
       if (!('palette' in arriving)) {
         arriving.palette = board.palette;
@@ -3579,7 +3686,7 @@
     return keep(copy, item, CARD_PARTS);
   }
 
-  function importCard(parsed, blobs) {
+  function importCard(parsed, blobs, entries) {
     var arriving = normalize([parsed.card]);
     if (!arriving.length) throw new Error('bad shape');
     var card = reid(arriving[0]);
@@ -3588,7 +3695,7 @@
     var brought = card.notes.length ? ' and ' + plural(card.notes.length, 'note') : '';
     var says = card.text.length > 60 ? card.text.slice(0, 60) + '...' : card.text;
     if (!confirm('Add ' + what + brought + ' to ' + col.label + '?\n\n' + says)) return;
-    unpack(blobs).then(function () {
+    unpack(blobs, entries).then(function () {
       here().cols[col.key].push(card);
       commit();
     });
@@ -3598,21 +3705,40 @@
   document.getElementById('importBtn').addEventListener('click', function () {
     fileInput.click();
   });
+  var NOT_EXPORT = "That file doesn't look like a personal board export.";
+
+  function importZip(f) {
+    unzip(f).then(function (entries) {
+      var json = entries['card.json'] || entries['board.json'];
+      return json.text().then(function (text) {
+        readExport(JSON.parse(text), entries);
+      });
+    }).catch(function () { alert(NOT_EXPORT); });
+  }
+
+  function readExport(parsed, entries) {
+    if (!parsed) throw new Error('bad shape');
+    var blobs = parsed.blobs || {};
+    delete parsed.blobs;
+    if (parsed.card) importCard(parsed, blobs, entries);
+    else if (parsed.cols) importBoard(parsed, blobs, entries);
+    else throw new Error('bad shape');
+  }
+
   fileInput.addEventListener('change', function () {
     var f = fileInput.files && fileInput.files[0];
     if (!f) return;
+    if (/\.zip$/i.test(f.name)) {
+      importZip(f);
+      fileInput.value = '';
+      return;
+    }
     var reader = new FileReader();
     reader.onload = function () {
       try {
-        var parsed = JSON.parse(reader.result);
-        if (!parsed) throw new Error('bad shape');
-        var blobs = parsed.blobs || {};
-        delete parsed.blobs;
-        if (parsed.card) importCard(parsed, blobs);
-        else if (parsed.cols) importBoard(parsed, blobs);
-        else throw new Error('bad shape');
+        readExport(JSON.parse(reader.result));
       } catch (e) {
-        alert("That file doesn't look like a personal board export.");
+        alert(NOT_EXPORT);
       }
       fileInput.value = '';
     };
