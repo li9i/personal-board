@@ -8,7 +8,7 @@ The full behaviour of the board. The README keeps the short version.
 
 **burst**, at the end of the row inside the box, decides what a saved card leaves behind. Off, the box closes once the card is in. On, it stays open and empty, ready for the next one. The switch is in the box, so it is there only while you are adding. One setting serves every box on the page, including the ones for notes and decks, and the board remembers it. It starts off.
 
-**≡** on a card opens the menu. The menu holds **Pin to top**, **Turn into a board**, **Download this card** and **Send this card by Gmail**. Escape or a click outside closes the menu. A **bin** sits to the left of **≡** and deletes the card in one press. A note carries the bin alone, with no menu.
+**≡** on a card opens the menu. The menu holds **Pin to top**, **Turn into a board**, **Attach a file**, **Download this card** and **Send this card by Gmail**. Escape or a click outside closes the menu. A **bin** sits to the left of **≡** and deletes the card in one press. A note carries the bin and a clip, with no menu. Files, below, has the clip.
 
 **A double click** on a card opens its text in a box. This is the one way to write the text, and a checkbox is the one thing that a single click changes. The same keys apply. A single click does nothing else, and a double click on a link or a button does what that link or button does. A note behaves in the same way.
 
@@ -54,6 +54,19 @@ A blank line inside a block closes nothing. A word after the opening fence names
 
 **Notes** open in a small window in the middle of the page. The words next to the date of a card open that window. A card with notes gives their count there. A card with no notes shows **add note** while the pointer is on the card. A click there opens the window, with the box for the first note. Notes are cards themselves. The same editing, backticks, links and dates apply to them, and a drag reorders them. They carry a bin of their own, with an Undo.
 
+## Files
+
+A card or a note can carry files. A file shows as a chip under the text, with its name and its size, such as `arm.png 210 KB`.
+
+- **Drop** a file from your desktop or file manager on a card or a note. While the file is over the card, a ring goes round the card with the word **attach**. One drop can bring more than one file.
+- **Attach a file**, in the menu of a card, opens the file picker. A note has no menu, so the clip next to its bin does the same.
+- A click on a chip opens the file in a new tab if the browser can show it: a picture, a PDF, plain text, audio or video. Every other file downloads under its own name. An SVG picture and an HTML page download too, because in a tab of their own they could run code with access to the board.
+- The cross on a chip removes the file from the card. The toast says `File removed` and offers **Undo**.
+- The notes window shows the files of its card under the text of the card.
+- A board card does not show its files. Its notes window shows them. A file that lands on a board card opens that window, so you see where the file went.
+- On a low card, the chips fade with the rest of the card.
+- A delete takes the files of the card with it, and Undo brings them back.
+
 The window shows all of its notes at once. It becomes as tall as the notes need, and the page behind it scrolls when the window is taller than the screen. Only the window that opens against a card, for an edit of the card text, keeps its notes in a box that scrolls. The window uses the colour of the column that holds the card. Escape or a click outside closes the window. A click counts as outside only when it starts and ends there, so a selection dragged out of the text leaves the window open.
 
 ## Pins
@@ -86,7 +99,7 @@ A deck is a card with cards of its own under it. The card on top is the head. It
 - Under its text, the head shows a bar and a count such as `3 of 14 done`. A card in a deck is done when it has at least one box and every box on it is ticked. A card with no box is never done.
 - Done cards go to the foot of the deck, below a line such as `3 done`. The arrow before the count folds the done cards away, and a second press shows them again. A new deck shows its done cards. The fold is on the head, so it travels with Export and shows in another tab.
 - The arrow before the date of the head folds the deck to its head, and a second press unfolds it. The fold is on the head, so it travels with Export and shows in another tab.
-- A card in a deck is a full card, with a date, notes, a bin and a menu. Its menu holds **Download this card** and **Send this card by Gmail**. It takes no pin and no level.
+- A card in a deck is a full card, with a date, notes, a bin and a menu. Its menu holds **Attach a file**, **Download this card** and **Send this card by Gmail**. It takes no pin and no level.
 - The bin on the head deletes the deck and every card in it, in one press. The toast says how many cards went, and offers **Undo**.
 - A pin or a level on the head acts on the whole deck. A low deck in Backlog fades as one and gathers with the low cards.
 - Every column takes decks.
@@ -100,7 +113,7 @@ A card can hold a board of its own. Such a card is a board card. The top board i
 - The text of the card names the board. The name is the first line of the text, cut to 60 letters. The page takes off any heading, quote, bullet, number or checkbox mark at the front of that line. The Gmail subject of a card uses the same rule. Backticks in the name show as a code chip on the card and in the heading, as they do in card text. The browser tab and the Gmail subject show the backticks as you typed them.
 - The head of a deck can turn into a board too. The cards of its deck go to Backlog on the new board, in the same order, and the head becomes a plain board card. The card keeps its text, notes, pin and level.
 - A board card has a **board** tab on its top edge, at the left, with an arrow after the word. A band in the colours of the four columns of its board goes along the top of the card. The colours come from the palette of that board, so each board looks different from outside. Each part of the band is as wide as the count of its column, and a column with no cards has no part. On a board with no cards, the four parts are equal and pale.
-- A board card shows only its name, in the type of the column headings. The rest of the text stays in the card, and shows when you edit the card. A double click on the name opens the card to edit, as on every card.
+- A board card shows only its name, in the type of the column headings. The rest of the text stays in the card, and shows when you edit the card. A double click on the name opens the card to edit, as on every card. The files of the card do not show on it. Its notes window shows them.
 - Under the name, a line such as `3 of 9 done` gives the count of Accomplished against the count of Backlog, Now and Accomplished together. Remember is not in the count, because its cards are not tasks. A board with no cards shows `empty board`.
 - On a low card, the band, the name and the line fade with the rest of the card. The tab does not fade.
 - The tab steps into the board. The heading becomes a trail, such as `Mother Board / Work / Robot arm`. Each name before the last is a button that steps back out to that board. The Back and Forward buttons of the browser step out and in too. The address keeps the place after `#`, so a reload or a bookmark opens the same board. The browser tab shows the name of the board you are in.
@@ -113,13 +126,15 @@ A card can hold a board of its own. Such a card is a board card. The top board i
 
 ## Export and Import
 
-**Export** opens a menu with two ways out. **Download the board** writes the board you are in to a JSON file, with every board inside it. **Send the board by Gmail** writes the same file and opens a new Gmail message in another tab, with a subject and a body that name the file. The file is not attached to the message. No page can hand Gmail a file: the Gmail compose address carries the recipient, the subject and the body and nothing else, and the mail protocols behind a plain mail link carry no attachment either. An attachment would need Google's mail interface, a signed-in account and the board served from a web address, which the board is not. So the message opens beside a downloaded file and you drag the file onto it. The menu says so under the two choices.
+**Export** opens a menu with two ways out. **Download the board** writes the board you are in to a JSON file, with every board inside it and every file on their cards and notes. **Send the board by Gmail** writes the same file and opens a new Gmail message in another tab, with a subject and a body that name the file. The file is not attached to the message. No page can hand Gmail a file: the Gmail compose address carries the recipient, the subject and the body and nothing else, and the mail protocols behind a plain mail link carry no attachment either. An attachment would need Google's mail interface, a signed-in account and the board served from a web address, which the board is not. So the message opens beside a downloaded file and you drag the file onto it. The menu says so under the two choices.
 
 If the browser blocks the new tab, the file is downloaded all the same.
 
+The files on the cards and notes go into the JSON file as text, so an export is still one file. That text is about a third larger than the files themselves. Import puts the files back into the browser.
+
 **Import** reads a board or a single card.
 
-**Download this card** writes one card to a file, with its notes. On the head of a deck it writes the whole deck, with every card and note in it. On a board card it writes the card with its whole board. The file passes the card to someone else. **Send this card by Gmail** writes the same file and opens a message for it, as the board does. The subject carries the first line of the card and then its id, as in `Personal board card: pay the bill (ctest456)`. The first line is the text of the line with any heading, quote, bullet, number or checkbox mark taken off the front, cut to 60 letters. The id is the one the card holds on this board. Import gives an arriving card a fresh id, so the id in the subject names the card here and not the card there. Import adds the card to the board you are in and does not change the other cards. The card goes to the column that it was in. If there is no such column, the card goes to Backlog. A board card arrives with its board, and the cards inside that board keep their ids. The card arrives as a new card. If you import the same file twice, you get two cards.
+**Download this card** writes one card to a file, with its notes and its files. On the head of a deck it writes the whole deck, with every card and note in it. On a board card it writes the card with its whole board. The file passes the card to someone else. **Send this card by Gmail** writes the same file and opens a message for it, as the board does. The subject carries the first line of the card and then its id, as in `Personal board card: pay the bill (ctest456)`. The first line is the text of the line with any heading, quote, bullet, number or checkbox mark taken off the front, cut to 60 letters. The id is the one the card holds on this board. Import gives an arriving card a fresh id, so the id in the subject names the card here and not the card there. Import adds the card to the board you are in and does not change the other cards. The card goes to the column that it was in. If there is no such column, the card goes to Backlog. A board card arrives with its board, and the cards inside that board keep their ids. The card arrives as a new card. If you import the same file twice, you get two cards.
 
 Export and Import use two shapes. A whole board is `{"cols": ...}` and replaces the board you are in. The boards above it and beside it do not change. One card is `{"card": ..., "col": ...}` and joins the board you are in. A deck is one card, with its cards in the list `cards` of the head. A board card is one card, with its board inside it. Import reads the fields in the file to find which of the two shapes it is.
 
@@ -130,6 +145,8 @@ The board is in `localStorage`, in the key `personal.board.v2`. The Mother Board
 The palette of each board is on that board. A Mother Board saved before boards kept a palette of their own takes its palette from the old keys `personal.palette.v1` and `personal.palturn.v1`. The page no longer writes those keys.
 
 The board keeps the notes of a card on the card, so a card is whole on its own. Notes travel with Export and Import. A delete removes the notes of the card too. Undo returns the card and the notes. A board saved before notes existed opens with no notes.
+
+The files are not in `localStorage`, which holds about 5 MB for the whole page. They are in the IndexedDB database `personal.files.v1` of the browser, which has room for gigabytes. The card or note keeps a list of its files, with the name, the type and the size of each, and the list travels with the card. The page never deletes a file from the database. A file that you remove, and the files of a card that you delete, stay there and take up space. A board saved before files existed opens with no files.
 
 The cards of a deck are on its head in the same way, so a deck travels whole. A delete of the head removes its cards too, and Undo returns them. A board saved before decks existed opens with no decks.
 

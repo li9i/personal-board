@@ -52,11 +52,24 @@ function launch() {
   }
 
   async function open() {
+    const downloads = path.join(profile, 'downloads');
     const { targetId } = await send('Target.createTarget',
       { url: 'about:blank' });
     const { sessionId } = await send('Target.attachToTarget',
       { targetId, flatten: true });
     await send('Page.enable', {}, sessionId);
+    await send('Page.setInterceptFileChooserDialog', { enabled: true },
+      sessionId);
+    await send('Browser.setDownloadBehavior',
+      { behavior: 'allow', downloadPath: downloads });
+
+    async function chosen(trigger, paths) {
+      const asked = next('Page.fileChooserOpened');
+      await run(trigger);
+      const { backendNodeId } = (await asked).params;
+      await send('DOM.setFileInputFiles', { files: paths, backendNodeId },
+        sessionId);
+    }
 
     async function go() {
       const loaded = next('Page.loadEventFired');
@@ -65,14 +78,34 @@ function launch() {
     }
 
     async function run(expression) {
-      const out = await send('Runtime.evaluate',
-        { expression, returnByValue: true }, sessionId);
+      const out = await send('Runtime.evaluate', { expression,
+        returnByValue: true, awaitPromise: true, userGesture: true },
+        sessionId);
       if (out.exceptionDetails) throw new Error(out.exceptionDetails.text);
       return out.result.value;
     }
 
+    async function saved(trigger, pattern) {
+      await run(trigger);
+      const name = await until(() => fs.existsSync(downloads)
+        && fs.readdirSync(downloads).find((f) => pattern.test(f)));
+      return fs.readFileSync(path.join(downloads, name), 'utf8');
+    }
+
+    async function shown(trigger) {
+      await run(trigger);
+      const tab = await until(async () => (await send('Target.getTargets'))
+        .targetInfos.find((t) => t.url.startsWith('blob:')));
+      const { sessionId: inTab } = await send('Target.attachToTarget',
+        { targetId: tab.targetId, flatten: true });
+      return until(async () => (await send('Runtime.evaluate', {
+        expression: 'document.readyState === "complete"'
+          + ' && document.body.innerText',
+        returnByValue: true }, inTab)).result.value);
+    }
+
     await go();
-    return { go, run };
+    return { chosen, go, run, saved, shown };
   }
 
   async function close() {
@@ -102,6 +135,15 @@ async function inPage(work) {
 function seed(page, key, board) {
   return page.run('localStorage.setItem(' + JSON.stringify(key) + ', '
     + JSON.stringify(JSON.stringify(board)) + ')');
+}
+
+async function until(check) {
+  for (let i = 0; i < 100; i++) {
+    const value = await check();
+    if (value) return value;
+    await new Promise((done) => setTimeout(done, 50));
+  }
+  throw new Error('timed out');
 }
 
 test('a save keeps the parts the page does not know', async () => {
@@ -383,3 +425,194 @@ test('a place button shows only where pin and low rules let a card land',
     assert.deepStrictEqual(seen.pinnedOntoNormal, [DECK]);
     assert.deepStrictEqual(seen.lowOntoNormal, [DECK]);
   });
+
+function dropFiles(selector, files) {
+  const box = document.querySelector(selector).getBoundingClientRect();
+  const x = box.left + box.width / 2;
+  const y = box.top + box.height / 2;
+  const dataTransfer = new DataTransfer();
+  files.forEach(([name, text, type]) =>
+    dataTransfer.items.add(new File([text], name, { type })));
+  const at = { bubbles: true, cancelable: true, clientX: x, clientY: y,
+    dataTransfer };
+  const target = document.elementFromPoint(x, y);
+  ['dragenter', 'dragover', 'drop'].forEach((type) =>
+    target.dispatchEvent(new DragEvent(type, at)));
+}
+
+function press(scope, words) {
+  Array.from(document.querySelectorAll(scope + ' button'))
+    .find((b) => b.textContent.includes(words)).click();
+}
+
+const HELLO = ['hello.txt', 'hello', 'text/plain'];
+const RAW = ['data.bin', 'raw bytes', 'application/octet-stream'];
+const ATTACH = 'Attach a file';
+
+function cardOf(id) {
+  return '.card[data-id="' + id + '"]';
+}
+
+function described(item) {
+  return (item.files || []).map(({ name, type, size }) =>
+    ({ name, type, size }));
+}
+
+function oneNote(extra) {
+  return { cols: { remember: [], now: [], accomplished: [], backlog: [
+    { id: 'a', text: 'card a', created: 1,
+      notes: [{ id: 'n', text: 'note n', created: 1 }] }].concat(extra) } };
+}
+
+async function filesOf(page, pick) {
+  return until(async () => {
+    const item = pick(await stored(page, STORE));
+    return item && item.files && item.files.length && described(item);
+  });
+}
+
+const cardA = (saved) => saved.cols.backlog.find((c) => c.id === 'a');
+const noteN = (saved) => cardA(saved).notes[0];
+
+test('a file dropped on a card or a note shows as a chip', async () => {
+  const seen = await inPage(async (page) => {
+    await seed(page, STORE, oneNote([
+      { id: 'b', text: 'board b', created: 1, board: { cols: {} } }]));
+    await page.go();
+    const text = (selector) => page.run('document.querySelector('
+      + JSON.stringify(selector) + ').innerText');
+    const out = {};
+    await page.run(call(dropFiles, cardOf('a'), [HELLO]));
+    out.card = await filesOf(page, cardA);
+    out.cardText = await text(cardOf('a'));
+    await page.run('document.querySelector(\'' + cardOf('a')
+      + ' .notemark\').click()');
+    await page.run(call(dropFiles, '#notes ' + cardOf('n'), [HELLO]));
+    out.note = await filesOf(page, noteN);
+    out.noteText = await text('#notes ' + cardOf('n'));
+    await page.run('document.dispatchEvent(new KeyboardEvent('
+      + '"keydown", { key: "Escape", bubbles: true }))');
+    await page.run(call(dropFiles, cardOf('b'), [HELLO]));
+    out.board = await filesOf(page,
+      (saved) => saved.cols.backlog.find((c) => c.id === 'b'));
+    out.boardText = await text(cardOf('b'));
+    out.notesHead = await text('#notes .notes-head');
+    return out;
+  });
+
+  const hello = [{ name: 'hello.txt', type: 'text/plain', size: 5 }];
+  assert.deepStrictEqual(seen.card, hello);
+  assert.deepStrictEqual(seen.note, hello);
+  assert.deepStrictEqual(seen.board, hello);
+  assert.match(seen.cardText, /hello\.txt\s+5 B/);
+  assert.match(seen.noteText, /hello\.txt\s+5 B/);
+  assert.doesNotMatch(seen.boardText, /hello\.txt/);
+  assert.match(seen.notesHead, /board b[\s\S]*hello\.txt\s+5 B/);
+});
+
+test('the card menu and the clip on a note attach a chosen file',
+  async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'files-'));
+    const plan = path.join(dir, 'plan.txt');
+    fs.writeFileSync(plan, 'the plan');
+    try {
+      const seen = await inPage(async (page) => {
+        await seed(page, STORE, oneNote([]));
+        await page.go();
+        await page.run('document.querySelector(\'' + cardOf('a')
+          + ' .menubtn\').click()');
+        await page.chosen(call(choose, ATTACH), [plan]);
+        const card = await filesOf(page, cardA);
+        await page.run('document.querySelector(\'' + cardOf('a')
+          + ' .notemark\').click()');
+        await page.chosen('document.querySelector(\'#notes ' + cardOf('n')
+          + ' [aria-label="' + ATTACH + '"]\').click()', [plan]);
+        return { card, note: await filesOf(page, noteN) };
+      });
+
+      const wanted = [{ name: 'plan.txt', type: 'text/plain', size: 8 }];
+      assert.deepStrictEqual(seen.card, wanted);
+      assert.deepStrictEqual(seen.note, wanted);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+test('a chip opens or downloads its file and its cross removes it',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, oneNote([]));
+      await page.go();
+      await page.run(call(dropFiles, cardOf('a'), [HELLO, RAW]));
+      await until(async () => described(cardA(await stored(page, STORE)))
+        .length === 2);
+      const names = async () => described(cardA(await stored(page, STORE)))
+        .map((f) => f.name);
+      const out = {};
+      out.opened = await page.shown(call(press, cardOf('a'), 'hello.txt'));
+      out.downloaded = await page.saved(call(press, cardOf('a'), 'data.bin'),
+        /^data\.bin$/);
+      await page.run('document.querySelector(\'' + cardOf('a')
+        + ' [aria-label="Remove hello.txt"]\').click()');
+      out.removed = await names();
+      out.toast = await page.run(
+        'document.getElementById("toastMsg").textContent');
+      await page.run('document.getElementById("undoBtn").click()');
+      out.back = await names();
+      return out;
+    });
+
+    assert.strictEqual(seen.opened, 'hello');
+    assert.strictEqual(seen.downloaded, 'raw bytes');
+    assert.deepStrictEqual(seen.removed, ['data.bin']);
+    assert.strictEqual(seen.toast, 'File removed');
+    assert.deepStrictEqual(seen.back, ['hello.txt', 'data.bin']);
+  });
+
+test('export carries the files and import brings them back', async () => {
+  const sent = await inPage(async (page) => {
+    await seed(page, STORE, oneNote([]));
+    await page.go();
+    await page.run(call(dropFiles, cardOf('a'), [HELLO]));
+    await filesOf(page, cardA);
+    await page.run(call(dropFiles, cardOf('a'), [RAW]));
+    await until(async () => described(cardA(await stored(page, STORE)))
+      .length === 2);
+    return {
+      board: await page.saved('document.getElementById("exportBtn").click();'
+        + call(choose, 'Download the board'), /^personal-board-\d+\.json$/),
+      card: await page.saved('document.querySelector(\'' + cardOf('a')
+        + ' .menubtn\').click();' + call(choose, 'Download this card'),
+        /^personal-board-card-\d+\.json$/)
+    };
+  });
+
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'files-'));
+  const bringBack = (name) => inPage(async (page) => {
+    const file = path.join(dir, name + '.json');
+    fs.writeFileSync(file, sent[name]);
+    await seed(page, STORE, { cols: { remember: [], backlog: [], now: [],
+      accomplished: [] } });
+    await page.go();
+    await page.run('window.confirm = () => true');
+    await page.chosen('document.getElementById("importBtn").click()',
+      [file]);
+    const files = await filesOf(page, (saved) => saved.cols.backlog[0]);
+    const id = (await stored(page, STORE)).cols.backlog[0].id;
+    return { files,
+      opened: await page.shown(call(press, cardOf(id), 'hello.txt')) };
+  });
+  try {
+    const board = await bringBack('board');
+    const card = await bringBack('card');
+
+    const both = [{ name: 'hello.txt', type: 'text/plain', size: 5 },
+      { name: 'data.bin', type: 'application/octet-stream', size: 9 }];
+    assert.deepStrictEqual(board.files, both);
+    assert.deepStrictEqual(card.files, both);
+    assert.strictEqual(board.opened, 'hello');
+    assert.strictEqual(card.opened, 'hello');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

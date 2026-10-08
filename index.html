@@ -798,6 +798,56 @@
     line-height: 1.15;
   }
   #trail code, .board-title code { font-size: 0.75em; }
+  .files {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 7px;
+    opacity: var(--fade, 1);
+  }
+  .notes-of .files { margin: 8px 0 0; }
+  .file {
+    display: flex;
+    align-items: center;
+    max-width: 100%;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1;
+    color: var(--gray-800);
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 4px;
+  }
+  .file button {
+    display: flex;
+    align-items: center;
+    padding: 3px 4px;
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+  .file .file-open {
+    gap: 4px;
+    min-width: 0;
+    padding-left: 5px;
+  }
+  .file-open:hover .file-name {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+  .file-open .glyph { display: flex; flex: none; }
+  .file-open svg { width: 11px; height: 11px; }
+  .file-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .file-size { flex: none; color: var(--gray-600); }
+  .file .file-drop { padding-left: 2px; color: var(--gray-600); }
+  .file .file-drop:hover { color: var(--clay-dd); }
   .ctext a {
     color: inherit;
     cursor: pointer;
@@ -1312,6 +1362,7 @@
       <button class="pill" id="exportBtn" type="button" aria-haspopup="true" aria-expanded="false">export</button>
     </div>
     <input type="file" id="fileInput" accept="application/json,.json" hidden />
+    <input type="file" id="attachInput" multiple hidden />
   </div>
 
   <div class="board" id="board"></div>
@@ -1382,7 +1433,10 @@
   var GONE_KEY = 'cut';
   var OLD_COLS = ['later', 'waiting', GONE_KEY];
   var CARD_PARTS = ['id', 'text', 'created', 'pinned', 'low', 'swept',
-    'notes', 'cards', 'folded', 'doneFolded', 'board'];
+    'notes', 'cards', 'folded', 'doneFolded', 'board', 'files'];
+  var FILES = 'personal.files.v1';
+  var ATTACH = 'Attach a file';
+  var SHOWN = /^(image\/(?!svg)|audio\/|video\/|application\/pdf$|text\/plain$)/;
   var MOTHER = 'Mother Board';
   var GMAIL = 'https://mail.google.com/mail/?view=cm&fs=1';
 
@@ -1416,6 +1470,8 @@
     tick: 'M20 6L9 17l-5-5',
     board: 'M3.5 4.5h17v15h-17Z M8 4.5v15 M12 4.5v15 M16 4.5v15',
     chev: 'M9 6l6 6-6 6',
+    clip: 'M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57'
+       + 'A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48',
     deck: 'M4 10h16v10H4Z M6 6.5h12 M8 3h8',
     above: 'M12 19V5 M5 12l7-7 7 7',
     below: 'M12 5v14 M19 12l-7 7-7-7',
@@ -1485,6 +1541,12 @@
     return new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }
 
+  function fmtSize(n) {
+    if (n < 1024) return n + ' B';
+    if (n < 1048576) return Math.round(n / 1024) + ' KB';
+    return (n / 1048576).toFixed(1) + ' MB';
+  }
+
   function fmtStamp(ms) {
     return new Date(ms).toLocaleString(undefined,
       { dateStyle: 'medium', timeStyle: 'medium' });
@@ -1504,6 +1566,35 @@
 
   function lsDel(key) {
     try { localStorage.removeItem(key); } catch (e) {}
+  }
+
+  var filesDb = null;
+
+  function fileGet(id) {
+    return fileStore('readonly', function (store) { return store.get(id); });
+  }
+
+  function filePut(id, blob) {
+    return fileStore('readwrite', function (store) {
+      return store.put(blob, id);
+    });
+  }
+
+  function fileStore(mode, work) {
+    filesDb = filesDb || new Promise(function (done) {
+      var req = indexedDB.open(FILES, 1);
+      req.onupgradeneeded = function () {
+        req.result.createObjectStore('files');
+      };
+      req.onsuccess = function () { done(req.result); };
+    });
+    return filesDb.then(function (db) {
+      return new Promise(function (done) {
+        var tx = db.transaction('files', mode);
+        var req = work(tx.objectStore('files'));
+        tx.oncomplete = function () { done(req.result); };
+      });
+    });
   }
 
   function readCarried(key, olds) {
@@ -1586,7 +1677,8 @@
         pinned: !held && c.pinned === true,
         low: !held && (c.low === true || c.swept === true) && c.pinned !== true,
         notes: normalize(c.notes, true),
-        cards: normalize(c.cards, true)
+        cards: normalize(c.cards, true),
+        files: Array.isArray(c.files) ? c.files : []
       };
       if (!held && c.folded === true) item.folded = true;
       if (!held && c.doneFolded === true) item.doneFolded = true;
@@ -1604,7 +1696,7 @@
 
   function newItem(text) {
     return { id: uid(), text: text, created: Date.now(), pinned: false,
-      low: false, notes: [], cards: [] };
+      low: false, notes: [], cards: [], files: [] };
   }
 
   function orderGroups(cols) {
@@ -1979,7 +2071,7 @@
 
   var nesting = null;
 
-  function markNest(card) {
+  function markNest(card, words) {
     if (nesting === card) return;
     if (nesting) {
       nesting.classList.remove('nesting');
@@ -1988,7 +2080,8 @@
     nesting = card;
     if (!card) return;
     card.classList.add('nesting');
-    card.dataset.nest = card.classList.contains('head') ? 'add to deck' : 'make a deck';
+    card.dataset.nest = words
+      || (card.classList.contains('head') ? 'add to deck' : 'make a deck');
   }
 
   function itemsIn(body, cls) {
@@ -2153,7 +2246,7 @@
 
   document.getElementById('undoBtn').addEventListener('click', function () {
     if (!lastDeleted) return;
-    var list = undoList(lastDeleted);
+    var list = lastDeleted.list || undoList(lastDeleted);
     if (list) {
       var at = Math.min(lastDeleted.index, list.length);
       list.splice.apply(list, [at, 0].concat(lastDeleted.cards));
@@ -2168,9 +2261,9 @@
   document.body.appendChild(menu);
   var menuOwner = null;
 
-  function makeDeleteButton(title, onClick) {
-    var button = iconBtn('', title, 'delbtn');
-    button.appendChild(icon('bin'));
+  function actButton(cls, mark, title, onClick) {
+    var button = iconBtn('', title, cls);
+    button.appendChild(icon(mark));
     button.addEventListener('click', function (e) {
       e.stopPropagation();
       closeMenu();
@@ -2284,13 +2377,39 @@
     }
 
     var actions = el('div', 'card-actions');
-    actions.appendChild(makeDeleteButton(spec.deleteTitle, spec.onDelete));
+    actions.appendChild(
+      actButton('delbtn', 'bin', spec.deleteTitle, spec.onDelete));
+    if (spec.clip) {
+      actions.appendChild(actButton('clipbtn', 'clip', ATTACH,
+        function () { pickFiles(item); }));
+    }
     if (spec.buttons.length) actions.appendChild(makeMenuButton(card, spec.buttons));
     bot.appendChild(actions);
 
     card.appendChild(text);
+    if (item.files.length && !spec.hideFiles) {
+      card.appendChild(makeFiles(item));
+    }
     card.appendChild(bot);
     wireDrag(card, item.id, spec.level);
+
+    card.addEventListener('dragover', function (e) {
+      if (!carriesFiles(e)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      e.dataTransfer.dropEffect = 'copy';
+      markNest(card, 'attach');
+    });
+    card.addEventListener('dragleave', function (e) {
+      if (carriesFiles(e) && !card.contains(e.relatedTarget)) markNest(null);
+    });
+    card.addEventListener('drop', function (e) {
+      if (!carriesFiles(e)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      markNest(null);
+      attach(item, e.dataTransfer.files).then(spec.attached);
+    });
 
     card.addEventListener('dblclick', function (e) {
       if (e.target.closest('a, button, .notemark')) return;
@@ -2335,6 +2454,68 @@
     });
     ta.addEventListener('blur', function () { finish(true); });
   }
+
+  var attachInput = document.getElementById('attachInput');
+  var attachTo = null;
+
+  function attach(item, list) {
+    var files = [].slice.call(list);
+    var metas = files.map(function (f) {
+      return { id: uid(), name: f.name, type: f.type, size: f.size };
+    });
+    return Promise.all(metas.map(function (meta, i) {
+      return filePut(meta.id, files[i]);
+    })).then(function () {
+      item.files.push.apply(item.files, metas);
+      commit();
+    });
+  }
+
+  function carriesFiles(e) {
+    return [].indexOf.call(e.dataTransfer.types, 'Files') >= 0;
+  }
+
+  function makeFiles(item) {
+    var row = el('div', 'files');
+    item.files.forEach(function (meta, i) {
+      var chip = el('span', 'file');
+      var open = textBtn('file-open');
+      open.title = meta.name;
+      open.appendChild(icon('clip'));
+      open.appendChild(el('span', 'file-name', meta.name));
+      open.appendChild(el('span', 'file-size', fmtSize(meta.size)));
+      open.addEventListener('click', function () { openFile(meta); });
+      var drop = iconBtn('×', 'Remove ' + meta.name, 'file-drop');
+      drop.addEventListener('click', function () {
+        discard({ list: item.files, index: i,
+          cards: item.files.splice(i, 1) }, 'File removed');
+      });
+      chip.appendChild(open);
+      chip.appendChild(drop);
+      row.appendChild(chip);
+    });
+    return row;
+  }
+
+  function openFile(meta) {
+    fileGet(meta.id).then(function (blob) {
+      if (!SHOWN.test(meta.type)) { saveBlob(meta.name, blob); return; }
+      var url = URL.createObjectURL(blob);
+      var tab = window.open(url, '_blank');
+      if (tab) tab.opener = null;
+      setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+    });
+  }
+
+  function pickFiles(item, after) {
+    attachTo = { item: item, after: after };
+    attachInput.click();
+  }
+
+  attachInput.addEventListener('change', function () {
+    attach(attachTo.item, attachInput.files).then(attachTo.after);
+    attachInput.value = '';
+  });
 
   function codeSpans(s) {
     return s.split(/`([^`\n]+)`/).map(function (part, i) {
@@ -2568,7 +2749,11 @@
   }
 
   function makeCard(card, col, deck) {
+    var attached = card.board && !deck
+      ? function () { openNotes(card.id); } : null;
     var buttons = [
+      { icon: 'clip', title: ATTACH,
+        onClick: function () { pickFiles(card, attached); } },
       { icon: 'down', title: 'Download this card',
         onClick: function () { exportCard(card.id); } },
       { icon: 'mail', title: 'Send this card by Gmail',
@@ -2596,6 +2781,8 @@
       onLow: function () { toggleLow(card.id); },
       head: card.board && !deck
         ? fillCode(el('div', 'board-title'), cardTitle(card)) : null,
+      hideFiles: card.board && !deck,
+      attached: attached,
       buttons: buttons
     });
     if (card.board && !deck) {
@@ -2737,6 +2924,7 @@
       redraw: redrawNotes,
       deleteTitle: 'Delete note',
       onDelete: function () { removeNote(note.id); },
+      clip: true,
       buttons: []
     });
   }
@@ -2924,6 +3112,8 @@
   var openCardId = null;
 
   notesWhat.parentNode.appendChild(whatEdit);
+  var notesFiles = el('div');
+  notesWhat.parentNode.appendChild(notesFiles);
 
   var notesComposer = makeComposer(document.getElementById('notesFoot'), {
     add: '+ add a note',
@@ -3044,6 +3234,8 @@
     document.getElementById('notesCol').textContent = colOf(found.col).label;
     renderText(notesWhat, found.card.text,
       function (at) { toggleTask(found.card, at); });
+    notesFiles.textContent = '';
+    if (found.card.files.length) notesFiles.appendChild(makeFiles(found.card));
     document.getElementById('notesCount').textContent = found.card.notes.length;
     fillBody(notesBody, found.card.notes, 'no notes yet', makeNote);
   }
@@ -3229,9 +3421,51 @@
     return line.length > 60 ? line.slice(0, 60).trim() + '...' : line;
   }
 
+  function boardFiles(board) {
+    return KEYS.reduce(function (out, k) {
+      return board.cols[k].reduce(function (all, c) {
+        return all.concat(filesOf(c));
+      }, out);
+    }, []);
+  }
+
+  function dataUrlOf(blob) {
+    return new Promise(function (done) {
+      var reader = new FileReader();
+      reader.onload = function () { done(reader.result); };
+      reader.readAsDataURL(blob);
+    });
+  }
+
   function download(name, data) {
     var file = name + '-' + Math.floor(Date.now() / 1000) + '.json';
-    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    pack(data).then(function (out) {
+      saveBlob(file, new Blob([JSON.stringify(out, null, 2)],
+        { type: 'application/json' }));
+    });
+    return file;
+  }
+
+  function filesOf(card) {
+    var out = card.notes.concat(card.cards).reduce(function (all, c) {
+      return all.concat(filesOf(c));
+    }, card.files);
+    return card.board ? out.concat(boardFiles(card.board)) : out;
+  }
+
+  function pack(data) {
+    var files = data.card ? filesOf(data.card) : boardFiles(data);
+    return Promise.all(files.map(function (f) {
+      return fileGet(f.id).then(dataUrlOf);
+    })).then(function (urls) {
+      if (!files.length) return data;
+      var blobs = {};
+      files.forEach(function (f, i) { blobs[f.id] = urls[i]; });
+      return Object.assign({}, data, { blobs: blobs });
+    });
+  }
+
+  function saveBlob(file, blob) {
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
     a.href = url;
@@ -3240,7 +3474,13 @@
     a.click();
     document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-    return file;
+  }
+
+  function unpack(blobs) {
+    return Promise.all(Object.keys(blobs).map(function (id) {
+      return fetch(blobs[id]).then(function (r) { return r.blob(); })
+        .then(function (blob) { return filePut(id, blob); });
+    }));
   }
 
   function exportCard(id) {
@@ -3283,19 +3523,21 @@
     ], 'Gmail opens with the board downloaded. Drag the file onto the message.');
   });
 
-  function importBoard(parsed) {
+  function importBoard(parsed, blobs) {
     var arriving = normalizeBoard(parsed);
     var total = boardSize(arriving);
     if (!confirm('Replace the current board with ' + total + ' card(s) from this file?')) return;
-    var board = here();
-    if (!('palette' in arriving)) {
-      arriving.palette = board.palette;
-      arriving.turn = board.turn;
-    }
-    Object.keys(board).forEach(function (k) { delete board[k]; });
-    Object.assign(board, arriving);
-    commit();
-    applyPalette(board.palette, board.turn);
+    unpack(blobs).then(function () {
+      var board = here();
+      if (!('palette' in arriving)) {
+        arriving.palette = board.palette;
+        arriving.turn = board.turn;
+      }
+      Object.keys(board).forEach(function (k) { delete board[k]; });
+      Object.assign(board, arriving);
+      commit();
+      applyPalette(board.palette, board.turn);
+    });
   }
 
   function reid(item) {
@@ -3306,7 +3548,8 @@
       pinned: item.pinned,
       low: item.low,
       notes: item.notes.map(reid),
-      cards: item.cards.map(reid)
+      cards: item.cards.map(reid),
+      files: item.files
     };
     if (item.folded) copy.folded = true;
     if (item.doneFolded) copy.doneFolded = true;
@@ -3314,7 +3557,7 @@
     return keep(copy, item, CARD_PARTS);
   }
 
-  function importCard(parsed) {
+  function importCard(parsed, blobs) {
     var arriving = normalize([parsed.card]);
     if (!arriving.length) throw new Error('bad shape');
     var card = reid(arriving[0]);
@@ -3323,8 +3566,10 @@
     var brought = card.notes.length ? ' and ' + plural(card.notes.length, 'note') : '';
     var says = card.text.length > 60 ? card.text.slice(0, 60) + '...' : card.text;
     if (!confirm('Add ' + what + brought + ' to ' + col.label + '?\n\n' + says)) return;
-    here().cols[col.key].push(card);
-    commit();
+    unpack(blobs).then(function () {
+      here().cols[col.key].push(card);
+      commit();
+    });
   }
 
   var fileInput = document.getElementById('fileInput');
@@ -3339,8 +3584,10 @@
       try {
         var parsed = JSON.parse(reader.result);
         if (!parsed) throw new Error('bad shape');
-        if (parsed.card) importCard(parsed);
-        else if (parsed.cols) importBoard(parsed);
+        var blobs = parsed.blobs || {};
+        delete parsed.blobs;
+        if (parsed.card) importCard(parsed, blobs);
+        else if (parsed.cols) importBoard(parsed, blobs);
         else throw new Error('bad shape');
       } catch (e) {
         alert("That file doesn't look like a personal board export.");
