@@ -2272,7 +2272,7 @@
     return button;
   }
 
-  function makeMenuButton(card, actions) {
+  function makeMenuButton(card, actions, cap) {
     var button = iconBtn('≡', 'actions', 'menubtn');
     button.setAttribute('aria-haspopup', 'true');
     button.setAttribute('aria-expanded', 'false');
@@ -2280,7 +2280,7 @@
       e.stopPropagation();
       var mine = menuOwner === button;
       closeMenu();
-      if (!mine) openMenu(card, button, actions);
+      if (!mine) openMenu(card, button, actions, cap);
     });
     return button;
   }
@@ -2383,7 +2383,9 @@
       actions.appendChild(actButton('clipbtn', 'clip', ATTACH,
         function () { pickFiles(item); }));
     }
-    if (spec.buttons.length) actions.appendChild(makeMenuButton(card, spec.buttons));
+    if (spec.buttons.length) {
+      actions.appendChild(makeMenuButton(card, spec.buttons, spec.cap));
+    }
     bot.appendChild(actions);
 
     card.appendChild(text);
@@ -2475,6 +2477,12 @@
     return [].indexOf.call(e.dataTransfer.types, 'Files') >= 0;
   }
 
+  function looseFiles(card) {
+    return card.notes.reduce(function (all, note) {
+      return all.concat(note.files);
+    }, card.files);
+  }
+
   function makeFiles(item) {
     var row = el('div', 'files');
     item.files.forEach(function (meta, i) {
@@ -2498,13 +2506,17 @@
   }
 
   function openFile(meta) {
+    if (!SHOWN.test(meta.type)) { saveFile(meta); return; }
     fileGet(meta.id).then(function (blob) {
-      if (!SHOWN.test(meta.type)) { saveBlob(meta.name, blob); return; }
       var url = URL.createObjectURL(blob);
       var tab = window.open(url, '_blank');
       if (tab) tab.opener = null;
       setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
     });
+  }
+
+  function saveFile(meta) {
+    fileGet(meta.id).then(function (blob) { saveBlob(meta.name, blob); });
   }
 
   function pickFiles(item, after) {
@@ -2783,7 +2795,12 @@
         ? fillCode(el('div', 'board-title'), cardTitle(card)) : null,
       hideFiles: card.board && !deck,
       attached: attached,
-      buttons: buttons
+      buttons: buttons,
+      cap: looseFiles(card).length
+        ? 'Gmail opens with the card and its files downloaded.'
+          + ' Drag them onto the message.'
+        : 'Gmail opens with the card downloaded.'
+          + ' Drag the file onto the message.'
     });
     if (card.board && !deck) {
       item.classList.add('inner');
@@ -3492,7 +3509,7 @@
   function gmail(subject, what, file) {
     var url = GMAIL + '&su=' + encodeURIComponent(subject)
       + '&body=' + encodeURIComponent(what + ' is in the file ' + file
-        + ', attached.\n\nOpen a personal board and press import to read it.\n');
+        + '.\n\nOpen a personal board and press import to read it.\n');
     var tab = window.open(url, '_blank');
     if (tab) tab.opener = null;
   }
@@ -3508,6 +3525,7 @@
     gmail('Personal board card' + (title ? ': ' + title : '')
       + ' (' + found.card.id + ')', 'The card',
       download('personal-board-card', { card: found.card, col: found.col }));
+    looseFiles(found.card).forEach(saveFile);
   }
 
   var exportBtn = document.getElementById('exportBtn');

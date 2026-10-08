@@ -77,6 +77,10 @@ function launch() {
       await loaded;
     }
 
+    function listed() {
+      return fs.existsSync(downloads) ? fs.readdirSync(downloads).sort() : [];
+    }
+
     async function run(expression) {
       const out = await send('Runtime.evaluate', { expression,
         returnByValue: true, awaitPromise: true, userGesture: true },
@@ -105,7 +109,7 @@ function launch() {
     }
 
     await go();
-    return { chosen, go, run, saved, shown };
+    return { chosen, go, listed, run, saved, shown };
   }
 
   async function close() {
@@ -616,3 +620,77 @@ test('export carries the files and import brings them back', async () => {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('send by gmail downloads the card and each of its files', async () => {
+  const seen = await inPage(async (page) => {
+    await seed(page, STORE, oneNote([]));
+    await page.go();
+    await page.run(call(dropFiles, cardOf('a'), [HELLO, RAW]));
+    await until(async () => described(cardA(await stored(page, STORE)))
+      .length === 2);
+    await page.run('window.open = (url) => { window.mailed = url; }');
+    await page.run('document.querySelector(\'' + cardOf('a')
+      + ' .menubtn\').click()');
+    const out = {};
+    out.menu = await page.run('Array.from(document.querySelectorAll('
+      + '\'[role="menu"]\')).find((m) => m.checkVisibility()).innerText');
+    out.card = JSON.parse(await page.saved(
+      call(choose, 'Send this card by Gmail'),
+      /^personal-board-card-\d+\.json$/));
+    out.hello = await page.saved('0', /^hello\.txt$/);
+    out.raw = await page.saved('0', /^data\.bin$/);
+    out.body = await page.run(
+      'new URL(window.mailed).searchParams.get("body")');
+    return out;
+  });
+
+  assert.match(seen.menu,
+    /Gmail opens with the card and its files downloaded\. Drag them onto/i);
+  assert.strictEqual(seen.card.card.text, 'card a');
+  assert.strictEqual(seen.hello, 'hello');
+  assert.strictEqual(seen.raw, 'raw bytes');
+  assert.match(seen.body, /^The card is in the file personal-board-card-/);
+  assert.doesNotMatch(seen.body, /attached/);
+});
+
+test('emailing a card downloads only the files on the card and its notes',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, { cols: { remember: [], now: [],
+        accomplished: [], backlog: [{ id: 'b', text: 'board b', created: 1,
+          notes: [{ id: 'n', text: 'note n', created: 1 }],
+          board: { cols: { backlog: [
+            { id: 'i', text: 'inside', created: 1 }] } } }] } });
+      await page.go();
+      const one = (name) => [[name, 'x', 'text/plain']];
+      const cardB = (saved) => saved.cols.backlog[0];
+      await page.run(call(dropFiles, cardOf('b'), one('card.txt')));
+      await filesOf(page, cardB);
+      await page.run(call(dropFiles, '#notes ' + cardOf('n'),
+        one('note.txt')));
+      await filesOf(page, (saved) => cardB(saved).notes[0]);
+      await page.run('location.hash = "b"');
+      await until(() => page.run('!!document.querySelector(\''
+        + cardOf('i') + '\')'));
+      await page.run(call(dropFiles, cardOf('i'), one('inside.txt')));
+      await filesOf(page,
+        (saved) => cardB(saved).board.cols.backlog[0]);
+      await page.run('location.hash = ""');
+      await until(() => page.run('!!document.querySelector(\''
+        + cardOf('b') + '\')'));
+      await page.run('window.open = () => null');
+      await page.run('document.querySelector(\'' + cardOf('b')
+        + ' .menubtn\').click()');
+      const card = JSON.parse(await page.saved(
+        call(choose, 'Send this card by Gmail'),
+        /^personal-board-card-\d+\.json$/));
+      await page.saved('0', /^card\.txt$/);
+      await page.saved('0', /^note\.txt$/);
+      return { card, listed: page.listed() };
+    });
+
+    assert.deepStrictEqual(
+      seen.listed.filter((f) => !f.endsWith('.json')),
+      ['card.txt', 'note.txt']);
+    assert.strictEqual(Object.keys(seen.card.blobs).length, 3);
+  });
