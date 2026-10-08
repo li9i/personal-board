@@ -808,3 +808,79 @@ test('import reads a zip that another program packed again', async () => {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+function storedKeys() {
+  return new Promise((done) => {
+    const open = indexedDB.open('personal.files.v1');
+    open.onsuccess = () => {
+      const all = open.result.transaction('files').objectStore('files')
+        .getAllKeys();
+      all.onsuccess = () => {
+        open.result.close();
+        done(all.result);
+      };
+    };
+  });
+}
+
+test('opening the page clears stored files that no card holds',
+  async () => {
+    const seen = await inPage(async (page) => {
+      await seed(page, STORE, { cols: { remember: [], now: [],
+        accomplished: [], backlog: [
+          { id: 'a', text: 'card a', created: 1,
+            notes: [{ id: 'n', text: 'note n', created: 1 }] },
+          { id: 'b', text: 'board b', created: 1, board: { cols: {
+            backlog: [{ id: 'i', text: 'inside', created: 1 }] } } }] } });
+      await page.go();
+      const one = (name) => [[name, 'x', 'text/plain']];
+      const named = async (name) => {
+        const all = JSON.stringify(await stored(page, STORE));
+        return all.includes('"' + name + '"');
+      };
+      await page.run(call(dropFiles, cardOf('a'), one('card.txt')));
+      await until(() => named('card.txt'));
+      await page.run(call(dropFiles, cardOf('a'), one('gone.txt')));
+      await until(() => named('gone.txt'));
+      await page.run(call(dropFiles, cardOf('a'), one('kept.txt')));
+      await until(() => named('kept.txt'));
+      await page.run('document.querySelector(\'' + cardOf('a')
+        + ' .notemark\').click()');
+      await page.run(call(dropFiles, '#notes ' + cardOf('n'),
+        one('note.txt')));
+      await until(() => named('note.txt'));
+      await page.run('location.hash = "b"');
+      await until(() => page.run('!!document.querySelector(\''
+        + cardOf('i') + '\')'));
+      await page.run(call(dropFiles, cardOf('i'), one('inside.txt')));
+      await until(() => named('inside.txt'));
+      await page.run('location.hash = ""');
+      await until(() => page.run('!!document.querySelector(\''
+        + cardOf('a') + '\')'));
+      await page.run('document.querySelector(\'' + cardOf('a')
+        + ' [aria-label="Remove gone.txt"]\').click()');
+      const board = await stored(page, STORE);
+      const a = board.cols.backlog[0];
+      const kept = a.files.find((f) => f.name === 'kept.txt');
+      a.files = a.files.filter((f) => f !== kept);
+      board.cols.someday = [{ id: 'x', text: 'x', created: 1,
+        files: [kept] }];
+      await seed(page, STORE, board);
+      const ids = {};
+      JSON.stringify(board, (key, value) => {
+        if (value && value.name && value.id) ids[value.id] = value.name;
+        return value;
+      });
+      const before = (await page.run(call(storedKeys))).length;
+      await page.go();
+      const after = await until(async () => {
+        const keys = await page.run(call(storedKeys));
+        return keys.length < before && keys;
+      });
+      return { before, after: after.map((id) => ids[id]).sort() };
+    });
+
+    assert.strictEqual(seen.before, 5);
+    assert.deepStrictEqual(seen.after,
+      ['card.txt', 'inside.txt', 'kept.txt', 'note.txt']);
+  });

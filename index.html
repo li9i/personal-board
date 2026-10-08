@@ -1598,6 +1598,19 @@
     });
   }
 
+  function sweepFiles() {
+    fileStore('readwrite', function (store) {
+      var all = store.getAllKeys();
+      all.onsuccess = function () {
+        var held = lsGet(STORE) + JSON.stringify(lastDeleted);
+        all.result.forEach(function (id) {
+          if (held.indexOf(id) < 0) store.delete(id);
+        });
+      };
+      return all;
+    });
+  }
+
   function readCarried(key, olds) {
     var current = lsGet(key);
     if (current != null) return current;
@@ -4172,6 +4185,7 @@
 
   readPath();
   show();
+  sweepFiles();
 </script>
 </body>
 </html>
