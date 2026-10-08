@@ -254,3 +254,132 @@ test('a name in backticks shows as code on its card and in the heading',
     assert.strictEqual(seen.headingText,
       'Mother Board / see outer_board / inner_board');
   });
+
+function dragOnto(from, onto) {
+  const card = (id) => document.querySelector('.card[data-id="' + id + '"]');
+  const box = card(onto).getBoundingClientRect();
+  const at = { bubbles: true, cancelable: true,
+    clientX: box.left + box.width / 2, clientY: box.top + box.height / 2,
+    dataTransfer: new DataTransfer() };
+  card(from).dispatchEvent(new DragEvent('dragstart', at));
+  card(onto).dispatchEvent(new DragEvent('dragover', at));
+  card(onto).dispatchEvent(new DragEvent('drop', at));
+  card(from).dispatchEvent(new DragEvent('dragend', at));
+}
+
+function choices() {
+  return Array.from(document.querySelectorAll('[role="menu"]'))
+    .filter((menu) => menu.checkVisibility())
+    .flatMap((menu) => Array.from(menu.querySelectorAll('button'),
+      (b) => b.textContent.trim()));
+}
+
+function choose(word) {
+  Array.from(document.querySelectorAll('[role="menu"] button'))
+    .find((b) => b.checkVisibility() && b.textContent.trim() === word)
+    ?.click();
+}
+
+function call(fn, ...args) {
+  return '(' + fn + ')(' + args.map((a) => JSON.stringify(a)).join(', ')
+    + ')';
+}
+
+const DECK = 'Create deck';
+const ABOVE = 'Place above this card';
+const BELOW = 'Place below this card';
+
+test('a drop on the middle of a card asks where the card goes', async () => {
+  const seen = await inPage(async (page) => {
+    const out = {};
+    const answers = { deck: DECK, up: ABOVE, down: BELOW, escape: null };
+    for (const [name, answer] of Object.entries(answers)) {
+      await seed(page, STORE, { cols: { remember: [], now: [],
+        accomplished: [], backlog: ['a', 'b', 'c'].map(
+          (id) => ({ id, text: 'card ' + id, created: 1 })) } });
+      await page.go();
+      await page.run(call(dragOnto, 'c', 'a'));
+      const asked = await page.run(call(choices));
+      const before = await stored(page, STORE);
+      if (!answer) {
+        await page.run('document.dispatchEvent(new KeyboardEvent('
+          + '"keydown", { key: "Escape", bubbles: true }))');
+      } else {
+        await page.run(call(choose, answer));
+      }
+      out[name] = { asked, before, after: await stored(page, STORE),
+        left: await page.run(call(choices)) };
+    }
+    return out;
+  });
+
+  const ids = (list) => list.map((c) => c.id);
+  Object.values(seen).forEach((one) => {
+    assert.deepStrictEqual(one.asked, [DECK, ABOVE, BELOW]);
+    assert.deepStrictEqual(ids(one.before.cols.backlog), ['a', 'b', 'c']);
+    assert.deepStrictEqual(one.left, []);
+  });
+  const deck = seen.deck.after.cols.backlog;
+  assert.deepStrictEqual(ids(deck), ['a', 'b']);
+  assert.deepStrictEqual(ids(deck[0].cards), ['c']);
+  assert.deepStrictEqual(ids(seen.up.after.cols.backlog), ['c', 'a', 'b']);
+  assert.deepStrictEqual(ids(seen.down.after.cols.backlog), ['a', 'c', 'b']);
+  assert.deepStrictEqual(ids(seen.escape.after.cols.backlog),
+    ['a', 'b', 'c']);
+});
+
+test('a drop on the head of a deck adds to it without asking', async () => {
+  const seen = await inPage(async (page) => {
+    await seed(page, STORE, { cols: { remember: [], now: [],
+      accomplished: [], backlog: [
+        { id: 'p', text: 'plain', created: 1 },
+        { id: 'h', text: 'head', created: 1,
+          cards: [{ id: 'k', text: 'in the deck', created: 1 }] }] } });
+    await page.go();
+    await page.run(call(dragOnto, 'p', 'h'));
+    return { asked: await page.run(call(choices)),
+      saved: await stored(page, STORE) };
+  });
+
+  assert.deepStrictEqual(seen.asked, []);
+  assert.deepStrictEqual(seen.saved.cols.backlog.map((c) => c.id), ['h']);
+  assert.deepStrictEqual(seen.saved.cols.backlog[0].cards.map((c) => c.id),
+    ['p', 'k']);
+});
+
+test('a place button shows only where pin and low rules let a card land',
+  async () => {
+    const card = (id, extra) => Object.assign({ id, text: id, created: 1 },
+      extra);
+    const pinned = { pinned: true };
+    const low = { low: true };
+    const cases = {
+      ontoPinned: [[card('P', pinned), card('a'), card('b')], 'b', 'P'],
+      ontoLow: [[card('a'), card('b'), card('L1', low), card('L2', low)],
+        'a', 'L1'],
+      pinnedOntoNormal: [[card('P', pinned), card('a'), card('b')], 'P', 'b'],
+      lowOntoNormal: [[card('a'), card('b'), card('L', low)], 'L', 'a']
+    };
+    const seen = await inPage(async (page) => {
+      const out = {};
+      for (const [name, [backlog, from, onto]] of Object.entries(cases)) {
+        await seed(page, STORE, { cols: { remember: [], now: [],
+          accomplished: [], backlog } });
+        await page.go();
+        await page.run(call(dragOnto, from, onto));
+        out[name] = await page.run(call(choices));
+        if (name === 'ontoPinned') {
+          await page.run(call(choose, BELOW));
+          out.pressed = (await stored(page, STORE)).cols.backlog
+            .map((c) => c.id);
+        }
+      }
+      return out;
+    });
+
+    assert.deepStrictEqual(seen.ontoPinned, [DECK, BELOW]);
+    assert.deepStrictEqual(seen.pressed, ['P', 'b', 'a']);
+    assert.deepStrictEqual(seen.ontoLow, [DECK, ABOVE]);
+    assert.deepStrictEqual(seen.pinnedOntoNormal, [DECK]);
+    assert.deepStrictEqual(seen.lowOntoNormal, [DECK]);
+  });

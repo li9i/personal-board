@@ -14,7 +14,7 @@ The full behaviour of the board. The README keeps the short version.
 
 **The date** on a card is the day it was written. Hold the pointer on the date and the exact time shows, down to the second. A note and a card in a deck show theirs in the same way.
 
-**Drag** moves a card within a column or to another column. A drop on the middle of another card puts the card under it, in a deck. Decks, below, has the rest.
+**Drag** moves a card within a column or to another column. A drop on the middle of another card asks first, in a small menu. On the head of a deck, a drop puts the card in the deck and does not ask. Decks, below, has the rest.
 
 The bin removes a card from the board, and on a note it removes the note from its card. On the head of a deck it removes the deck and every card in it. None of these asks first. **clear column** empties Accomplished and asks first. All three show a toast with an **Undo**.
 
@@ -77,7 +77,9 @@ A card in Backlog is **normal** or **low**, and only Backlog has the two. Backlo
 
 A deck is a card with cards of its own under it. The card on top is the head. It keeps its own text, notes and menu, and its text names the deck. The cards of the deck hang under the head at the full width of the column, and a thin line in the margin ties each one to the head. A deck goes one level deep, so a card in a deck cannot hold cards.
 
-- A drop on another card makes a deck. While you drag, the board shows which of two things a drop will do. Near the top or bottom edge of a card, a line appears between the cards, and a drop moves the card to that line, as it always did. Over the middle half of a card, a ring goes round that card with the words **make a deck**, and a drop puts the dragged card under it. The card inside the ring becomes the head, and keeps its text, notes, pin and level.
+- A drop on another card can make a deck. While you drag, the board shows which of two things a drop will do. Near the top or bottom edge of a card, a line appears between the cards, and a drop moves the card to that line, as it always did. Over the middle half of a card, a ring goes round that card with the words **make a deck**. A drop there asks first. It opens a small menu below that card, with up to three buttons.
+- **Create deck** makes the deck. The card inside the ring becomes the head, and keeps its text, notes, pin and level. The dragged card goes under it.
+- **Place above this card** puts the dragged card directly above the card inside the ring, and **Place below this card** puts it directly below. Pinned cards stay at the top of the column, and low cards stay at the foot of Backlog. So the two Place buttons show only when the dragged card can land there. For example, over a pinned card, a card that is not pinned gets **Place below this card** only, and only on the last pinned card. Escape or a click outside closes the menu, and the dragged card stays where it was before the drag.
 - Over the head of a deck, everything below its top quarter shows the ring with **add to deck**, and a drop puts the card at the top of the deck.
 - **+ add to deck**, right under the head, writes a new card at the top of the deck. It works as the box at the top of a column does, burst included.
 - Over the cards of a deck, only the line shows. A drop there puts the card into the deck at that line, and never makes a deck inside a deck. A drag also takes a card out of a deck to any place in a column. A card that joins a deck loses its pin and its level. A drag on the head moves the whole deck. A head never shows the ring, because a deck cannot go into another deck, so a head dropped on the cards of a deck lands in the column next to that deck. When the last card leaves a deck, the head is a plain card again.

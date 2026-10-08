@@ -1416,6 +1416,9 @@
     tick: 'M20 6L9 17l-5-5',
     board: 'M3.5 4.5h17v15h-17Z M8 4.5v15 M12 4.5v15 M16 4.5v15',
     chev: 'M9 6l6 6-6 6',
+    deck: 'M4 10h16v10H4Z M6 6.5h12 M8 3h8',
+    above: 'M12 19V5 M5 12l7-7 7 7',
+    below: 'M12 5v14 M19 12l-7 7-7-7',
     note: 'M12 20h9 M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z',
     abstract: 'M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2 '
        + 'M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1Z M8 12h8 M8 16h5',
@@ -1869,8 +1872,25 @@
       level: 'card',
       onDrop: function (id, at) { dropCard(id, c.key, at); },
       onNest: function (id, onto) {
-        var first = find(onto).card.cards.filter(function (k) { return k.id !== id; })[0];
-        joinDeck(id, onto, first ? first.id : null);
+        var host = onto.dataset.id;
+        var deck = function () {
+          var first = find(host).card.cards
+            .filter(function (k) { return k.id !== id; })[0];
+          joinDeck(id, host, first ? first.id : null);
+        };
+        if (onto.classList.contains('head')) return deck();
+        var box = onto.getBoundingClientRect();
+        var at = itemsIn(body).indexOf(onto);
+        var side = function (icon, title, y, want) {
+          var to = insertIndex(body, y);
+          return to === want && { icon: icon, title: title,
+            onClick: function () { dropCard(id, c.key, to); } };
+        };
+        openMenu(null, onto, [
+          { icon: 'deck', title: 'Create deck', onClick: deck },
+          side('above', 'Place above this card', box.top, at),
+          side('below', 'Place below this card', box.bottom, at + 1)
+        ].filter(Boolean));
       }
     });
 
@@ -1939,7 +1959,7 @@
       });
       var onto = spec.onNest ? nestTarget(body, e.clientY) : null;
       markNest(null);
-      if (onto) spec.onNest(id, onto.dataset.id);
+      if (onto) spec.onNest(id, onto);
       else spec.onDrop(id, insertIndex(body, e.clientY, spec.flat));
     });
   }
