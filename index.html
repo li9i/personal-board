@@ -12,6 +12,7 @@
     --clay: #D97757;
     --clay-d: #B85C3E;
     --clay-dd: #A85033;
+    --red: #A6433B;
     --oat: #E3DACC;
     --olive: #788C5D;
     --gray-50: #F0EEE6;
@@ -1126,6 +1127,7 @@
     cursor: pointer;
   }
   .card-menu button:hover { background: var(--gray-50); }
+  .card-menu .delbtn { color: var(--red); }
   .card-menu button:focus-visible { outline: 2px solid var(--clay); outline-offset: -2px; }
   .card-menu .glyph {
     display: flex;
@@ -2412,8 +2414,10 @@
     }
 
     var actions = el('div', 'card-actions');
-    actions.appendChild(
-      actButton('delbtn', 'bin', spec.deleteTitle, spec.onDelete));
+    if (spec.onDelete) {
+      actions.appendChild(
+        actButton('delbtn', 'bin', spec.deleteTitle, spec.onDelete));
+    }
     if (spec.clip) {
       actions.appendChild(actButton('clipbtn', 'clip', ATTACH,
         function () { pickFiles(item); }));
@@ -2814,11 +2818,11 @@
       buttons.unshift({ icon: 'pin', title: card.pinned ? 'Unpin' : 'Pin to top',
         onClick: function () { togglePin(card.id); } });
     }
+    buttons.unshift({ cls: 'delbtn', icon: 'bin', title: 'Delete',
+      onClick: function () { removeCard(card.id); } });
     var item = makeItem(card, {
       level: 'card',
       redraw: render,
-      deleteTitle: 'Delete',
-      onDelete: function () { removeCard(card.id); },
       mark: noteMark(card),
       markCls: card.notes.length ? '' : 'add',
       onMark: function () { openNotes(card.id, card.notes.length ? null : 'compose'); },

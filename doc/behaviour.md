@@ -8,7 +8,7 @@ The full behaviour of the board. The README keeps the short version.
 
 **burst**, at the end of the row inside the box, decides what a saved card leaves behind. Off, the box closes once the card is in. On, it stays open and empty, ready for the next one. The switch is in the box, so it is there only while you are adding. One setting serves every box on the page, including the ones for notes and decks, and the board remembers it. It starts off.
 
-**≡** on a card opens the menu. The menu holds **Pin to top**, **Turn into a board**, **Attach a file**, **Download this card** and **Send this card by Gmail**. Escape or a click outside closes the menu. A **bin** sits to the left of **≡** and deletes the card in one press. A note carries the bin and a clip, with no menu. Files, below, has the clip.
+**≡** on a card opens the menu. The menu holds **Delete**, in red, then **Pin to top**, **Turn into a board**, **Attach a file**, **Download this card** and **Send this card by Gmail**. Escape or a click outside closes the menu. **Delete** removes the card in one press. A note carries a bin and a clip, with no menu. Files, below, has the clip.
 
 **A double click** on a card opens its text in a box. This is the one way to write the text, and a checkbox is the one thing that a single click changes. The same keys apply. A single click does nothing else, and a double click on a link or a button does what that link or button does. A note behaves in the same way.
 
@@ -16,7 +16,7 @@ The full behaviour of the board. The README keeps the short version.
 
 **Drag** moves a card within a column or to another column. A drop on the middle of another card asks first, in a small menu. On the head of a deck, a drop puts the card in the deck and does not ask. Decks, below, has the rest.
 
-The bin removes a card from the board, and on a note it removes the note from its card. On the head of a deck it removes the deck and every card in it. None of these asks first. **clear column** empties Accomplished and asks first. All three show a toast with an **Undo**.
+**Delete** removes a card from the board, and the bin on a note removes the note from its card. On the head of a deck, **Delete** removes the deck and every card in it. None of these asks first. **clear column** empties Accomplished and asks first. All three show a toast with an **Undo**.
 
 ## What the card text reads
 
@@ -99,8 +99,8 @@ A deck is a card with cards of its own under it. The card on top is the head. It
 - Under its text, the head shows a bar and a count such as `3 of 14 done`. A card in a deck is done when it has at least one box and every box on it is ticked. A card with no box is never done.
 - Done cards go to the foot of the deck, below a line such as `3 done`. The arrow before the count folds the done cards away, and a second press shows them again. A new deck shows its done cards. The fold is on the head, so it travels with Export and shows in another tab.
 - The arrow before the date of the head folds the deck to its head, and a second press unfolds it. The fold is on the head, so it travels with Export and shows in another tab.
-- A card in a deck is a full card, with a date, notes, a bin and a menu. Its menu holds **Attach a file**, **Download this card** and **Send this card by Gmail**. It takes no pin and no level.
-- The bin on the head deletes the deck and every card in it, in one press. The toast says how many cards went, and offers **Undo**.
+- A card in a deck is a full card, with a date, notes and a menu. Its menu holds **Delete**, **Attach a file**, **Download this card** and **Send this card by Gmail**. It takes no pin and no level.
+- **Delete** on the head deletes the deck and every card in it, in one press. The toast says how many cards went, and offers **Undo**.
 - A pin or a level on the head acts on the whole deck. A low deck in Backlog fades as one and gathers with the low cards.
 - Every column takes decks.
 - A card that holds a board takes no part in a deck. Boards, below, has the rest.
@@ -121,7 +121,7 @@ A card can hold a board of its own. Such a card is a board card. The top board i
 - A board card counts as one card in the counts of the board that holds it. The cards inside its board count only inside that board.
 - A board card takes no part in a deck. It cannot join a deck and it cannot head one. When you drag a board card over a card, or a card over a board card, no ring shows. The line shows, and a drop moves the card to that line. A board card dropped on the cards of a deck lands in the column next to that deck, as a head does.
 - A drop never puts a card into another board. To move a card to another board, use **Download this card**, open the other board and **Import** the file there.
-- The bin on a board card deletes the card and its whole board in one press. It does not ask first. The toast says how many cards went, such as `Board of 12 cards deleted`, and offers **Undo**. The number is the count of that board, with each board inside it counted as one card.
+- **Delete** on a board card deletes the card and its whole board in one press. It does not ask first. The toast says how many cards went, such as `Board of 12 cards deleted`, and offers **Undo**. The number is the count of that board, with each board inside it counted as one card.
 - **Undo** puts the card back in the board it came from, even if you stepped into another board before you pressed it. This holds for every delete: **Undo** returns a card, a note, a deck or a cleared column to the board it came from.
 
 ## Export and Import

@@ -901,7 +901,7 @@ test('a clean-up in another tab keeps the files of a pending undo',
       await one.run('document.querySelector(\'' + cardOf('b')
         + ' [aria-label="Remove gone.txt"]\').click()');
       await one.run('document.querySelector(\'' + cardOf('a')
-        + ' [aria-label="Delete"]\').click()');
+        + ' .menubtn\').click();' + call(choose, 'Delete'));
       const before = (await one.run(call(storedKeys))).length;
       const two = await browser.open();
       await until(async () => (await two.run(call(storedKeys))).length
